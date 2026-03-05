@@ -1,0 +1,60 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Hotel Thinker{% endblock %}</title>
+
+  <!-- Tailwind (CDN for quick start) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial;
+    }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body class="bg-slate-50 text-slate-900 h-screen overflow-hidden">
+
+  <!-- Page shell: fixed viewport, internal scroll regions -->
+  <div class="h-screen flex">
+
+    <!-- Sidebar: fixed height, independent scroll -->
+    <aside class="w-72 bg-white border-r border-slate-200 hidden lg:block h-screen">
+      <div class="h-screen overflow-y-auto">
+        {% include "partials/sidebar.html" %}
+      </div>
+    </aside>
+
+    <!-- Main: header fixed + content scroll only -->
+    <div class="flex-1 flex flex-col h-screen min-w-0">
+
+      <!-- Navbar (fixed, not scrolling with content) -->
+      <div class="shrink-0">
+        {% include "partials/navbar.html" %}
+      </div>
+
+      <!-- Main content scroll area -->
+      <main class="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        {% include "partials/messages.html" %}
+        {% block content %}{% endblock %}
+      </main>
+
+      <!-- Footer fixed -->
+      <footer class="shrink-0 border-t border-slate-200 bg-white px-6 py-4 text-sm text-slate-500">
+        <div class="flex items-center justify-between">
+          <span>© {% now "Y" %} Hotel Thinker</span>
+          <span class="hidden sm:inline">Pure Django UI • Tailwind CSS</span>
+        </div>
+      </footer>
+
+    </div>
+  </div>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

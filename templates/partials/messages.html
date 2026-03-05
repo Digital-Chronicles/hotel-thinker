@@ -1,0 +1,45 @@
+{% if messages %}
+  <div class="mb-6 space-y-3">
+    {% for message in messages %}
+      <div class="group relative rounded-xl border px-4 py-3 text-sm shadow-sm flex gap-3 items-start
+        {% if 'success' in message.tags %}
+          bg-emerald-50 border-emerald-200 text-emerald-900
+        {% elif 'error' in message.tags %}
+          bg-rose-50 border-rose-200 text-rose-900
+        {% elif 'warning' in message.tags %}
+          bg-amber-50 border-amber-200 text-amber-900
+        {% else %}
+          bg-gray-50 border-gray-200 text-gray-800
+        {% endif %}
+      ">
+
+        <!-- Icon -->
+        <div class="mt-0.5">
+          {% if 'success' in message.tags %}
+            ✅
+          {% elif 'error' in message.tags %}
+            ❌
+          {% elif 'warning' in message.tags %}
+            ⚠️
+          {% else %}
+            ℹ️
+          {% endif %}
+        </div>
+
+        <!-- Text -->
+        <div class="flex-1">
+          {{ message }}
+        </div>
+
+        <!-- Dismiss -->
+        <button type="button"
+                class="opacity-70 hover:opacity-100 transition text-base leading-none"
+                onclick="this.closest('.group').remove()"
+                aria-label="Dismiss">
+          ✕
+        </button>
+
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}

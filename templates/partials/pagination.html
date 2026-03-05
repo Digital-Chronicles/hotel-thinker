@@ -1,0 +1,51 @@
+{% if is_paginated %}
+  <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div class="text-sm text-gray-600">
+      Page <span class="font-semibold text-gray-900">{{ page_obj.number }}</span>
+      of <span class="font-semibold text-gray-900">{{ page_obj.paginator.num_pages }}</span>
+      • <span class="text-gray-500">{{ page_obj.paginator.count }} records</span>
+    </div>
+
+    <div class="flex items-center gap-2 flex-wrap">
+
+      {% if page_obj.has_previous %}
+        <a class="px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-700"
+           href="?page=1{% if request.GET %}{% for k,v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}{% endif %}">
+          First
+        </a>
+
+        <a class="px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-700"
+           href="?page={{ page_obj.previous_page_number }}{% if request.GET %}{% for k,v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}{% endif %}">
+          Prev
+        </a>
+      {% else %}
+        <span class="px-3 py-2 rounded-lg border border-gray-100 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+          First
+        </span>
+        <span class="px-3 py-2 rounded-lg border border-gray-100 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+          Prev
+        </span>
+      {% endif %}
+
+      {% if page_obj.has_next %}
+        <a class="px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-700"
+           href="?page={{ page_obj.next_page_number }}{% if request.GET %}{% for k,v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}{% endif %}">
+          Next
+        </a>
+
+        <a class="px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-700"
+           href="?page={{ page_obj.paginator.num_pages }}{% if request.GET %}{% for k,v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}{% endif %}">
+          Last
+        </a>
+      {% else %}
+        <span class="px-3 py-2 rounded-lg border border-gray-100 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+          Next
+        </span>
+        <span class="px-3 py-2 rounded-lg border border-gray-100 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+          Last
+        </span>
+      {% endif %}
+
+    </div>
+  </div>
+{% endif %}

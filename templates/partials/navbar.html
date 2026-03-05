@@ -1,0 +1,43 @@
+<nav class="bg-white border-b border-gray-200">
+  <div class="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+
+    <!-- Left -->
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="lg:hidden">
+        <div class="text-base font-bold text-blue-800 leading-tight">Hotel Thinker</div>
+        <div class="text-xs text-gray-500">Management System</div>
+      </div>
+
+      <div class="hidden lg:block">
+        <div class="text-lg font-bold text-blue-800">Hotel Thinker</div>
+        <div class="text-xs text-gray-500">Management System</div>
+      </div>
+    </div>
+
+    <!-- Right -->
+    <div class="flex items-center gap-2 sm:gap-3">
+      {% if request.user.is_authenticated %}
+        <div class="hidden sm:flex flex-col items-end">
+          <div class="text-xs text-gray-500">Signed in</div>
+          <div class="text-sm font-semibold text-gray-900 truncate max-w-[220px]">
+            {{ request.user.username }}
+          </div>
+        </div>
+
+        <a href="{% url 'accounts:my_profile' %}"
+           class="inline-flex items-center justify-center px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 transition">
+          My Profile
+        </a>
+
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button type="submit"
+                  class="inline-flex items-center justify-center px-3 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-medium transition">
+            Logout
+          </button>
+        </form>
+      {% endif %}
+    </div>
+
+  </div>
+</nav>

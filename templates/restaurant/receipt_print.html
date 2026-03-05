@@ -1,0 +1,134 @@
+{% load humanize %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Receipt</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* ✅ Blank page on screen */
+    @media screen {
+      .receipt { display: none !important; }
+      body { background: #fff; }
+    }
+
+    /* ✅ Only show receipt when printing */
+    @media print {
+      .receipt { display: block !important; }
+      .no-print { display: none !important; }
+      body { background: #fff; }
+    }
+  </style>
+</head>
+
+<body class="bg-white">
+
+  <!-- This remains blank (screen mode), but can be useful for debugging -->
+  <div class="no-print"></div>
+
+  <!-- ✅ Receipt prints only -->
+  <div class="receipt p-6">
+    <div class="max-w-md mx-auto border border-slate-200 rounded-2xl p-6">
+      <div class="text-center">
+        <div class="text-xl font-bold text-slate-900">{{ hotel.name }}</div>
+        <div class="text-sm text-slate-600">Restaurant Receipt</div>
+        <div class="text-xs text-slate-500 mt-1">{{ order.created_at|date:"d M Y, H:i" }}</div>
+      </div>
+
+      <div class="mt-5 text-sm">
+        <div class="flex justify-between">
+          <span class="text-slate-600">Order</span>
+          <span class="font-semibold">{{ order.order_number|default:order.id }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-600">Table</span>
+          <span class="font-semibold">{% if order.table %}{{ order.table.number }}{% else %}Walk-in{% endif %}</span>
+        </div>
+        {% if invoice %}
+        <div class="flex justify-between">
+          <span class="text-slate-600">Invoice</span>
+          <span class="font-semibold">{{ invoice.invoice_number }}</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <hr class="my-4"/>
+
+      <table class="w-full text-sm">
+        <thead class="text-slate-500">
+          <tr>
+            <th class="text-left py-1">Item</th>
+            <th class="text-right py-1">Qty</th>
+            <th class="text-right py-1">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for it in items %}
+            <tr class="border-t">
+              <td class="py-2">
+                <div class="font-semibold text-slate-900">{{ it.item.name }}</div>
+                <div class="text-xs text-slate-500">UGX {{ it.unit_price|intcomma }}</div>
+              </td>
+              <td class="py-2 text-right">{{ it.qty }}</td>
+              <td class="py-2 text-right font-semibold">UGX {{ it.line_total|intcomma }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <hr class="my-4"/>
+
+      <div class="text-sm space-y-2">
+        <div class="flex justify-between">
+          <span class="text-slate-600">Subtotal</span>
+          <span class="font-semibold">UGX {{ order.subtotal|intcomma }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-600">Discount</span>
+          <span class="font-semibold">UGX {{ order.discount|default:0|intcomma }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-600">Tax</span>
+          <span class="font-semibold">UGX {{ order.tax|default:0|intcomma }}</span>
+        </div>
+        <div class="flex justify-between text-base pt-2">
+          <span class="font-bold text-slate-900">TOTAL</span>
+          <span class="font-bold text-slate-900">UGX {{ order.total|intcomma }}</span>
+        </div>
+      </div>
+
+      {% if payments %}
+        <hr class="my-4"/>
+        <div class="text-sm">
+          <div class="font-semibold text-slate-900 mb-2">Payments</div>
+          {% for p in payments %}
+            <div class="flex justify-between">
+              <span class="text-slate-600">{{ p.get_method_display }}{% if p.reference %} ({{ p.reference }}){% endif %}</span>
+              <span class="font-semibold">UGX {{ p.amount|intcomma }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="mt-6 text-center text-xs text-slate-500">
+        Thank you for dining with us.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ✅ Auto-print when the page loads
+    window.addEventListener("load", () => {
+      window.print();
+    });
+
+    // ✅ Optional: after printing, go back to the order detail automatically
+    window.addEventListener("afterprint", () => {
+      window.location.href = "{% url 'restaurant:order_detail' order.pk %}";
+    });
+  </script>
+
+</body>
+</html>

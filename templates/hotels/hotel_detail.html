@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Hotel — Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl">
+
+  <div class="mb-6 flex items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-blue-800">{{ hotel.name }}</h1>
+      <p class="text-sm text-gray-600 mt-1">Hotel overview and quick settings.</p>
+    </div>
+
+    <a href="{% url 'hotels:settings' %}"
+       class="px-4 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold">
+      Open Settings
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+    <!-- Left card -->
+    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden lg:col-span-2">
+      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div class="text-sm font-semibold text-gray-900">Profile</div>
+        <div class="text-xs text-gray-500 mt-0.5">Basic hotel information.</div>
+      </div>
+
+      <div class="p-6">
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          <div class="rounded-xl border border-gray-200 bg-white p-4">
+            <dt class="text-gray-500">Email</dt>
+            <dd class="font-semibold text-gray-900 mt-1">{{ hotel.email|default:"—" }}</dd>
+          </div>
+          <div class="rounded-xl border border-gray-200 bg-white p-4">
+            <dt class="text-gray-500">Phone</dt>
+            <dd class="font-semibold text-gray-900 mt-1">{{ hotel.phone|default:"—" }}</dd>
+          </div>
+          <div class="rounded-xl border border-gray-200 bg-white p-4 sm:col-span-2">
+            <dt class="text-gray-500">Address</dt>
+            <dd class="font-semibold text-gray-900 mt-1">{{ settings.address|default:"—" }}</dd>
+          </div>
+          <div class="rounded-xl border border-gray-200 bg-white p-4">
+            <dt class="text-gray-500">Check-in</dt>
+            <dd class="font-semibold text-gray-900 mt-1">{{ settings.check_in_time }}</dd>
+          </div>
+          <div class="rounded-xl border border-gray-200 bg-white p-4">
+            <dt class="text-gray-500">Check-out</dt>
+            <dd class="font-semibold text-gray-900 mt-1">{{ settings.check_out_time }}</dd>
+          </div>
+        </dl>
+
+        {% if settings.short_description %}
+          <div class="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <div class="text-xs font-semibold text-gray-700">Short Description</div>
+            <div class="text-sm text-gray-700 mt-1 whitespace-pre-line">{{ settings.short_description }}</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Right card -->
+    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div class="text-sm font-semibold text-gray-900">Features</div>
+        <div class="text-xs text-gray-500 mt-0.5">Enabled modules.</div>
+      </div>
+
+      <div class="p-6 space-y-3 text-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-gray-700">Online Booking</span>
+          <span class="px-2.5 py-1 rounded-full text-xs font-semibold {% if settings.enable_online_booking %}bg-emerald-100 text-emerald-800{% else %}bg-gray-100 text-gray-700{% endif %}">
+            {% if settings.enable_online_booking %}Enabled{% else %}Disabled{% endif %}
+          </span>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <span class="text-gray-700">Restaurant Ordering</span>
+          <span class="px-2.5 py-1 rounded-full text-xs font-semibold {% if settings.enable_restaurant_ordering %}bg-emerald-100 text-emerald-800{% else %}bg-gray-100 text-gray-700{% endif %}">
+            {% if settings.enable_restaurant_ordering %}Enabled{% else %}Disabled{% endif %}
+          </span>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <span class="text-gray-700">Loyalty Program</span>
+          <span class="px-2.5 py-1 rounded-full text-xs font-semibold {% if settings.enable_loyalty_program %}bg-emerald-100 text-emerald-800{% else %}bg-gray-100 text-gray-700{% endif %}">
+            {% if settings.enable_loyalty_program %}Enabled{% else %}Disabled{% endif %}
+          </span>
+        </div>
+
+        <div class="pt-4 border-t border-gray-200">
+          <a href="{% url 'hotels:settings' %}"
+             class="w-full inline-flex justify-center px-4 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold">
+            Manage Settings
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

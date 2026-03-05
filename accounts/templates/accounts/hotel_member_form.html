@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Member — Hotel Thinker{% endblock %}
+
+{% block content %}
+
+<div class="mb-6">
+  <div class="flex items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-blue-800">Edit Member</h1>
+      <p class="text-sm text-gray-600 mt-1">
+        Update role, permissions and access rights.
+      </p>
+    </div>
+
+    <a href="{% url 'accounts:hotel_members_list' %}"
+       class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 transition">
+      Back
+    </a>
+  </div>
+</div>
+
+<div class="rounded-2xl border border-gray-200 bg-white p-6">
+
+  <div class="mb-6">
+    <div class="text-sm text-gray-500">User</div>
+    <div class="text-lg font-semibold text-gray-900">
+      {{ member.user.get_full_name|default:member.user.username }}
+    </div>
+    <div class="text-sm text-gray-600">{{ member.user.email }}</div>
+  </div>
+
+  <form method="post" class="space-y-6">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="rounded-xl border border-rose-200 bg-rose-50 text-rose-900 px-4 py-3 text-sm">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="text-sm font-medium text-gray-700">Role</label>
+        {{ form.role }}
+        {% if form.role.errors %}<div class="text-sm text-rose-600 mt-1">{{ form.role.errors }}</div>{% endif %}
+      </div>
+
+      <div>
+        <label class="text-sm font-medium text-gray-700">Permission Level</label>
+        {{ form.permission_level }}
+      </div>
+    </div>
+
+    <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+      <div class="text-sm font-semibold text-gray-900 mb-3">Module Access</div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3">
+          {{ form.can_access_front_desk }}
+          <span class="text-sm font-medium text-gray-800">Front Desk</span>
+        </label>
+
+        <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3">
+          {{ form.can_access_housekeeping }}
+          <span class="text-sm font-medium text-gray-800">Housekeeping</span>
+        </label>
+
+        <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3">
+          {{ form.can_access_restaurant }}
+          <span class="text-sm font-medium text-gray-800">Restaurant</span>
+        </label>
+
+        <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3">
+          {{ form.can_access_finance }}
+          <span class="text-sm font-medium text-gray-800">Finance</span>
+        </label>
+
+        <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3">
+          {{ form.can_access_maintenance }}
+          <span class="text-sm font-medium text-gray-800">Maintenance</span>
+        </label>
+
+        <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3">
+          {{ form.can_access_reports }}
+          <span class="text-sm font-medium text-gray-800">Reports</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+        {{ form.is_active }}
+        <span class="text-sm font-medium text-gray-800">Active</span>
+      </label>
+
+      <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+        {{ form.is_primary_contact }}
+        <span class="text-sm font-medium text-gray-800">Primary Contact</span>
+      </label>
+    </div>
+
+    <div>
+      <label class="text-sm font-medium text-gray-700">Notes</label>
+      {{ form.notes }}
+    </div>
+
+    <div class="flex items-center justify-end gap-3">
+      <a href="{% url 'accounts:hotel_members_list' %}"
+         class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 transition">
+        Cancel
+      </a>
+      <button type="submit"
+              class="px-5 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-medium transition">
+        Save Changes
+      </button>
+    </div>
+
+  </form>
+
+</div>
+
+{% endblock %}

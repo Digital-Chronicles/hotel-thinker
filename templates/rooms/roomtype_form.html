@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{% if form.instance.pk %}Edit Room Type{% else %}New Room Type{% endif %} — Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl">
+
+  <div class="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+    <div>
+      <div class="text-xs text-gray-500">
+        <a href="{% url 'rooms:roomtype_list' %}" class="hover:underline">Room Types</a>
+        <span class="mx-1">/</span>
+        {% if form.instance.pk %}Edit{% else %}New{% endif %}
+      </div>
+
+      <h1 class="text-2xl font-bold text-blue-800 mt-1">
+        {% if form.instance.pk %}Edit Room Type{% else %}Create Room Type{% endif %}
+      </h1>
+      <p class="text-sm text-gray-600 mt-1">Room types define base pricing and category information.</p>
+    </div>
+
+    <a href="{% url 'rooms:roomtype_list' %}"
+       class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
+      Back
+    </a>
+  </div>
+
+  <form method="post" class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    {% csrf_token %}
+
+    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+      <div class="text-sm font-semibold text-gray-900">Type Details</div>
+      <div class="text-xs text-gray-500 mt-0.5">Example: Single, Double, Deluxe.</div>
+    </div>
+
+    <div class="p-6 space-y-5">
+      {% if form.non_field_errors %}
+        <div class="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-4 py-3 text-sm">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+        {{ form.name }}
+        {% if form.name.errors %}
+          <p class="text-xs text-rose-600 mt-1">{{ form.name.errors|striptags }}</p>
+        {% else %}
+          <p class="text-xs text-gray-500 mt-1">Displayed across bookings and reports.</p>
+        {% endif %}
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        {{ form.description }}
+        {% if form.description.errors %}
+          <p class="text-xs text-rose-600 mt-1">{{ form.description.errors|striptags }}</p>
+        {% else %}
+          <p class="text-xs text-gray-500 mt-1">Optional details about this type.</p>
+        {% endif %}
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Base Price</label>
+          {{ form.base_price }}
+          {% if form.base_price.errors %}
+            <p class="text-xs text-rose-600 mt-1">{{ form.base_price.errors|striptags }}</p>
+          {% else %}
+            <p class="text-xs text-gray-500 mt-1">Used as default nightly price.</p>
+          {% endif %}
+        </div>
+
+        <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 flex items-center">
+          <div>
+            <div class="text-sm font-semibold text-gray-900">Tip</div>
+            <div class="text-xs text-gray-500 mt-1">
+              You can override pricing later on bookings/offers.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="px-6 py-4 border-t border-gray-200 bg-white flex items-center justify-end gap-2">
+      <a href="{% url 'rooms:roomtype_list' %}"
+         class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
+        Cancel
+      </a>
+      <button class="px-5 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold">
+        Save Type
+      </button>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

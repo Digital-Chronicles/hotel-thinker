@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}{% if form.instance.pk %}Edit Room{% else %}New Room{% endif %} — Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl">
+
+  <!-- Header -->
+  <div class="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+    <div>
+      <div class="text-xs text-gray-500">
+        <a href="{% url 'rooms:room_list' %}" class="hover:underline">Rooms</a>
+        <span class="mx-1">/</span>
+        {% if form.instance.pk %}Edit{% else %}New{% endif %}
+      </div>
+
+      <h1 class="text-2xl font-bold text-blue-800 mt-1">
+        {% if form.instance.pk %}Edit Room{% else %}Create Room{% endif %}
+      </h1>
+      <p class="text-sm text-gray-600 mt-1">
+        Keep room inventory accurate for front desk and housekeeping.
+      </p>
+    </div>
+
+    <a href="{% url 'rooms:room_list' %}"
+       class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
+      Back
+    </a>
+  </div>
+
+  <!-- Form Card -->
+  <form method="post" class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    {% csrf_token %}
+
+    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+      <div class="text-sm font-semibold text-gray-900">Room Details</div>
+      <div class="text-xs text-gray-500 mt-0.5">Fields marked required must be provided.</div>
+    </div>
+
+    <div class="p-6 space-y-5">
+
+      {% if form.non_field_errors %}
+        <div class="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-4 py-3 text-sm">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Room Type</label>
+          {{ form.room_type }}
+          {% if form.room_type.errors %}
+            <p class="text-xs text-rose-600 mt-1">{{ form.room_type.errors|striptags }}</p>
+          {% else %}
+            <p class="text-xs text-gray-500 mt-1">Select category e.g. Deluxe, Single.</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
+          {{ form.number }}
+          {% if form.number.errors %}
+            <p class="text-xs text-rose-600 mt-1">{{ form.number.errors|striptags }}</p>
+          {% else %}
+            <p class="text-xs text-gray-500 mt-1">Example: 101, A-01.</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Floor</label>
+          {{ form.floor }}
+          {% if form.floor.errors %}
+            <p class="text-xs text-rose-600 mt-1">{{ form.floor.errors|striptags }}</p>
+          {% else %}
+            <p class="text-xs text-gray-500 mt-1">Optional: Ground, 1st, 2nd…</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          {{ form.status }}
+          {% if form.status.errors %}
+            <p class="text-xs text-rose-600 mt-1">{{ form.status.errors|striptags }}</p>
+          {% else %}
+            <p class="text-xs text-gray-500 mt-1">Controls room availability.</p>
+          {% endif %}
+        </div>
+
+      </div>
+
+      <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+        <label class="flex items-center gap-3">
+          {{ form.is_active }}
+          <div>
+            <div class="text-sm font-semibold text-gray-900">Active Room</div>
+            <div class="text-xs text-gray-500">Inactive rooms won’t appear for booking.</div>
+          </div>
+        </label>
+      </div>
+
+    </div>
+
+    <!-- Actions -->
+    <div class="px-6 py-4 border-t border-gray-200 bg-white flex items-center justify-end gap-2">
+      <a href="{% url 'rooms:room_list' %}"
+         class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
+        Cancel
+      </a>
+      <button class="px-5 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold">
+        Save Room
+      </button>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

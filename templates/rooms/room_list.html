@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}Rooms — Hotel Thinker{% endblock %}
+
+{% block content %}
+
+<div class="mb-6">
+  <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-blue-800">Rooms</h1>
+      <p class="text-sm text-gray-600 mt-1">Search, filter, and track room availability.</p>
+    </div>
+
+    <div class="flex gap-2">
+      <a href="{% url 'rooms:roomtype_list' %}"
+         class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
+        Room Types
+      </a>
+      <a href="{% url 'rooms:room_create' %}"
+         class="px-4 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold">
+        + New Room
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+  <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+    <div>
+      <div class="text-sm font-semibold text-gray-900">Filters</div>
+      <div class="text-xs text-gray-500">Search by number, floor, or room type.</div>
+    </div>
+
+    {% if request.GET.q or request.GET.status or request.GET.room_type %}
+      <a href="{% url 'rooms:room_list' %}"
+         class="px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
+        Clear
+      </a>
+    {% endif %}
+  </div>
+
+  <form method="get" class="p-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="md:col-span-2">
+      <label class="text-sm font-medium text-gray-700">Search</label>
+      <input type="text" name="q" value="{{ request.GET.q }}"
+             placeholder="Room 101, 1st floor, Deluxe..."
+             class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600">
+    </div>
+
+    <div>
+      <label class="text-sm font-medium text-gray-700">Status</label>
+      <select name="status"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600">
+        <option value="">All</option>
+        {% for v,label in statuses %}
+          <option value="{{ v }}" {% if request.GET.status == v %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="text-sm font-medium text-gray-700">Room Type</label>
+      <select name="room_type"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600">
+        <option value="">All</option>
+        {% for rt in room_types %}
+          <option value="{{ rt.id }}" {% if request.GET.room_type == rt.id|stringformat:"s" %}selected{% endif %}>
+            {{ rt.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="md:col-span-4 flex justify-end">
+      <button class="px-5 py-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold">
+        Apply
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Table -->
+<div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+  <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+    <div class="text-sm text-gray-600">
+      Showing <span class="font-semibold text-gray-900">{{ page_obj.paginator.count }}</span> room(s)
+    </div>
+    <div class="text-xs text-gray-500 hidden sm:block">Click a room to open details</div>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm">
+      <thead class="bg-white text-gray-600">
+        <tr class="border-b border-gray-200">
+          <th class="text-left px-6 py-3 font-semibold">Room</th>
+          <th class="text-left px-6 py-3 font-semibold">Type</th>
+          <th class="text-left px-6 py-3 font-semibold">Floor</th>
+          <th class="text-left px-6 py-3 font-semibold">Status</th>
+          <th class="text-right px-6 py-3 font-semibold">Active</th>
+          <th class="text-right px-6 py-3 font-semibold">Action</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-gray-200">
+        {% for room in rooms %}
+          <tr class="hover:bg-gray-50 cursor-pointer"
+              onclick="window.location='{% url 'rooms:room_detail' room.id %}'">
+
+            <td class="px-6 py-4">
+              <div class="font-semibold text-blue-800">Room {{ room.number }}</div>
+            </td>
+
+            <td class="px-6 py-4 text-gray-900 font-semibold">{{ room.room_type.name }}</td>
+
+            <td class="px-6 py-4 text-gray-700">{{ room.floor|default:"—" }}</td>
+
+            <td class="px-6 py-4">
+              <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold
+                {% if room.status == 'available' %}bg-emerald-100 text-emerald-800
+                {% elif room.status == 'occupied' %}bg-rose-100 text-rose-800
+                {% elif room.status == 'maintenance' %}bg-amber-100 text-amber-800
+                {% else %}bg-blue-100 text-blue-800{% endif %}">
+                {{ room.get_status_display }}
+              </span>
+            </td>
+
+            <td class="px-6 py-4 text-right">
+              {% if room.is_active %}
+                <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold">Yes</span>
+              {% else %}
+                <span class="px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">No</span>
+              {% endif %}
+            </td>
+
+            <td class="px-6 py-4 text-right" onclick="event.stopPropagation()">
+              <a href="{% url 'rooms:room_update' room.id %}"
+                 class="inline-flex px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
+                Edit
+              </a>
+            </td>
+
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+              No rooms found. Add your first room.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="px-6 py-4 border-t border-gray-200">
+    {% include "partials/pagination.html" %}
+  </div>
+</div>
+
+{% endblock %}

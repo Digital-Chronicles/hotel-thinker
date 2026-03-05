@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Finance Dashboard — Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="p-6 space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Finance Dashboard</h1>
+      <p class="text-sm text-slate-500 mt-1">Overview of revenue, payments, and expenses</p>
+    </div>
+
+    <div class="flex items-center gap-2 text-xs">
+      <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-slate-600">
+        <span class="h-2 w-2 rounded-full bg-emerald-500"></span> Revenue
+      </span>
+      <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-slate-600">
+        <span class="h-2 w-2 rounded-full bg-amber-500"></span> Pending
+      </span>
+      <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-slate-600">
+        <span class="h-2 w-2 rounded-full bg-rose-500"></span> Expenses
+      </span>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Today -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+      <p class="text-sm text-slate-500">Today's Revenue</p>
+      <div class="mt-2 flex items-end justify-between">
+        <h2 class="text-2xl font-bold text-emerald-600">
+          UGX {{ today_revenue|default_if_none:0|intcomma }}
+        </h2>
+        <span class="text-xs text-slate-400">Today</span>
+      </div>
+    </div>
+
+    <!-- Month -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+      <p class="text-sm text-slate-500">Monthly Revenue</p>
+      <div class="mt-2 flex items-end justify-between">
+        <h2 class="text-2xl font-bold text-emerald-600">
+          UGX {{ monthly_revenue|default_if_none:0|intcomma }}
+        </h2>
+        <span class="text-xs text-slate-400">This month</span>
+      </div>
+    </div>
+
+    <!-- Pending -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+      <p class="text-sm text-slate-500">Pending Payments</p>
+      <div class="mt-2 flex items-end justify-between">
+        <h2 class="text-2xl font-bold text-amber-600">
+          {{ pending_payments|default_if_none:0 }}
+        </h2>
+        <span class="text-xs text-slate-400">Uncleared</span>
+      </div>
+    </div>
+
+    <!-- Expenses -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+      <p class="text-sm text-slate-500">Total Expenses</p>
+      <div class="mt-2 flex items-end justify-between">
+        <h2 class="text-2xl font-bold text-rose-600">
+          UGX {{ expenses|default_if_none:0|intcomma }}
+        </h2>
+        <span class="text-xs text-slate-400">This month</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Transactions -->
+  <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+    <div class="p-4 border-b border-slate-200 flex items-center justify-between gap-3">
+      <div>
+        <h3 class="font-semibold text-slate-900">Recent Transactions</h3>
+        <p class="text-sm text-slate-500">Latest revenue and expense activity</p>
+      </div>
+
+      <div class="text-xs text-slate-400">
+        Showing last {{ transactions|length|default:0 }} item{{ transactions|length|pluralize }}
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-slate-600">
+          <tr class="text-left">
+            <th class="p-3 font-medium">Date</th>
+            <th class="p-3 font-medium">Description</th>
+            <th class="p-3 font-medium text-right">Amount</th>
+            <th class="p-3 font-medium">Type</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-slate-100">
+          {% for transaction in transactions %}
+            <tr class="hover:bg-slate-50">
+              <td class="p-3 whitespace-nowrap text-slate-700">
+                {{ transaction.date|date:"d M Y" }}
+              </td>
+
+              <td class="p-3 text-slate-800">
+                {{ transaction.description|default:"—" }}
+              </td>
+
+              <td class="p-3 text-right font-semibold text-slate-900 whitespace-nowrap">
+                UGX {{ transaction.amount|default_if_none:0|intcomma }}
+              </td>
+
+              <td class="p-3">
+                {% with t=transaction.type|default:"Other"|lower %}
+                  {% if t == "income" or t == "revenue" %}
+                    <span class="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 text-xs font-semibold">
+                      {{ transaction.type|default:"Income" }}
+                    </span>
+                  {% elif t == "expense" %}
+                    <span class="inline-flex items-center rounded-full bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 text-xs font-semibold">
+                      {{ transaction.type|default:"Expense" }}
+                    </span>
+                  {% else %}
+                    <span class="inline-flex items-center rounded-full bg-slate-50 text-slate-700 border border-slate-200 px-2.5 py-0.5 text-xs font-semibold">
+                      {{ transaction.type|default:"Other" }}
+                    </span>
+                  {% endif %}
+                {% endwith %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="4" class="p-8 text-center">
+                <div class="mx-auto max-w-md">
+                  <div class="text-slate-900 font-semibold">No transactions yet</div>
+                  <div class="text-sm text-slate-500 mt-1">
+                    When you record payments (including restaurant payments) or add expenses, they will appear here.
+                  </div>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

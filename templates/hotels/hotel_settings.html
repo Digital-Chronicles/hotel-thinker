@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}Hotel Settings — Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl">
+
+  <div class="mb-6 flex items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-blue-800">Hotel Settings</h1>
+      <p class="text-sm text-gray-600 mt-1">Configure branding, policies, hours, and integrations for {{ hotel.name }}.</p>
+    </div>
+    <a href="{% url 'hotels:detail' %}"
+       class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
+      Back to Hotel
+    </a>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" class="space-y-4">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-4 py-3 text-sm">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
+    <!-- ABOUT -->
+    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div class="text-sm font-semibold text-gray-900">About</div>
+        <div class="text-xs text-gray-500 mt-0.5">Descriptions shown in documents and online booking.</div>
+      </div>
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="text-sm font-medium text-gray-700">Short Description</label>
+          {{ form.short_description }}
+          {% if form.short_description.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.short_description.errors|striptags }}</p>{% endif %}
+        </div>
+        <div>
+          <label class="text-sm font-medium text-gray-700">About Description</label>
+          {{ form.about_description }}
+          {% if form.about_description.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.about_description.errors|striptags }}</p>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTACT -->
+    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div class="text-sm font-semibold text-gray-900">Contact</div>
+        <div class="text-xs text-gray-500 mt-0.5">Front desk and guest-facing contact details.</div>
+      </div>
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="md:col-span-2">
+          <label class="text-sm font-medium text-gray-700">Address</label>
+          {{ form.address }}
+          {% if form.address.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.address.errors|striptags }}</p>{% endif %}
+        </div>
+        <div>
+          <label class="text-sm font-medium text-gray-700">Phone Number</label>
+          {{ form.phone_number }}
+        </div>
+        <div>
+          <label class="text-sm font-medium text-gray-700">Email</label>
+          {{ form.email }}
+        </div>
+        <div>
+          <label class="text-sm font-medium text-gray-700">Emergency Contact</label>
+          {{ form.emergency_contact }}
+        </div>
+      </div>
+    </div>
+
+    <!-- BRANDING -->
+    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div class="text-sm font-semibold text-gray-900">Branding</div>
+        <div class="text-xs text-gray-500 mt-0.5">Logo and colors.</div>
+      </div>
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="text-sm font-medium text-gray-700">Brand Color (Hex)</label>
+          {{ form.brand_color }}
+        </div>
+        <div>
+          <label class="text-sm font-medium text-gray-700">Favicon</label>
+          {{ form.favicon }}
+        </div>
+        <div>
+          <label class="text-sm font-medium text-gray-700">Logo (Dark)</label>
+          {{ form.logo }}
+        </div>
+        <div>
+          <label class="text-sm font-medium text-gray-700">Logo (Light)</label>
+          {{ form.logo_light }}
+        </div>
+      </div>
+    </div>
+
+    <!-- HOURS -->
+    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div class="text-sm font-semibold text-gray-900">Business Hours</div>
+        <div class="text-xs text-gray-500 mt-0.5">Default times for check-in/out and reception.</div>
+      </div>
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div><label class="text-sm font-medium text-gray-700">Check-in Time</label>{{ form.check_in_time }}</div>
+        <div><label class="text-sm font-medium text-gray-700">Check-out Time</label>{{ form.check_out_time }}</div>
+        <div><label class="text-sm font-medium text-gray-700">Reception Open</label>{{ form.reception_open_time }}</div>
+        <div><label class="text-sm font-medium text-gray-700">Reception Close</label>{{ form.reception_close_time }}</div>
+      </div>
+    </div>
+
+    <!-- POLICIES -->
+    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div class="text-sm font-semibold text-gray-900">Policies</div>
+        <div class="text-xs text-gray-500 mt-0.5">Used in bookings and guest communication.</div>
+      </div>
+      <div class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div><label class="text-sm font-medium text-gray-700">Cancellation Policy</label>{{ form.cancellation_policy }}</div>
+        <div><label class="text-sm font-medium text-gray-700">Payment Policy</label>{{ form.payment_policy }}</div>
+        <div><label class="text-sm font-medium text-gray-700">House Rules</label>{{ form.house_rules }}</div>
+      </div>
+    </div>
+
+    <!-- TAX & CURRENCY -->
+    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div class="text-sm font-semibold text-gray-900">Tax & Currency</div>
+        <div class="text-xs text-gray-500 mt-0.5">Defaults for invoices and totals.</div>
+      </div>
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div><label class="text-sm font-medium text-gray-700">Default Tax Rate (%)</label>{{ form.default_tax_rate }}</div>
+        <div><label class="text-sm font-medium text-gray-700">Tax Number</label>{{ form.tax_number }}</div>
+        <div><label class="text-sm font-medium text-gray-700">Currency</label>{{ form.currency }}</div>
+        <div><label class="text-sm font-medium text-gray-700">Currency Symbol</label>{{ form.currency_symbol }}</div>
+      </div>
+    </div>
+
+    <!-- SOCIAL -->
+    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div class="text-sm font-semibold text-gray-900">Social Links</div>
+        <div class="text-xs text-gray-500 mt-0.5">Optional social handles or URLs.</div>
+      </div>
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div><label class="text-sm font-medium text-gray-700">Instagram</label>{{ form.instagram }}</div>
+        <div><label class="text-sm font-medium text-gray-700">Twitter/X</label>{{ form.twitter }}</div>
+        <div><label class="text-sm font-medium text-gray-700">Facebook</label>{{ form.facebook }}</div>
+        <div><label class="text-sm font-medium text-gray-700">LinkedIn</label>{{ form.linkedin }}</div>
+        <div><label class="text-sm font-medium text-gray-700">YouTube</label>{{ form.youtube }}</div>
+      </div>
+    </div>
+
+    <!-- ADVANCED / API KEYS -->
+    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div class="text-sm font-semibold text-gray-900">Integrations (API Keys)</div>
+        <div class="text-xs text-gray-500 mt-0.5">Keep these private. Only admins should access.</div>
+      </div>
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div><label class="text-sm font-medium text-gray-700">Google Maps API Key</label>{{ form.google_maps_api_key }}</div>
+        <div><label class="text-sm font-medium text-gray-700">SMS API Key</label>{{ form.sms_api_key }}</div>
+        <div><label class="text-sm font-medium text-gray-700">Payment Gateway Key</label>{{ form.payment_gateway_key }}</div>
+        <div><label class="text-sm font-medium text-gray-700">Payment Gateway Secret</label>{{ form.payment_gateway_secret }}</div>
+        <div class="md:col-span-2"><label class="text-sm font-medium text-gray-700">Email API Key</label>{{ form.email_api_key }}</div>
+      </div>
+    </div>
+
+    <!-- FEATURES -->
+    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div class="text-sm font-semibold text-gray-900">Features</div>
+        <div class="text-xs text-gray-500 mt-0.5">Enable/disable system modules.</div>
+      </div>
+      <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <label class="flex items-center gap-2">
+          {{ form.enable_online_booking }}
+          <span class="text-sm text-gray-700">Enable online booking</span>
+        </label>
+
+        <label class="flex items-center gap-2">
+          {{ form.enable_restaurant_ordering }}
+          <span class="text-sm text-gray-700">Enable restaurant ordering</span>
+        </label>
+
+        <label class="flex items-center gap-2">
+          {{ form.enable_loyalty_program }}
+          <span class="text-sm text-gray-700">Enable loyalty program</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="flex justify-end gap-2">
+      <a href="{% url 'hotels:detail' %}"
+         class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
+        Cancel
+      </a>
+      <button class="px-5 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold">
+        Save Settings
+      </button>
+    </div>
+
+  </form>
+</div>
+{% endblock %}

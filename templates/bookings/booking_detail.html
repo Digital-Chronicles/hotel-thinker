@@ -1,0 +1,409 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Booking {{ booking.booking_number }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto py-6">
+
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">
+      Booking {{ booking.booking_number }}
+    </h1>
+
+    <div class="flex gap-2">
+      <a href="{% url 'bookings:booking_update' booking.id %}"
+         class="px-4 py-2 bg-blue-600 text-white rounded-lg">
+         Edit
+      </a>
+
+      <a href="{% url 'bookings:booking_list' %}"
+         class="px-4 py-2 bg-gray-200 rounded-lg">
+         Back
+      </a>
+    </div>
+  </div>
+
+  <!-- Booking Info -->
+  <div class="bg-white rounded-xl shadow p-6 mb-6">
+    <h2 class="text-lg font-semibold mb-4">Booking Information</h2>
+
+    <div class="grid grid-cols-2 gap-4 text-sm">
+      <div>
+        <span class="text-gray-500">Room</span><br>
+        <strong>{{ booking.room.number }}</strong>
+        <div class="text-xs text-gray-500 mt-1">
+          {{ booking.room.room_type.name }} • Rate: {{ booking.room.room_type.base_price|intcomma }}
+        </div>
+      </div>
+
+      <div>
+        <span class="text-gray-500">Guest</span><br>
+        <strong>{{ booking.guest.full_name }}</strong>
+      </div>
+
+      <div>
+        <span class="text-gray-500">Check In</span><br>
+        <strong>{{ booking.check_in }}</strong>
+      </div>
+
+      <div>
+        <span class="text-gray-500">Check Out</span><br>
+        <strong>{{ booking.check_out }}</strong>
+      </div>
+
+      <div>
+        <span class="text-gray-500">Adults</span><br>
+        {{ booking.adults }}
+      </div>
+
+      <div>
+        <span class="text-gray-500">Children</span><br>
+        {{ booking.children }}
+      </div>
+
+      <div>
+        <span class="text-gray-500">Status</span><br>
+        <span class="px-2 py-1 bg-gray-100 rounded">
+          {{ booking.get_status_display }}
+        </span>
+      </div>
+
+      <div>
+        <span class="text-gray-500">Payment Status</span><br>
+        <span class="px-2 py-1 bg-gray-100 rounded">
+          {{ booking.get_payment_status_display }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Financial Summary -->
+  <div class="bg-white rounded-xl shadow p-6 mb-6">
+    <h2 class="text-lg font-semibold mb-4">Financial Summary</h2>
+
+    <div class="grid grid-cols-4 gap-4 text-sm">
+      <div>
+        <span class="text-gray-500">Nightly Rate</span><br>
+        {{ booking.nightly_rate|intcomma }}
+      </div>
+
+      <div>
+        <span class="text-gray-500">Subtotal</span><br>
+        {{ booking.subtotal|intcomma }}
+      </div>
+
+      <div>
+        <span class="text-gray-500">Tax</span><br>
+        {{ booking.tax_amount|intcomma }}
+      </div>
+
+      <div>
+        <span class="text-gray-500">Total</span><br>
+        <strong id="uiTotal">{{ booking.total_amount|intcomma }}</strong>
+      </div>
+
+      <div>
+        <span class="text-gray-500">Amount Paid</span><br>
+        <span id="uiPaid">{{ booking.amount_paid|intcomma }}</span>
+      </div>
+
+      <div>
+        <span class="text-gray-500">Balance</span><br>
+        <strong id="uiBalance">{{ booking.balance_due|intcomma }}</strong>
+      </div>
+
+      <div>
+        <span class="text-gray-500">Required for Check-in (50%)</span><br>
+        <strong id="uiReq50">{{ booking.required_checkin_amount|intcomma }}</strong>
+      </div>
+
+      <div>
+        <span class="text-gray-500">Minimum to Pay Now</span><br>
+        <strong id="uiMinNow">{{ min_pay_for_checkin_now|intcomma }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex gap-3 flex-wrap">
+
+    {% if booking.status != "checked_in" and booking.status != "checked_out" and booking.status != "cancelled" %}
+      <button type="button" id="openCheckInModal"
+              class="px-4 py-2 bg-green-600 text-white rounded-lg">
+        Check In
+      </button>
+    {% endif %}
+
+    {% if booking.status == "checked_in" %}
+      <button type="button" id="openCheckOutModal"
+              class="px-4 py-2 bg-indigo-600 text-white rounded-lg">
+        Check Out
+      </button>
+    {% endif %}
+
+    {% if booking.status != "checked_out" and booking.status != "cancelled" %}
+      <form method="post" action="{% url 'bookings:booking_cancel' booking.id %}">
+        {% csrf_token %}
+        <button class="px-4 py-2 bg-red-600 text-white rounded-lg">
+          Cancel
+        </button>
+      </form>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- ===========================================================
+     CHECK-IN MODAL (requires at least 50% paid)
+=========================================================== -->
+<div id="checkInModal" class="hidden fixed inset-0 z-50">
+  <div class="absolute inset-0 bg-black/50" data-close="checkInModal"></div>
+
+  <div class="relative mx-auto mt-16 w-full max-w-lg px-4">
+    <div class="rounded-2xl bg-white shadow border border-gray-200 overflow-hidden">
+      <div class="px-6 py-4 border-b bg-gray-50 flex items-center justify-between">
+        <div>
+          <div class="font-bold text-gray-900">Check In</div>
+          <div class="text-xs text-gray-500">Must reach at least 50% payment before check-in.</div>
+        </div>
+        <button type="button" class="text-gray-500 hover:text-gray-900" data-close="checkInModal">✕</button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <div class="rounded-xl border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm">
+          Total: <span class="font-semibold" id="ciTotal"></span><br/>
+          Paid: <span class="font-semibold" id="ciPaid"></span><br/>
+          Required (50%): <span class="font-semibold" id="ciRequired"></span><br/>
+          Minimum to pay now: <span class="font-semibold" id="ciMinPay"></span>
+        </div>
+
+        <div id="ciError" class="hidden rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-4 py-3 text-sm"></div>
+
+        <form id="ciPayForm" method="post" action="{% url 'bookings:booking_add_payment' booking.id %}">
+          {% csrf_token %}
+          <input type="hidden" name="target" value="checkin">
+          <input type="hidden" name="method" id="ciMethodHidden" value="cash">
+
+          <label class="text-sm font-medium text-gray-700">Amount to Pay Now</label>
+          <input id="ciAmount" name="amount" type="number" step="0.01" required
+                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+
+          <label class="text-sm font-medium text-gray-700 mt-3 block">Reference (optional)</label>
+          <input name="reference"
+                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                 placeholder="Optional">
+
+          <div class="mt-4 flex items-center justify-between gap-3">
+            <select id="ciMethod" class="rounded-lg border border-gray-300 px-3 py-2 text-sm w-44">
+              {% for key,label in payment_methods %}
+                <option value="{{ key }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+
+            <button id="ciPayBtn"
+                    class="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-700">
+              Pay & Continue
+            </button>
+          </div>
+        </form>
+
+        <form id="ciActionForm" method="post" action="{% url 'bookings:booking_check_in' booking.id %}" class="hidden">
+          {% csrf_token %}
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===========================================================
+     CHECK-OUT MODAL (requires 100% paid)
+=========================================================== -->
+<div id="checkOutModal" class="hidden fixed inset-0 z-50">
+  <div class="absolute inset-0 bg-black/50" data-close="checkOutModal"></div>
+
+  <div class="relative mx-auto mt-16 w-full max-w-lg px-4">
+    <div class="rounded-2xl bg-white shadow border border-gray-200 overflow-hidden">
+      <div class="px-6 py-4 border-b bg-gray-50 flex items-center justify-between">
+        <div>
+          <div class="font-bold text-gray-900">Check Out</div>
+          <div class="text-xs text-gray-500">Must clear the full balance before check-out.</div>
+        </div>
+        <button type="button" class="text-gray-500 hover:text-gray-900" data-close="checkOutModal">✕</button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <div class="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-4 py-3 text-sm">
+          Total: <span class="font-semibold" id="coTotal"></span><br/>
+          Paid: <span class="font-semibold" id="coPaid"></span><br/>
+          Balance due: <span class="font-semibold" id="coBalance"></span>
+        </div>
+
+        <div id="coError" class="hidden rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-4 py-3 text-sm"></div>
+
+        <form id="coPayForm" method="post" action="{% url 'bookings:booking_add_payment' booking.id %}">
+          {% csrf_token %}
+          <input type="hidden" name="target" value="checkout">
+          <input type="hidden" name="method" id="coMethodHidden" value="cash">
+
+          <label class="text-sm font-medium text-gray-700">Amount to Pay Now</label>
+          <input id="coAmount" name="amount" type="number" step="0.01" required
+                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+
+          <label class="text-sm font-medium text-gray-700 mt-3 block">Reference (optional)</label>
+          <input name="reference"
+                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                 placeholder="Optional">
+
+          <div class="mt-4 flex items-center justify-between gap-3">
+            <select id="coMethod" class="rounded-lg border border-gray-300 px-3 py-2 text-sm w-44">
+              {% for key,label in payment_methods %}
+                <option value="{{ key }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+
+            <button id="coPayBtn"
+                    class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700">
+              Pay & Continue
+            </button>
+          </div>
+        </form>
+
+        <form id="coActionForm" method="post" action="{% url 'bookings:booking_check_out' booking.id %}" class="hidden">
+          {% csrf_token %}
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Helpers
+  function openModal(id){ document.getElementById(id)?.classList.remove("hidden"); }
+  function closeModal(id){ document.getElementById(id)?.classList.add("hidden"); }
+  function showErr(id, msg){
+    const box = document.getElementById(id);
+    if(!box) return;
+    box.textContent = msg;
+    box.classList.remove("hidden");
+  }
+  function clearErr(id){
+    const box = document.getElementById(id);
+    if(!box) return;
+    box.textContent = "";
+    box.classList.add("hidden");
+  }
+
+  // Close modals
+  document.querySelectorAll("[data-close]").forEach(el => {
+    el.addEventListener("click", () => closeModal(el.dataset.close));
+  });
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "Escape"){ closeModal("checkInModal"); closeModal("checkOutModal"); }
+  });
+
+  // Numbers from backend
+  const TOTAL = parseFloat("{{ booking.total_amount|default:0 }}") || 0;
+  const PAID  = parseFloat("{{ booking.amount_paid|default:0 }}") || 0;
+
+  function money(n){ return (Math.round(n * 100) / 100).toFixed(2); }
+
+  // Populate check-in modal (50%)
+  document.getElementById("openCheckInModal")?.addEventListener("click", () => {
+    clearErr("ciError");
+    const required = TOTAL * 0.5;
+    const minPay = Math.max(required - PAID, 0);
+
+    document.getElementById("ciTotal").textContent = money(TOTAL);
+    document.getElementById("ciPaid").textContent = money(PAID);
+    document.getElementById("ciRequired").textContent = money(required);
+    document.getElementById("ciMinPay").textContent = money(minPay);
+
+    const amt = document.getElementById("ciAmount");
+    amt.value = money(minPay);
+    amt.min = money(minPay);
+
+    openModal("checkInModal");
+  });
+
+  // Populate check-out modal (100%)
+  document.getElementById("openCheckOutModal")?.addEventListener("click", () => {
+    clearErr("coError");
+    const balance = Math.max(TOTAL - PAID, 0);
+
+    document.getElementById("coTotal").textContent = money(TOTAL);
+    document.getElementById("coPaid").textContent = money(PAID);
+    document.getElementById("coBalance").textContent = money(balance);
+
+    const amt = document.getElementById("coAmount");
+    amt.value = money(balance);
+    amt.min = money(balance);
+
+    openModal("checkOutModal");
+  });
+
+  // Bind payment method select -> hidden input
+  function bindMethod(selectId, hiddenId){
+    const sel = document.getElementById(selectId);
+    const hid = document.getElementById(hiddenId);
+    if(!sel || !hid) return;
+    hid.value = sel.value;
+    sel.addEventListener("change", () => hid.value = sel.value);
+  }
+  bindMethod("ciMethod", "ciMethodHidden");
+  bindMethod("coMethod", "coMethodHidden");
+
+  // AJAX payment then submit action
+  async function payThenSubmit(payFormId, actionFormId, errorBoxId, btnId){
+    const payForm = document.getElementById(payFormId);
+    const actionForm = document.getElementById(actionFormId);
+    const btn = document.getElementById(btnId);
+    if(!payForm || !actionForm) return;
+
+    payForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearErr(errorBoxId);
+
+      btn.disabled = true;
+      btn.classList.add("opacity-70","cursor-not-allowed");
+
+      try{
+        const csrf = payForm.querySelector('input[name="csrfmiddlewaretoken"]').value;
+        const fd = new FormData(payForm);
+
+        const res = await fetch(payForm.action, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrf,
+            "X-Requested-With": "XMLHttpRequest"
+          },
+          body: fd
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if(!res.ok || !data.ok){
+          const msg = data.error || "Payment failed. Please check the amount and try again.";
+          showErr(errorBoxId, msg);
+          return;
+        }
+
+        // Payment OK → now submit action (server still validates)
+        actionForm.submit();
+
+      }catch(err){
+        showErr(errorBoxId, "Network error. Please try again.");
+      }finally{
+        btn.disabled = false;
+        btn.classList.remove("opacity-70","cursor-not-allowed");
+      }
+    });
+  }
+
+  payThenSubmit("ciPayForm", "ciActionForm", "ciError", "ciPayBtn");
+  payThenSubmit("coPayForm", "coActionForm", "coError", "coPayBtn");
+</script>
+{% endblock %}

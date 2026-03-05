@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Dining Area — Restaurant Manager{% endblock %}
+{% block content %}
+
+<div class="max-w-2xl mx-auto">
+  <div class="mb-6 flex items-end justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-blue-800">{% if area %}Edit Dining Area{% else %}New Dining Area{% endif %}</h1>
+      <p class="text-sm text-gray-600 mt-1">Keep names short and clear.</p>
+    </div>
+    <a href="{% url 'restaurant:area_list' %}" class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">Back</a>
+  </div>
+
+  <div class="rounded-2xl border border-gray-200 bg-white p-6">
+    <form method="post">
+      {% csrf_token %}
+      <div>
+        <label class="text-sm font-medium text-gray-700">Name</label>
+        {{ form.name }}
+        {% if form.name.errors %}<p class="text-sm text-rose-600 mt-1">{{ form.name.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="flex justify-end gap-3 mt-6">
+        <a href="{% url 'restaurant:area_list' %}" class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">Cancel</a>
+        <button class="px-6 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

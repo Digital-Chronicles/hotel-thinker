@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+
+{% block title %}New Restaurant Order — Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+
+  <!-- Header -->
+  <div class="mb-6">
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-3">
+          <div class="h-10 w-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-sm">
+            <!-- icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M6 7v12a2 2 0 002 2h8a2 2 0 002-2V7M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2"/>
+            </svg>
+          </div>
+
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900">Create Restaurant Order</h1>
+            <p class="text-sm text-slate-600 mt-1">
+              Start a dine-in or walk-in order. Add items after saving.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="hidden md:flex gap-2">
+        <a href="{% url 'restaurant:order_list' %}"
+           class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          Back to Orders
+        </a>
+      </div>
+    </div>
+
+    <!-- Stepper -->
+    <div class="mt-5 rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
+      <div class="flex flex-wrap items-center gap-3 text-sm">
+        <span class="inline-flex items-center gap-2 rounded-full bg-slate-900 text-white px-3 py-1 font-semibold">
+          <span class="h-2 w-2 rounded-full bg-white"></span> 1. Order
+        </span>
+        <span class="text-slate-400">→</span>
+        <span class="inline-flex items-center gap-2 rounded-full bg-slate-100 text-slate-700 px-3 py-1 font-semibold">
+          2. Add Items
+        </span>
+        <span class="text-slate-400">→</span>
+        <span class="inline-flex items-center gap-2 rounded-full bg-slate-100 text-slate-700 px-3 py-1 font-semibold">
+          3. Bill
+        </span>
+        <span class="text-slate-400">→</span>
+        <span class="inline-flex items-center gap-2 rounded-full bg-slate-100 text-slate-700 px-3 py-1 font-semibold">
+          4. Pay & Print
+        </span>
+
+        <div class="ml-auto hidden md:flex items-center gap-2">
+          <span class="text-xs text-slate-500">Workflow:</span>
+          <span class="text-xs font-semibold text-slate-700">Open → Kitchen → Served → Billed → Paid</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Main form -->
+    <div class="lg:col-span-2">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Order Details</h2>
+              <p class="text-sm text-slate-600 mt-1">Fill in order information. Table is optional.</p>
+            </div>
+
+            <!-- Live status badge -->
+            <div class="shrink-0">
+              <span id="statusBadge"
+                    class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-slate-100 text-slate-700">
+                Status: —
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <form method="post" novalidate class="p-6 space-y-6">
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+              {{ form.non_field_errors.0 }}
+            </div>
+          {% endif %}
+
+          <!-- Dine-in / Walk-in toggle -->
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <div class="text-sm font-bold text-slate-900">Order Type</div>
+                <div class="text-xs text-slate-600 mt-1">Choose dine-in to assign a table, or walk-in for takeaway.</div>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button type="button" id="btnDineIn"
+                        class="px-3 py-2 rounded-lg text-sm font-semibold border border-slate-300 bg-white hover:bg-slate-100">
+                  Dine-in
+                </button>
+                <button type="button" id="btnWalkIn"
+                        class="px-3 py-2 rounded-lg text-sm font-semibold border border-slate-300 bg-white hover:bg-slate-100">
+                  Walk-in
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- Table -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1">
+                Table (Optional)
+              </label>
+              <div class="relative">
+                {{ form.table }}
+              </div>
+              <p class="text-xs text-slate-500 mt-1">
+                Leave empty for walk-in / takeaway.
+              </p>
+              {% if form.table.errors %}
+                <p class="text-sm text-rose-600 mt-1">{{ form.table.errors.0 }}</p>
+              {% endif %}
+            </div>
+
+            <!-- Status -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1">
+                Status
+              </label>
+              {{ form.status }}
+              <p class="text-xs text-slate-500 mt-1">
+                Recommended: <span class="font-semibold">Open</span>. It moves to Kitchen when items are added.
+              </p>
+              {% if form.status.errors %}
+                <p class="text-sm text-rose-600 mt-1">{{ form.status.errors.0 }}</p>
+              {% endif %}
+            </div>
+
+            <!-- Customer Name -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1">
+                Customer Name (Optional)
+              </label>
+              {{ form.customer_name }}
+              {% if form.customer_name.errors %}
+                <p class="text-sm text-rose-600 mt-1">{{ form.customer_name.errors.0 }}</p>
+              {% endif %}
+            </div>
+
+            <!-- Customer Phone -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1">
+                Customer Phone (Optional)
+              </label>
+              {{ form.customer_phone }}
+              <p class="text-xs text-slate-500 mt-1">
+                Useful for delivery / contact on large orders.
+              </p>
+              {% if form.customer_phone.errors %}
+                <p class="text-sm text-rose-600 mt-1">{{ form.customer_phone.errors.0 }}</p>
+              {% endif %}
+            </div>
+
+            <!-- Discount -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1">
+                Discount
+              </label>
+              {{ form.discount }}
+              <p class="text-xs text-slate-500 mt-1">Enter 0 if none.</p>
+              {% if form.discount.errors %}
+                <p class="text-sm text-rose-600 mt-1">{{ form.discount.errors.0 }}</p>
+              {% endif %}
+            </div>
+
+            <!-- Tax -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1">
+                Tax
+              </label>
+              {{ form.tax }}
+              <p class="text-xs text-slate-500 mt-1">Enter 0 if none.</p>
+              {% if form.tax.errors %}
+                <p class="text-sm text-rose-600 mt-1">{{ form.tax.errors.0 }}</p>
+              {% endif %}
+            </div>
+
+          </div>
+
+          <!-- Desktop buttons -->
+          <div class="hidden md:flex items-center justify-end gap-3 pt-2">
+            <a href="{% url 'restaurant:order_list' %}"
+               class="px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-sm font-semibold text-slate-700">
+              Cancel
+            </a>
+
+            <button type="submit"
+                    class="px-6 py-2 rounded-lg bg-slate-900 hover:bg-slate-950 text-white text-sm font-semibold shadow-sm">
+              Create Order
+            </button>
+          </div>
+
+          <!-- Mobile sticky actions -->
+          <div class="md:hidden sticky bottom-0 -mx-6 px-6 py-4 bg-white border-t border-slate-200 flex gap-3">
+            <a href="{% url 'restaurant:order_list' %}"
+               class="flex-1 px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-sm font-semibold text-slate-700 text-center">
+              Cancel
+            </a>
+            <button type="submit"
+                    class="flex-1 px-6 py-2 rounded-lg bg-slate-900 hover:bg-slate-950 text-white text-sm font-semibold">
+              Create
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+    <!-- Right panel -->
+    <div class="space-y-6">
+
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
+        <h3 class="text-sm font-bold text-slate-900">Quick Tips</h3>
+
+        <ul class="mt-4 space-y-3 text-sm text-slate-600">
+          <li class="flex gap-3">
+            <span class="mt-1 h-2.5 w-2.5 rounded-full bg-slate-900"></span>
+            <span><span class="font-semibold text-slate-800">Dine-in:</span> choose a table and seat the guest.</span>
+          </li>
+          <li class="flex gap-3">
+            <span class="mt-1 h-2.5 w-2.5 rounded-full bg-slate-900"></span>
+            <span><span class="font-semibold text-slate-800">Walk-in:</span> leave table empty for takeaway.</span>
+          </li>
+          <li class="flex gap-3">
+            <span class="mt-1 h-2.5 w-2.5 rounded-full bg-slate-900"></span>
+            <span>After creating, add items and it moves to <span class="font-semibold text-slate-800">Kitchen</span>.</span>
+          </li>
+          <li class="flex gap-3">
+            <span class="mt-1 h-2.5 w-2.5 rounded-full bg-slate-900"></span>
+            <span>Use <span class="font-semibold text-slate-800">Bill</span> then <span class="font-semibold text-slate-800">Pay & Print</span>.</span>
+          </li>
+        </ul>
+
+        <div class="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+          Tip: Keep Status as <span class="font-semibold">Open</span> for new orders.
+        </div>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
+        <h3 class="text-sm font-bold text-slate-900">Recommended Defaults</h3>
+        <div class="mt-3 space-y-2 text-sm text-slate-600">
+          <div class="flex justify-between">
+            <span>Status</span><span class="font-semibold text-slate-800">Open</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Discount</span><span class="font-semibold text-slate-800">0</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Tax</span><span class="font-semibold text-slate-800">0</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const statusSelect = document.querySelector("select[name='status']");
+  const badge = document.getElementById("statusBadge");
+  const tableSelect = document.querySelector("select[name='table']");
+  const btnDineIn = document.getElementById("btnDineIn");
+  const btnWalkIn = document.getElementById("btnWalkIn");
+
+  function setBadge() {
+    if (!statusSelect || !badge) return;
+
+    const val = statusSelect.value || "";
+    const label = statusSelect.options[statusSelect.selectedIndex]?.text || "—";
+
+    badge.textContent = "Status: " + label;
+
+    // reset classes
+    badge.className = "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold";
+
+    const map = {
+      "paid": "bg-emerald-50 text-emerald-700",
+      "billed": "bg-amber-50 text-amber-800",
+      "kitchen": "bg-blue-50 text-blue-800",
+      "served": "bg-indigo-50 text-indigo-800",
+      "cancelled": "bg-rose-50 text-rose-700",
+      "open": "bg-slate-100 text-slate-700",
+    };
+
+    const cls = map[val] || "bg-slate-100 text-slate-700";
+    badge.className += " " + cls;
+  }
+
+  function activateButton(activeBtn, inactiveBtn) {
+    activeBtn.classList.add("bg-slate-900", "text-white", "border-slate-900");
+    activeBtn.classList.remove("bg-white");
+    inactiveBtn.classList.remove("bg-slate-900", "text-white", "border-slate-900");
+    inactiveBtn.classList.add("bg-white");
+  }
+
+  function setWalkIn(isWalkIn) {
+    if (!tableSelect) return;
+
+    if (isWalkIn) {
+      tableSelect.value = "";
+      tableSelect.disabled = true;
+      tableSelect.classList.add("opacity-60");
+      if (btnWalkIn && btnDineIn) activateButton(btnWalkIn, btnDineIn);
+    } else {
+      tableSelect.disabled = false;
+      tableSelect.classList.remove("opacity-60");
+      if (btnWalkIn && btnDineIn) activateButton(btnDineIn, btnWalkIn);
+    }
+  }
+
+  // Init
+  setBadge();
+
+  if (statusSelect) statusSelect.addEventListener("change", setBadge);
+
+  if (btnWalkIn) btnWalkIn.addEventListener("click", () => setWalkIn(true));
+  if (btnDineIn) btnDineIn.addEventListener("click", () => setWalkIn(false));
+
+  // default: if no table selected, assume walk-in UI but keep table enabled (user choice)
+  if (tableSelect && !tableSelect.value) {
+    // just set buttons visually, don't disable table by default
+    if (btnWalkIn && btnDineIn) activateButton(btnWalkIn, btnDineIn);
+  } else {
+    if (btnWalkIn && btnDineIn) activateButton(btnDineIn, btnWalkIn);
+  }
+})();
+</script>
+{% endblock %}

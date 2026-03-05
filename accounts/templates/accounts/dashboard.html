@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — Hotel Thinker{% endblock %}
+
+{% block content %}
+
+<div class="mb-6">
+  <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-blue-800">Dashboard</h1>
+      <p class="text-sm text-gray-600 mt-1">
+        Welcome{% if request.user.first_name %}, {{ request.user.first_name }}{% endif %}.
+        {% if hotel %}Active hotel: <span class="font-semibold text-gray-900">{{ hotel.name }}</span>{% endif %}
+      </p>
+    </div>
+
+    <div class="flex gap-2">
+      <a href="{% url 'accounts:my_profile' %}"
+         class="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 transition">
+        Update Profile
+      </a>
+      <a href="{% url 'accounts:hotel_members_list' %}"
+         class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-medium transition">
+        Manage Staff
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Quick cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+
+  <a href="{% url 'rooms:room_list' %}"
+     class="group rounded-2xl border border-gray-200 bg-white p-5 hover:shadow-md transition">
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="text-sm text-gray-500">Operations</div>
+        <div class="mt-1 text-lg font-semibold text-gray-900 group-hover:text-blue-800">Rooms</div>
+        <div class="mt-1 text-sm text-gray-600">Manage room types, rooms, status.</div>
+      </div>
+      <div class="h-10 w-10 rounded-xl bg-gray-100 flex items-center justify-center text-blue-800 font-bold">
+        R
+      </div>
+    </div>
+  </a>
+
+  <a href="{% url 'bookings:booking_list' %}"
+     class="group rounded-2xl border border-gray-200 bg-white p-5 hover:shadow-md transition">
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="text-sm text-gray-500">Front Desk</div>
+        <div class="mt-1 text-lg font-semibold text-gray-900 group-hover:text-blue-800">Bookings</div>
+        <div class="mt-1 text-sm text-gray-600">Create, confirm, check-in/out.</div>
+      </div>
+      <div class="h-10 w-10 rounded-xl bg-gray-100 flex items-center justify-center text-blue-800 font-bold">
+        B
+      </div>
+    </div>
+  </a>
+
+  <a href="#"
+     class="group rounded-2xl border border-gray-200 bg-white p-5 hover:shadow-md transition">
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="text-sm text-gray-500">Finance</div>
+        <div class="mt-1 text-lg font-semibold text-gray-900 group-hover:text-blue-800">Revenue & Expenses</div>
+        <div class="mt-1 text-sm text-gray-600">Track payments, invoices, costs.</div>
+      </div>
+      <div class="h-10 w-10 rounded-xl bg-gray-100 flex items-center justify-center text-blue-800 font-bold">
+        ₦
+      </div>
+    </div>
+  </a>
+
+  <a href="#"
+     class="group rounded-2xl border border-gray-200 bg-white p-5 hover:shadow-md transition">
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="text-sm text-gray-500">Restaurant</div>
+        <div class="mt-1 text-lg font-semibold text-gray-900 group-hover:text-blue-800">POS & Kitchen</div>
+        <div class="mt-1 text-sm text-gray-600">Orders, tables, menu.</div>
+      </div>
+      <div class="h-10 w-10 rounded-xl bg-gray-100 flex items-center justify-center text-blue-800 font-bold">
+        🍽
+      </div>
+    </div>
+  </a>
+
+  <a href="{% url 'accounts:my_profile' %}"
+     class="group rounded-2xl border border-gray-200 bg-white p-5 hover:shadow-md transition">
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="text-sm text-gray-500">Account</div>
+        <div class="mt-1 text-lg font-semibold text-gray-900 group-hover:text-blue-800">My Profile</div>
+        <div class="mt-1 text-sm text-gray-600">Update your details & preferences.</div>
+      </div>
+      <div class="h-10 w-10 rounded-xl bg-gray-100 flex items-center justify-center text-blue-800 font-bold">
+        👤
+      </div>
+    </div>
+  </a>
+
+  <a href="{% url 'accounts:hotel_members_list' %}"
+     class="group rounded-2xl border border-gray-200 bg-white p-5 hover:shadow-md transition">
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="text-sm text-gray-500">Admin</div>
+        <div class="mt-1 text-lg font-semibold text-gray-900 group-hover:text-blue-800">Staff & Roles</div>
+        <div class="mt-1 text-sm text-gray-600">Permissions, access, activation.</div>
+      </div>
+      <div class="h-10 w-10 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600 font-bold">
+        S
+      </div>
+    </div>
+  </a>
+
+</div>
+
+{% endblock %}

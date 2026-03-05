@@ -1,0 +1,462 @@
+{% extends "base.html" %}
+{% block title %}{% if form.instance.pk %}Edit Booking{% else %}New Booking{% endif %} — Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl">
+
+  <!-- Header -->
+  <div class="mb-6 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3">
+    <div>
+      <div class="text-xs text-gray-500">
+        <a href="{% url 'bookings:booking_list' %}" class="hover:underline">Bookings</a>
+        <span class="mx-1">/</span>
+        {% if form.instance.pk %}Edit{% else %}New{% endif %}
+      </div>
+      <h1 class="text-2xl font-bold text-blue-800 mt-1">
+        {% if form.instance.pk %}Edit Booking{% else %}Create Booking{% endif %}
+      </h1>
+      <p class="text-sm text-gray-600 mt-1">
+        Create a booking and add a new guest without leaving this page.
+      </p>
+    </div>
+
+    <div class="flex gap-2">
+      <button type="button"
+              data-modal-open="guestModal"
+              class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
+        + Add Guest
+      </button>
+
+      <a href="{% url 'bookings:booking_list' %}"
+         class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
+        Back
+      </a>
+    </div>
+  </div>
+
+  <!-- Page grid -->
+  <form method="post" class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+    {% csrf_token %}
+    {{ form.use_room_rate }} {# hidden, defaults True if you kept it #}
+
+    <!-- Left / Main -->
+    <div class="xl:col-span-2 rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+        <div>
+          <div class="text-sm font-semibold text-gray-900">Booking Details</div>
+          <div class="text-xs text-gray-500 mt-0.5">Room price is fetched automatically from Room Type.</div>
+        </div>
+        <span class="text-xs px-2.5 py-1 rounded-full bg-orange-100 text-orange-800 font-semibold">
+          Front Desk
+        </span>
+      </div>
+
+      <div class="p-6 space-y-5">
+        {% if form.non_field_errors %}
+          <div class="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-4 py-3 text-sm">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        <!-- Guest + Room -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <div class="flex items-center justify-between">
+              <label class="text-sm font-medium text-gray-700">Guest</label>
+              <button type="button" data-modal-open="guestModal"
+                      class="text-xs font-semibold text-blue-800 hover:underline">
+                + Quick Add
+              </button>
+            </div>
+            {{ form.guest }}
+            {% if form.guest.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.guest.errors|striptags }}</p>{% endif %}
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-gray-700">Room</label>
+
+            {# Render room select manually so we can attach data-price from room_type.base_price #}
+            <select name="room" id="id_room"
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+                    required>
+              <option value="">Select a room</option>
+              {% for room in form.fields.room.queryset %}
+                <option value="{{ room.pk }}"
+                        data-price="{{ room.room_type.base_price|default:0 }}"
+                        {% if form.room.value|stringformat:"s" == room.pk|stringformat:"s" %}selected{% endif %}>
+                  Room {{ room.number }} — {{ room.room_type.name }} ({{ room.room_type.base_price|floatformat:2 }})
+                </option>
+              {% endfor %}
+            </select>
+
+            {% if form.room.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.room.errors|striptags }}</p>{% endif %}
+
+            <p class="text-xs text-gray-500 mt-1">
+              Nightly Rate (Auto): <span class="font-semibold text-gray-900" id="roomRateLabel">0.00</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Dates -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="text-sm font-medium text-gray-700">Check-in</label>
+            {{ form.check_in }}
+            {% if form.check_in.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.check_in.errors|striptags }}</p>{% endif %}
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-gray-700">Check-out</label>
+            {{ form.check_out }}
+            {% if form.check_out.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.check_out.errors|striptags }}</p>{% endif %}
+          </div>
+        </div>
+
+        <!-- Pax -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="text-sm font-medium text-gray-700">Adults</label>
+            {{ form.adults }}
+            {% if form.adults.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.adults.errors|striptags }}</p>{% endif %}
+          </div>
+          <div>
+            <label class="text-sm font-medium text-gray-700">Children</label>
+            {{ form.children }}
+            {% if form.children.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.children.errors|striptags }}</p>{% endif %}
+          </div>
+          <div>
+            <label class="text-sm font-medium text-gray-700">Infants</label>
+            {{ form.infants }}
+            {% if form.infants.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.infants.errors|striptags }}</p>{% endif %}
+          </div>
+        </div>
+
+        <!-- Source + Status -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="text-sm font-medium text-gray-700">Source</label>
+            {{ form.source }}
+            {% if form.source.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.source.errors|striptags }}</p>{% endif %}
+          </div>
+          <div>
+            <label class="text-sm font-medium text-gray-700">Status</label>
+            {{ form.status }}
+            {% if form.status.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.status.errors|striptags }}</p>{% endif %}
+          </div>
+        </div>
+
+        <div>
+          <label class="text-sm font-medium text-gray-700">Special Requests</label>
+          {{ form.special_requests }}
+          {% if form.special_requests.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.special_requests.errors|striptags }}</p>{% endif %}
+        </div>
+
+        <div>
+          <label class="text-sm font-medium text-gray-700">Internal Notes</label>
+          {{ form.internal_notes }}
+          {% if form.internal_notes.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.internal_notes.errors|striptags }}</p>{% endif %}
+        </div>
+
+        {% if form.payment_status %}
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm font-medium text-gray-700">Payment Status</label>
+              {{ form.payment_status }}
+              {% if form.payment_status.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.payment_status.errors|striptags }}</p>{% endif %}
+            </div>
+            <div>
+              <label class="text-sm font-medium text-gray-700">Amount Paid</label>
+              {{ form.amount_paid }}
+              {% if form.amount_paid.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.amount_paid.errors|striptags }}</p>{% endif %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-2">
+        <a href="{% url 'bookings:booking_list' %}"
+           class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
+          Cancel
+        </a>
+        <button class="px-5 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold">
+          Save Booking
+        </button>
+      </div>
+    </div>
+
+    <!-- Right / Summary -->
+    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden h-fit">
+      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div class="text-sm font-semibold text-gray-900">Estimate Summary</div>
+        <div class="text-xs text-gray-500 mt-0.5">Based on Room Type base price × nights.</div>
+      </div>
+
+      <div class="p-6 space-y-3 text-sm">
+        <div class="flex justify-between"><span class="text-gray-600">Nights</span><span class="font-semibold" id="sumNights">0</span></div>
+        <div class="flex justify-between"><span class="text-gray-600">Nightly Rate</span><span class="font-semibold" id="sumRate">0.00</span></div>
+        <div class="pt-3 border-t border-gray-200 flex justify-between text-base">
+          <span class="font-semibold text-gray-900">Estimated Total</span>
+          <span class="font-bold text-blue-800" id="sumTotal">0.00</span>
+        </div>
+
+        <div class="rounded-xl border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-xs mt-4">
+          Tip: Price is automatic from Room Type. Use “Add Guest” to create guest instantly.
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Quick Add Guest Modal (unchanged) -->
+<div id="guestModal" class="hidden fixed inset-0 z-50">
+  <div class="absolute inset-0 bg-black/50" data-modal-close="guestModal"></div>
+
+  <div class="relative mx-auto mt-10 w-full max-w-3xl px-4">
+    <div class="rounded-2xl bg-white border border-gray-200 shadow-lg overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+        <div>
+          <div class="font-semibold text-gray-900">Add Guest</div>
+          <div class="text-xs text-gray-500 mt-0.5">Create guest and select them automatically.</div>
+        </div>
+        <button type="button" class="text-gray-500 hover:text-gray-900" data-modal-close="guestModal">✕</button>
+      </div>
+
+      <form id="guestQuickForm" class="p-6 space-y-4">
+        {% csrf_token %}
+
+        <div id="guestQuickError"
+             class="hidden rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-4 py-3 text-sm"></div>
+
+        <!-- BASIC -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="text-sm font-medium text-gray-700">Full Name *</label>
+            <input name="full_name" required
+                   class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                   placeholder="Guest full name">
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-gray-700">Phone *</label>
+            <input name="phone" required
+                   class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                   placeholder="2567XXXXXXXX">
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-gray-700">Email</label>
+            <input name="email" type="email"
+                   class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                   placeholder="Optional">
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-gray-700">Guest Type</label>
+            <select name="guest_type"
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600">
+              <option value="individual">Individual</option>
+              <option value="corporate">Corporate</option>
+              <option value="travel_agency">Travel Agency</option>
+              <option value="tour_operator">Tour Operator</option>
+              <option value="vip">VIP</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Toggle -->
+        <button type="button" id="toggleMoreGuest"
+                class="text-sm font-semibold text-blue-800 hover:underline">
+          + More details
+        </button>
+
+        <!-- MORE DETAILS -->
+        <div id="moreGuestFields" class="hidden space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm font-medium text-gray-700">Nationality</label>
+              <input name="nationality"
+                     class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-600"
+                     placeholder="Optional">
+            </div>
+            <div>
+              <label class="text-sm font-medium text-gray-700">Country</label>
+              <input name="country"
+                     class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-600"
+                     placeholder="Optional">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm font-medium text-gray-700">ID Type</label>
+              <select name="id_type"
+                      class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-600">
+                <option value="">—</option>
+                <option value="passport">Passport</option>
+                <option value="national_id">National ID</option>
+                <option value="drivers_license">Driver's License</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-gray-700">ID Number</label>
+              <input name="id_number"
+                     class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-600"
+                     placeholder="Optional">
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <input type="checkbox" name="is_vip"
+                   class="h-4 w-4 rounded border-gray-300 text-blue-800 focus:ring-2 focus:ring-blue-600">
+            <span class="text-sm text-gray-700">Mark as VIP</span>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" data-modal-close="guestModal"
+                  class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
+            Cancel
+          </button>
+          <button id="guestQuickSubmit"
+                  class="px-4 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold">
+            Save Guest
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // ---- Estimate summary (RoomType.base_price × nights) ----
+  function parseNum(v){ const n = parseFloat((v||"").toString().replace(/,/g,'')); return isNaN(n) ? 0 : n; }
+  function daysBetween(a,b){
+    const da = new Date(a), db = new Date(b);
+    if (isNaN(da) || isNaN(db)) return 0;
+    const diff = (db - da) / (1000*60*60*24);
+    return diff > 0 ? Math.floor(diff) : 0;
+  }
+  function currentRoomRate(){
+    const sel = document.getElementById("id_room");
+    if(!sel) return 0;
+    const opt = sel.options[sel.selectedIndex];
+    if(!opt) return 0;
+    return parseNum(opt.dataset.price);
+  }
+  function recalc(){
+    const checkIn = document.getElementById("id_check_in")?.value;
+    const checkOut = document.getElementById("id_check_out")?.value;
+    const nights = daysBetween(checkIn, checkOut);
+    const rate = currentRoomRate();
+    const total = rate * nights;
+
+    document.getElementById("roomRateLabel").textContent = rate.toFixed(2);
+    document.getElementById("sumNights").textContent = nights;
+    document.getElementById("sumRate").textContent = rate.toFixed(2);
+    document.getElementById("sumTotal").textContent = total.toFixed(2);
+  }
+
+  ["id_check_in","id_check_out","id_room"].forEach(id => {
+    document.getElementById(id)?.addEventListener("input", recalc);
+    document.getElementById(id)?.addEventListener("change", recalc);
+  });
+  recalc();
+
+  // ---- Modal helpers ----
+  function openModal(id){ document.getElementById(id)?.classList.remove("hidden"); }
+  function closeModal(id){ document.getElementById(id)?.classList.add("hidden"); }
+
+  document.querySelectorAll("[data-modal-open]").forEach(btn => {
+    btn.addEventListener("click", () => openModal(btn.dataset.modalOpen));
+  });
+  document.querySelectorAll("[data-modal-close]").forEach(el => {
+    el.addEventListener("click", () => closeModal(el.dataset.modalClose));
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeModal("guestModal");
+  });
+
+  // Expand more guest fields
+  const t = document.getElementById("toggleMoreGuest");
+  const more = document.getElementById("moreGuestFields");
+  if (t && more) {
+    t.addEventListener("click", () => {
+      more.classList.toggle("hidden");
+      t.textContent = more.classList.contains("hidden") ? "+ More details" : "− Less details";
+    });
+  }
+
+  // ---- Quick Add Guest AJAX ----
+  (function(){
+    const form = document.getElementById("guestQuickForm");
+    if(!form) return;
+
+    const errBox = document.getElementById("guestQuickError");
+    const submitBtn = document.getElementById("guestQuickSubmit");
+    const guestSelect = document.getElementById("id_guest");
+
+    function showError(msg){
+      errBox.textContent = msg;
+      errBox.classList.remove("hidden");
+    }
+    function clearError(){
+      errBox.textContent = "";
+      errBox.classList.add("hidden");
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearError();
+
+      submitBtn.disabled = true;
+      submitBtn.classList.add("opacity-70", "cursor-not-allowed");
+
+      try{
+        const csrf = form.querySelector('input[name="csrfmiddlewaretoken"]').value;
+        const fd = new FormData(form);
+
+        const res = await fetch("{% url 'bookings:guest_quick_create' %}", {
+          method: "POST",
+          headers: { "X-CSRFToken": csrf },
+          body: fd
+        });
+
+        const data = await res.json();
+
+        if(!res.ok || !data.ok){
+          if(data && data.errors){
+            const firstField = Object.keys(data.errors)[0];
+            const firstMsg = data.errors[firstField][0];
+            showError(firstMsg);
+          }else{
+            showError("Failed to create guest. Please check fields.");
+          }
+          return;
+        }
+
+        if(guestSelect){
+          const opt = document.createElement("option");
+          opt.value = data.id;
+          opt.textContent = data.label || "New Guest";
+          guestSelect.appendChild(opt);
+          guestSelect.value = data.id;
+        }
+
+        form.reset();
+        more?.classList.add("hidden");
+        if (t) t.textContent = "+ More details";
+        closeModal("guestModal");
+
+      }catch(err){
+        showError("Network error. Please try again.");
+      }finally{
+        submitBtn.disabled = false;
+        submitBtn.classList.remove("opacity-70", "cursor-not-allowed");
+      }
+    });
+  })();
+</script>
+{% endblock %}
