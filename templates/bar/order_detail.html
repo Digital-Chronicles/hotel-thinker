@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Bar Order {{ order.order_number }} | Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-sm">
+          <i class="fas fa-receipt text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-slate-800">Bar Order {{ order.order_number }}</h1>
+          <div class="flex items-center gap-2 mt-1">
+            <p class="text-sm text-slate-500">
+              {% if order.guest_name %}
+                <i class="fas fa-user text-blue-500 text-xs mr-1"></i>{{ order.guest_name }}
+              {% else %}
+                <i class="fas fa-walking text-blue-500 text-xs mr-1"></i>Walk-in Guest
+              {% endif %}
+            </p>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
+              {% if order.status == 'paid' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+              {% elif order.status == 'billed' %}bg-amber-50 text-amber-700 border border-amber-200
+              {% elif order.status == 'served' %}bg-indigo-50 text-indigo-700 border border-indigo-200
+              {% elif order.status == 'open' %}bg-blue-50 text-blue-700 border border-blue-200
+              {% elif order.status == 'cancelled' %}bg-rose-50 text-rose-700 border border-rose-200
+              {% else %}bg-slate-100 text-slate-600 border border-slate-200{% endif %}">
+              <span class="w-1.5 h-1.5 rounded-full
+                {% if order.status == 'paid' %}bg-emerald-500
+                {% elif order.status == 'billed' %}bg-amber-500
+                {% elif order.status == 'served' %}bg-indigo-500
+                {% elif order.status == 'open' %}bg-blue-500
+                {% elif order.status == 'cancelled' %}bg-rose-500
+                {% else %}bg-slate-400{% endif %}"></span>
+              {{ order.get_status_display }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <a href="{% url 'bar:order_list' %}"
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition">
+        <i class="fas fa-arrow-left text-blue-500 text-sm"></i>
+        <span>Back to Orders</span>
+      </a>
+
+      {% if order.status == 'open' %}
+        <a href="{% url 'bar:order_update' order.pk %}"
+           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition">
+          <i class="fas fa-edit text-blue-500 text-sm"></i>
+          <span>Edit Order</span>
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- Left Column - Order Items -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- Order Items Table -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/50">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-list-ul text-blue-600 text-sm"></i>
+            <h2 class="text-base font-semibold text-slate-800">Order Items</h2>
+            <span class="ml-auto text-xs text-slate-500">
+              <i class="fas fa-wine-glass-alt mr-1"></i>{{ order.items.count }} item(s)
+            </span>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+              <tr class="text-left text-slate-600">
+                <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Item</th>
+                <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider text-center">Qty</th>
+                <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider text-right">Unit Price</th>
+                <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider text-right">Total</th>
+               </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              {% for item in order.items.all %}
+                <tr>
+                  <td class="px-5 py-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                        <i class="fas fa-wine-bottle text-blue-500 text-xs"></i>
+                      </div>
+                      <div>
+                        <p class="font-medium text-slate-800">{{ item.item.name }}</p>
+                        {% if item.note %}
+                          <p class="text-xs text-slate-400 mt-0.5">{{ item.note }}</p>
+                        {% endif %}
+                      </div>
+                    </div>
+                   </td>
+                  <td class="px-5 py-4 text-center font-medium text-slate-700">{{ item.qty }}</td>
+                  <td class="px-5 py-4 text-right text-slate-700">UGX {{ item.unit_price|floatformat:0|intcomma }}</td>
+                  <td class="px-5 py-4 text-right font-semibold text-emerald-600">UGX {{ item.line_total|floatformat:0|intcomma }}</td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="4" class="px-6 py-14 text-center text-slate-400">
+                    <i class="fas fa-box-open text-2xl mb-2"></i>
+                    <p class="text-sm">No items added to this order yet.</p>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column - Summary & Actions -->
+    <div class="space-y-6">
+      
+      <!-- Order Summary Card -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden sticky top-6">
+        <div class="px-5 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-calculator text-blue-600 text-sm"></i>
+            <h3 class="text-base font-semibold text-slate-800">Order Summary</h3>
+          </div>
+        </div>
+
+        <div class="p-5">
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-600">Subtotal</span>
+              <span class="font-semibold text-slate-800">UGX {{ order.subtotal|floatformat:0|intcomma }}</span>
+            </div>
+            
+            {% if order.discount > 0 %}
+              <div class="flex justify-between items-center">
+                <span class="text-slate-600">Discount</span>
+                <span class="font-semibold text-emerald-600">- UGX {{ order.discount|floatformat:0|intcomma }}</span>
+              </div>
+            {% endif %}
+            
+            {% if order.tax > 0 %}
+              <div class="flex justify-between items-center">
+                <span class="text-slate-600">Tax</span>
+                <span class="font-semibold text-slate-800">UGX {{ order.tax|floatformat:0|intcomma }}</span>
+              </div>
+            {% endif %}
+
+            <div class="border-t border-slate-200 pt-3 mt-2">
+              <div class="flex justify-between items-center">
+                <span class="text-base font-bold text-slate-900">TOTAL</span>
+                <span class="text-xl font-bold text-emerald-600">UGX {{ order.total|floatformat:0|intcomma }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workflow Actions Card -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-tasks text-blue-600 text-sm"></i>
+            <h3 class="text-base font-semibold text-slate-800">Workflow Actions</h3>
+          </div>
+        </div>
+
+        <div class="p-5 space-y-3">
+          {% if order.status == 'open' %}
+            <form method="post" action="{% url 'bar:order_mark_served' order.pk %}">
+              {% csrf_token %}
+              <button type="submit"
+                      class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition shadow-sm">
+                <i class="fas fa-check-circle text-sm"></i>
+                <span>Mark as Served</span>
+              </button>
+            </form>
+          {% endif %}
+
+          {% if order.status == 'served' %}
+            <a href="{% url 'bar:order_update' order.pk %}"
+               class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold transition shadow-sm">
+              <i class="fas fa-receipt text-sm"></i>
+              <span>Add Bill / Apply Discount</span>
+            </a>
+          {% endif %}
+
+          {% if order.status == 'billed' %}
+            <form method="post" action="{% url 'bar:order_mark_paid' order.pk %}">
+              {% csrf_token %}
+              <button type="submit"
+                      class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition shadow-sm">
+                <i class="fas fa-credit-card text-sm"></i>
+                <span>Mark as Paid</span>
+              </button>
+            </form>
+          {% endif %}
+
+          {% if order.status != 'paid' and order.status != 'cancelled' %}
+            <form method="post" action="{% url 'bar:order_cancel' order.pk %}"
+                  onsubmit="return confirm('Are you sure you want to cancel this order? This action cannot be undone.')">
+              {% csrf_token %}
+              <button type="submit"
+                      class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-sm font-semibold transition">
+                <i class="fas fa-ban text-sm"></i>
+                <span>Cancel Order</span>
+              </button>
+            </form>
+          {% endif %}
+
+          {% if order.status == 'paid' %}
+            <div class="rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-center">
+              <i class="fas fa-check-circle text-emerald-600 text-sm"></i>
+              <p class="text-xs text-emerald-800 mt-1">This order has been paid and completed.</p>
+            </div>
+          {% endif %}
+
+          {% if order.status == 'cancelled' %}
+            <div class="rounded-xl bg-rose-50 border border-rose-200 p-3 text-center">
+              <i class="fas fa-ban text-rose-600 text-sm"></i>
+              <p class="text-xs text-rose-800 mt-1">This order has been cancelled.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Order Info Card -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/50">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-info-circle text-blue-600 text-sm"></i>
+            <h3 class="text-sm font-semibold text-slate-800">Order Information</h3>
+          </div>
+        </div>
+        
+        <div class="p-5 space-y-2 text-sm">
+          <div class="flex justify-between">
+            <span class="text-slate-600">Order Number</span>
+            <span class="font-medium text-slate-800">{{ order.order_number }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-600">Created</span>
+            <span class="text-slate-700">{{ order.created_at|date:"d M Y, H:i" }}</span>
+          </div>
+          {% if order.closed_at %}
+            <div class="flex justify-between">
+              <span class="text-slate-600">Closed</span>
+              <span class="text-slate-700">{{ order.closed_at|date:"d M Y, H:i" }}</span>
+            </div>
+          {% endif %}
+          <div class="flex justify-between">
+            <span class="text-slate-600">Created By</span>
+            <span class="text-slate-700">{{ order.created_by.get_full_name|default:order.created_by.username|default:"System" }}</span>
+          </div>
+          {% if order.booking %}
+            <div class="flex justify-between">
+              <span class="text-slate-600">Booking</span>
+              <span class="text-blue-600 font-medium">#{{ order.booking.id }}</span>
+            </div>
+          {% endif %}
+          {% if order.room_charge %}
+            <div class="mt-2 rounded-lg bg-purple-50 p-2 text-center">
+              <span class="text-xs font-medium text-purple-700">
+                <i class="fas fa-hotel mr-1"></i>This order will be charged to room
+              </span>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

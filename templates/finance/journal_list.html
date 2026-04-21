@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Journals{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto p-6">
+
+<h1 class="text-2xl font-bold mb-4">Journal Entries</h1>
+
+<table class="w-full bg-white shadow rounded">
+<thead class="bg-gray-100">
+<tr>
+<th>Entry #</th>
+<th>Date</th>
+<th>Status</th>
+<th>Amount</th>
+</tr>
+</thead>
+
+<tbody>
+{% for j in journals %}
+<tr class="border-t">
+<td class="p-3">
+<a href="{% url 'finance:journal_detail' j.pk %}" class="text-blue-600">
+{{ j.entry_number }}
+</a>
+</td>
+<td>{{ j.entry_date }}</td>
+<td>{{ j.status }}</td>
+<td>{{ j.total_debits }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+</div>
+{% endblock %}

@@ -1,123 +1,186 @@
+<!-- accounts/templates/accounts/hotel_member_form.html -->
 {% extends "base.html" %}
 
-{% block title %}Edit Member — Hotel Thinker{% endblock %}
+{% block title %}{% if is_edit %}Edit{% else %}Invite{% endif %} Staff Member{% endblock %}
+
+{% block breadcrumb %}
+<li class="flex items-center gap-2">
+  <i class="fas fa-chevron-right text-slate-400 text-xs"></i>
+  <a href="{% url 'accounts:hotel_members_list' %}" class="text-slate-600 hover:text-blue-600">Staff</a>
+</li>
+<li class="flex items-center gap-2">
+  <i class="fas fa-chevron-right text-slate-400 text-xs"></i>
+  <span class="text-slate-800 font-semibold">{% if is_edit %}Edit Member{% else %}Invite Member{% endif %}</span>
+</li>
+{% endblock %}
 
 {% block content %}
-
-<div class="mb-6">
-  <div class="flex items-end justify-between gap-3">
-    <div>
-      <h1 class="text-2xl font-bold text-blue-800">Edit Member</h1>
-      <p class="text-sm text-gray-600 mt-1">
-        Update role, permissions and access rights.
+<div class="max-w-4xl mx-auto">
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-6">
+      <h1 class="text-2xl font-bold text-white">
+        {% if is_edit %}Edit Staff Member{% else %}Invite New Staff Member{% endif %}
+      </h1>
+      <p class="text-blue-100 mt-1">
+        {% if is_edit %}Update staff information and permissions{% else %}Send an invitation to join your hotel team{% endif %}
       </p>
     </div>
-
-    <a href="{% url 'accounts:hotel_members_list' %}"
-       class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 transition">
-      Back
-    </a>
+    
+    <!-- Form -->
+    <form method="post" enctype="multipart/form-data" class="p-6 space-y-6">
+      {% csrf_token %}
+      
+      {% if form.non_field_errors %}
+      <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+        {% for error in form.non_field_errors %}
+        <p class="text-red-600 text-sm">{{ error }}</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+      
+      <!-- Basic Information Section -->
+      <div>
+        <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <i class="fas fa-user-circle text-blue-600"></i>
+          Basic Information
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {% for field in form %}
+            {% if field.name in 'role,permission_level,employment_type,shift_preference,profile_picture,work_phone,work_email,employee_code,hire_date,contract_start_date,contract_end_date,probation_end_date,is_active,is_primary_contact,notes' %}
+              {# Skip these for now, they'll be in other sections #}
+            {% else %}
+              <div class="{% if field.name in 'notes,special_skills' %}md:col-span-2{% endif %}">
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">
+                  {{ field.label }}
+                  {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                </label>
+                {{ field }}
+                {% if field.help_text %}
+                <p class="text-xs text-slate-500 mt-1">{{ field.help_text }}</p>
+                {% endif %}
+                {% if field.errors %}
+                <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
+                {% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      
+      <!-- Employment Details -->
+      <div class="border-t border-slate-200 pt-6">
+        <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <i class="fas fa-briefcase text-emerald-600"></i>
+          Employment Details
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="{{ form.role.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Role *</label>
+            {{ form.role }}
+          </div>
+          <div>
+            <label for="{{ form.permission_level.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Permission Level</label>
+            {{ form.permission_level }}
+          </div>
+          <div>
+            <label for="{{ form.employment_type.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Employment Type</label>
+            {{ form.employment_type }}
+          </div>
+          <div>
+            <label for="{{ form.shift_preference.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Shift Preference</label>
+            {{ form.shift_preference }}
+          </div>
+          <div>
+            <label for="{{ form.hire_date.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Hire Date</label>
+            {{ form.hire_date }}
+          </div>
+          <div>
+            <label for="{{ form.employee_code.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Employee Code</label>
+            {{ form.employee_code }}
+          </div>
+        </div>
+      </div>
+      
+      <!-- Contact Information -->
+      <div class="border-t border-slate-200 pt-6">
+        <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <i class="fas fa-phone-alt text-purple-600"></i>
+          Contact Information
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="{{ form.work_phone.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Work Phone</label>
+            {{ form.work_phone }}
+          </div>
+          <div>
+            <label for="{{ form.work_email.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Work Email</label>
+            {{ form.work_email }}
+          </div>
+          <div>
+            <label for="{{ form.profile_picture.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Profile Picture</label>
+            {{ form.profile_picture }}
+          </div>
+        </div>
+      </div>
+      
+      <!-- Contract Dates -->
+      <div class="border-t border-slate-200 pt-6">
+        <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <i class="fas fa-file-contract text-amber-600"></i>
+          Contract Information
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="{{ form.contract_start_date.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Contract Start Date</label>
+            {{ form.contract_start_date }}
+          </div>
+          <div>
+            <label for="{{ form.contract_end_date.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Contract End Date</label>
+            {{ form.contract_end_date }}
+          </div>
+          <div>
+            <label for="{{ form.probation_end_date.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Probation End Date</label>
+            {{ form.probation_end_date }}
+          </div>
+        </div>
+      </div>
+      
+      <!-- Status -->
+      <div class="border-t border-slate-200 pt-6">
+        <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <i class="fas fa-toggle-on text-indigo-600"></i>
+          Status Settings
+        </h2>
+        <div class="space-y-3">
+          <div class="flex items-center gap-3">
+            {{ form.is_active }}
+            <label for="{{ form.is_active.id_for_label }}" class="text-sm font-medium text-slate-700">Active Status</label>
+          </div>
+          <div class="flex items-center gap-3">
+            {{ form.is_primary_contact }}
+            <label for="{{ form.is_primary_contact.id_for_label }}" class="text-sm font-medium text-slate-700">Primary Contact for Hotel</label>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Notes -->
+      <div class="border-t border-slate-200 pt-6">
+        <label for="{{ form.notes.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Additional Notes</label>
+        {{ form.notes }}
+      </div>
+      
+      <!-- Form Actions -->
+      <div class="flex gap-3 pt-4 border-t border-slate-200">
+        <button type="submit" class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all">
+          {% if is_edit %}Save Changes{% else %}Send Invitation{% endif %}
+        </button>
+        <a href="{% url 'accounts:hotel_members_list' %}" 
+           class="px-6 py-3 bg-slate-100 text-slate-700 rounded-xl font-semibold hover:bg-slate-200 transition-all text-center">
+          Cancel
+        </a>
+      </div>
+    </form>
   </div>
 </div>
-
-<div class="rounded-2xl border border-gray-200 bg-white p-6">
-
-  <div class="mb-6">
-    <div class="text-sm text-gray-500">User</div>
-    <div class="text-lg font-semibold text-gray-900">
-      {{ member.user.get_full_name|default:member.user.username }}
-    </div>
-    <div class="text-sm text-gray-600">{{ member.user.email }}</div>
-  </div>
-
-  <form method="post" class="space-y-6">
-    {% csrf_token %}
-
-    {% if form.non_field_errors %}
-      <div class="rounded-xl border border-rose-200 bg-rose-50 text-rose-900 px-4 py-3 text-sm">
-        {{ form.non_field_errors }}
-      </div>
-    {% endif %}
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label class="text-sm font-medium text-gray-700">Role</label>
-        {{ form.role }}
-        {% if form.role.errors %}<div class="text-sm text-rose-600 mt-1">{{ form.role.errors }}</div>{% endif %}
-      </div>
-
-      <div>
-        <label class="text-sm font-medium text-gray-700">Permission Level</label>
-        {{ form.permission_level }}
-      </div>
-    </div>
-
-    <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
-      <div class="text-sm font-semibold text-gray-900 mb-3">Module Access</div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3">
-          {{ form.can_access_front_desk }}
-          <span class="text-sm font-medium text-gray-800">Front Desk</span>
-        </label>
-
-        <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3">
-          {{ form.can_access_housekeeping }}
-          <span class="text-sm font-medium text-gray-800">Housekeeping</span>
-        </label>
-
-        <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3">
-          {{ form.can_access_restaurant }}
-          <span class="text-sm font-medium text-gray-800">Restaurant</span>
-        </label>
-
-        <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3">
-          {{ form.can_access_finance }}
-          <span class="text-sm font-medium text-gray-800">Finance</span>
-        </label>
-
-        <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3">
-          {{ form.can_access_maintenance }}
-          <span class="text-sm font-medium text-gray-800">Maintenance</span>
-        </label>
-
-        <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3">
-          {{ form.can_access_reports }}
-          <span class="text-sm font-medium text-gray-800">Reports</span>
-        </label>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-        {{ form.is_active }}
-        <span class="text-sm font-medium text-gray-800">Active</span>
-      </label>
-
-      <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-        {{ form.is_primary_contact }}
-        <span class="text-sm font-medium text-gray-800">Primary Contact</span>
-      </label>
-    </div>
-
-    <div>
-      <label class="text-sm font-medium text-gray-700">Notes</label>
-      {{ form.notes }}
-    </div>
-
-    <div class="flex items-center justify-end gap-3">
-      <a href="{% url 'accounts:hotel_members_list' %}"
-         class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 transition">
-        Cancel
-      </a>
-      <button type="submit"
-              class="px-5 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-medium transition">
-        Save Changes
-      </button>
-    </div>
-
-  </form>
-
-</div>
-
 {% endblock %}

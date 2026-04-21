@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}{% if form.instance.pk %}Edit Guest{% else %}New Guest{% endif %} | Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div class="flex items-start gap-3">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-600 flex items-center justify-center shadow-sm">
+        <i class="fas fa-user-edit text-white text-lg"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-slate-800">
+          {% if form.instance.pk %}Edit Guest{% else %}Create New Guest{% endif %}
+        </h1>
+        <p class="text-sm text-slate-500 mt-1">Capture guest identity, contact information, and preferences.</p>
+      </div>
+    </div>
+
+    <a href="{% url 'bookings:guest_list' %}"
+       class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+      <i class="fas fa-arrow-left text-xs"></i>
+      <span>Back to Guests</span>
+    </a>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    {% csrf_token %}
+
+    <div class="px-6 py-5 space-y-6">
+      {% if form.non_field_errors %}
+        <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <div>
+        <h2 class="text-lg font-semibold text-slate-800">Basic Information</h2>
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-5">
+          {% for field in form %}
+            {% if field.name in "full_name,preferred_name,guest_type,phone,alternative_phone,email,language,nationality" %}
+              <div class="{% if field.name == 'full_name' %}md:col-span-2{% endif %}">
+                <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                  {{ field.label }}
+                  {% if field.field.required %}<span class="text-rose-500">*</span>{% endif %}
+                </label>
+                {{ field }}
+                {% if field.help_text %}
+                  <p class="text-xs text-slate-500 mt-1">{{ field.help_text }}</p>
+                {% endif %}
+                {% if field.errors %}
+                  <p class="text-xs text-rose-600 mt-1">{{ field.errors|striptags }}</p>
+                {% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="border-t border-slate-100 pt-6">
+        <h2 class="text-lg font-semibold text-slate-800">Identification</h2>
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-5">
+          {% for field in form %}
+            {% if field.name in "id_type,id_number,id_issue_date,id_expiry_date,id_scan" %}
+              <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1.5">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                  <p class="text-xs text-rose-600 mt-1">{{ field.errors|striptags }}</p>
+                {% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="border-t border-slate-100 pt-6">
+        <h2 class="text-lg font-semibold text-slate-800">Address</h2>
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-5">
+          {% for field in form %}
+            {% if field.name in "address,city,country,postal_code" %}
+              <div class="{% if field.name == 'address' %}md:col-span-2{% endif %}">
+                <label class="block text-sm font-semibold text-slate-700 mb-1.5">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                  <p class="text-xs text-rose-600 mt-1">{{ field.errors|striptags }}</p>
+                {% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="border-t border-slate-100 pt-6">
+        <h2 class="text-lg font-semibold text-slate-800">Company Details</h2>
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-5">
+          {% for field in form %}
+            {% if field.name in "company_name,company_vat,company_address" %}
+              <div class="{% if field.name == 'company_address' %}md:col-span-2{% endif %}">
+                <label class="block text-sm font-semibold text-slate-700 mb-1.5">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                  <p class="text-xs text-rose-600 mt-1">{{ field.errors|striptags }}</p>
+                {% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="border-t border-slate-100 pt-6">
+        <h2 class="text-lg font-semibold text-slate-800">Preferences</h2>
+        <div class="mt-4 grid grid-cols-1 gap-5">
+          {% for field in form %}
+            {% if field.name in "special_requests,dietary_restrictions,room_preferences" %}
+              <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1.5">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                  <p class="text-xs text-rose-600 mt-1">{{ field.errors|striptags }}</p>
+                {% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="border-t border-slate-100 pt-6">
+        <h2 class="text-lg font-semibold text-slate-800">Flags</h2>
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-5">
+          {% for field in form %}
+            {% if field.name in "is_vip,marketing_consent,newsletter_subscribed" %}
+              <label class="inline-flex items-center gap-3 rounded-xl border border-slate-200 p-4">
+                {{ field }}
+                <span class="text-sm font-medium text-slate-700">{{ field.label }}</span>
+              </label>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="px-6 py-4 border-t border-slate-200 bg-slate-50/70 flex flex-col sm:flex-row justify-end gap-3">
+      <a href="{% url 'bookings:guest_list' %}"
+         class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+        <i class="fas fa-times text-xs"></i>
+        <span>Cancel</span>
+      </a>
+      <button type="submit"
+              class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-semibold shadow-sm hover:from-blue-700 hover:to-indigo-700 transition">
+        <i class="fas fa-save text-xs"></i>
+        <span>{% if form.instance.pk %}Update Guest{% else %}Create Guest{% endif %}</span>
+      </button>
+    </div>
+  </form>
+</div>
+
+<style>
+  input[type="text"],
+  input[type="email"],
+  input[type="date"],
+  input[type="file"],
+  select,
+  textarea {
+    width: 100%;
+    border: 1px solid rgb(226 232 240);
+    border-radius: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    font-size: 0.875rem;
+    background: white;
+  }
+
+  textarea {
+    min-height: 110px;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+    border-color: rgb(147 197 253);
+    box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.35);
+  }
+</style>
+{% endblock %}

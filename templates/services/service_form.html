@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Service Form • Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto bg-white border border-slate-200 rounded-2xl p-6">
+  <h1 class="text-2xl font-bold text-slate-900 mb-6">
+    {% if object %}Edit Service{% else %}New Service{% endif %}
+  </h1>
+
+  <form method="post" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    {% csrf_token %}
+    {% for field in form %}
+    <div>
+      <label class="block text-sm font-medium text-slate-700 mb-1">{{ field.label }}</label>
+      {{ field }}
+      {% for error in field.errors %}
+        <p class="mt-1 text-sm text-rose-600">{{ error }}</p>
+      {% endfor %}
+    </div>
+    {% endfor %}
+
+    <div class="md:col-span-2 flex justify-end gap-3">
+      <a href="{% url 'services:service_list' %}" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700">Cancel</a>
+      <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Save Service</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,165 +1,865 @@
 {% extends "base.html" %}
+{% load humanize %}
 
-{% block title %}My Profile — Hotel Thinker{% endblock %}
+{% block title %}My Profile | Hotel Thinker{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Professional Animations */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  /* Professional Card Hover Effects */
+  .profile-card {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .profile-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Professional Form Fields */
+  .form-field {
+    transition: all 0.2s ease;
+  }
+  
+  .form-field:focus {
+    transform: translateY(-1px);
+  }
+  
+  /* Professional Checkbox Toggle */
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+  }
+  
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e1;
+    transition: 0.3s;
+    border-radius: 34px;
+  }
+  
+  .toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+  }
+  
+  input:checked + .toggle-slider {
+    background-color: #3b82f6;
+  }
+  
+  input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+  }
+  
+  /* Professional Tab Styling */
+  .tab-active {
+    border-bottom: 2px solid #3b82f6;
+    color: #1e293b;
+  }
+  
+  .tab-inactive {
+    border-bottom: 2px solid transparent;
+    color: #64748b;
+  }
+  
+  .tab-inactive:hover {
+    color: #475569;
+    border-bottom-color: #cbd5e1;
+  }
+  
+  /* Professional Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+  
+  /* Loading State */
+  .btn-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+  }
+  
+  .btn-loading::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    right: 12px;
+    margin-top: -8px;
+    border: 2px solid white;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  /* Success Checkmark */
+  .success-checkmark {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+  }
+  
+  .check-icon {
+    width: 80px;
+    height: 80px;
+    position: relative;
+    border-radius: 50%;
+    box-sizing: content-box;
+    border: 4px solid #4caf50;
+  }
+  
+  .check-icon::before {
+    top: 3px;
+    left: -2px;
+    width: 30px;
+    transform-origin: 100% 50%;
+    border-radius: 100px 0 0 100px;
+  }
+  
+  .check-icon::after {
+    top: 0;
+    left: 30px;
+    width: 60px;
+    transform-origin: 0 50%;
+    border-radius: 0 100px 100px 0;
+    animation: rotate-circle 4.25s ease-in;
+  }
+  
+  .check-icon::before, .check-icon::after {
+    content: '';
+    height: 100px;
+    position: absolute;
+    background: transparent;
+    transform: rotate(-45deg);
+  }
+  
+  .icon-line {
+    height: 5px;
+    background-color: #4caf50;
+    display: block;
+    border-radius: 2px;
+    position: absolute;
+    z-index: 10;
+  }
+  
+  .icon-line.line-tip {
+    top: 46px;
+    left: 14px;
+    width: 25px;
+    transform: rotate(45deg);
+    animation: icon-line-tip 0.75s;
+  }
+  
+  .icon-line.line-long {
+    top: 38px;
+    right: 8px;
+    width: 47px;
+    transform: rotate(-45deg);
+    animation: icon-line-long 0.75s;
+  }
+  
+  @keyframes rotate-circle {
+    0% { transform: rotate(-45deg); }
+    5% { transform: rotate(-45deg); }
+    12% { transform: rotate(-405deg); }
+    100% { transform: rotate(-405deg); }
+  }
+  
+  @keyframes icon-line-tip {
+    0% { width: 0; left: 1px; top: 19px; }
+    54% { width: 0; left: 1px; top: 19px; }
+    70% { width: 50px; left: -8px; top: 37px; }
+    84% { width: 17px; left: 21px; top: 48px; }
+    100% { width: 25px; left: 14px; top: 46px; }
+  }
+  
+  @keyframes icon-line-long {
+    0% { width: 0; right: 46px; top: 54px; }
+    65% { width: 0; right: 46px; top: 54px; }
+    84% { width: 55px; right: 0px; top: 35px; }
+    100% { width: 47px; right: 8px; top: 38px; }
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-
-<div class="mb-6">
-  <div class="flex items-end justify-between gap-3">
-    <div>
-      <h1 class="text-2xl font-bold text-blue-800">My Profile</h1>
-      <p class="text-sm text-gray-600 mt-1">Update your personal and notification settings.</p>
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+  <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
+    
+    <!-- Page Header -->
+    <div class="mb-6 lg:mb-8 fade-in">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-md">
+              <i class="fas fa-user-circle text-white text-lg"></i>
+            </div>
+            <div>
+              <h1 class="text-2xl lg:text-3xl font-bold text-slate-800 tracking-tight">My Profile</h1>
+              <p class="text-sm text-slate-500 mt-0.5">Manage your personal information, preferences, and account settings</p>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-lg">
+            <i class="fas fa-check-circle text-emerald-600 text-sm"></i>
+            <span class="text-xs font-medium text-emerald-700">Profile Completeness: {{ profile_completeness|default:"85" }}%</span>
+          </div>
+          <a href="{% url 'accounts:dashboard' %}"
+             class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all hover:shadow-sm">
+            <i class="fas fa-arrow-left text-xs"></i>
+            <span>Dashboard</span>
+          </a>
+        </div>
+      </div>
     </div>
-    <a href="{% url 'accounts:dashboard' %}"
-       class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 transition">
-      Back
-    </a>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 fade-in">
+      
+      <!-- Sidebar Navigation -->
+      <div class="lg:col-span-1">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden sticky top-6">
+          <!-- Profile Summary -->
+          <div class="p-5 text-center border-b border-slate-200 bg-gradient-to-br from-slate-50 to-white">
+            <div class="relative inline-block">
+              {% if profile.avatar %}
+                <img src="{{ profile.avatar.url }}" alt="{{ request.user.get_full_name }}" 
+                     class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg">
+              {% else %}
+                <div class="w-24 h-24 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg mx-auto">
+                  <span class="text-3xl font-bold text-white">{{ request.user.get_full_name|default:request.user.username|first|upper }}</span>
+                </div>
+              {% endif %}
+              <button onclick="document.getElementById('avatar-input').click()" 
+                      class="absolute bottom-0 right-0 bg-white rounded-full p-1.5 shadow-md border border-slate-200 hover:bg-slate-50 transition">
+                <i class="fas fa-camera text-slate-600 text-xs"></i>
+              </button>
+            </div>
+            <h3 class="mt-3 font-semibold text-slate-800">{{ request.user.get_full_name|default:request.user.username }}</h3>
+            <p class="text-xs text-slate-500 mt-0.5">{{ request.user.email }}</p>
+            <div class="mt-2 flex items-center justify-center gap-1">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">
+                <i class="fas fa-circle text-[6px] text-emerald-500"></i>
+                Active
+              </span>
+              <span class="text-xs text-slate-400">Member since {{ request.user.date_joined|date:"M Y" }}</span>
+            </div>
+          </div>
+          
+          <!-- Navigation Tabs -->
+          <nav class="p-2 space-y-1">
+            <button onclick="switchTab('personal')" 
+                    class="tab-nav w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left"
+                    data-tab="personal">
+              <i class="fas fa-user w-4 text-blue-500"></i>
+              <span>Personal Information</span>
+              <i class="fas fa-chevron-right ml-auto text-xs text-slate-400"></i>
+            </button>
+            <button onclick="switchTab('contact')" 
+                    class="tab-nav w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left"
+                    data-tab="contact">
+              <i class="fas fa-map-marker-alt w-4 text-emerald-500"></i>
+              <span>Address & Contact</span>
+              <i class="fas fa-chevron-right ml-auto text-xs text-slate-400"></i>
+            </button>
+            <button onclick="switchTab('professional')" 
+                    class="tab-nav w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left"
+                    data-tab="professional">
+              <i class="fas fa-briefcase w-4 text-purple-500"></i>
+              <span>Professional Info</span>
+              <i class="fas fa-chevron-right ml-auto text-xs text-slate-400"></i>
+            </button>
+            <button onclick="switchTab('notifications')" 
+                    class="tab-nav w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left"
+                    data-tab="notifications">
+              <i class="fas fa-bell w-4 text-amber-500"></i>
+              <span>Notifications</span>
+              <i class="fas fa-chevron-right ml-auto text-xs text-slate-400"></i>
+            </button>
+            <button onclick="switchTab('security')" 
+                    class="tab-nav w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left"
+                    data-tab="security">
+              <i class="fas fa-shield-alt w-4 text-red-500"></i>
+              <span>Security</span>
+              <i class="fas fa-chevron-right ml-auto text-xs text-slate-400"></i>
+            </button>
+          </nav>
+          
+          <!-- Quick Stats -->
+          <div class="p-4 border-t border-slate-200 bg-slate-50">
+            <div class="grid grid-cols-2 gap-3">
+              <div class="text-center">
+                <div class="text-lg font-bold text-slate-800">{{ hotels_count|default:"1" }}</div>
+                <div class="text-xs text-slate-500">Hotels</div>
+              </div>
+              <div class="text-center">
+                <div class="text-lg font-bold text-slate-800">{{ last_login_days|default:"0" }}</div>
+                <div class="text-xs text-slate-500">Days ago</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Main Content Area -->
+      <div class="lg:col-span-3">
+        <form method="post" enctype="multipart/form-data" id="profileForm">
+          {% csrf_token %}
+          
+          <!-- Hidden Avatar Input -->
+          <input type="file" name="avatar" id="avatar-input" class="hidden" accept="image/*">
+          
+          <!-- Tab 1: Personal Information -->
+          <div id="tab-personal" class="tab-pane active">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-user text-blue-500"></i>
+                  <h2 class="text-lg font-semibold text-slate-800">Personal Information</h2>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">Your basic personal details and identification</p>
+              </div>
+              
+              <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                      First Name
+                    </label>
+                    <input type="text" name="first_name" value="{{ request.user.first_name }}"
+                           class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                      Last Name
+                    </label>
+                    <input type="text" name="last_name" value="{{ request.user.last_name }}"
+                           class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all">
+                  </div>
+                  
+                  <div class="md:col-span-2">
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                      Email Address
+                    </label>
+                    <div class="relative">
+                      <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                      <input type="email" name="email" value="{{ request.user.email }}"
+                             class="w-full rounded-lg border border-slate-200 pl-9 pr-3 py-2 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all">
+                    </div>
+                  </div>
+                  
+                  <div class="md:col-span-2">
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                      Confirm Email
+                    </label>
+                    <div class="relative">
+                      <i class="fas fa-check-circle absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                      {{ form.confirm_email }}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                      Gender
+                    </label>
+                    {{ form.gender }}
+                  </div>
+                  
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                      Date of Birth
+                    </label>
+                    {{ form.date_of_birth }}
+                  </div>
+                  
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                      Phone Number
+                    </label>
+                    <div class="relative">
+                      <i class="fas fa-phone absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                      {{ form.phone }}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                      Alternative Phone
+                    </label>
+                    <div class="relative">
+                      <i class="fas fa-mobile-alt absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                      {{ form.alternative_phone }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Tab 2: Address & Contact -->
+          <div id="tab-contact" class="tab-pane hidden">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-map-marker-alt text-emerald-500"></i>
+                  <h2 class="text-lg font-semibold text-slate-800">Address Information</h2>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">Your physical address and location details</p>
+              </div>
+              
+              <div class="p-6">
+                <div class="space-y-5">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                      Address Line 1
+                    </label>
+                    {{ form.address_line1 }}
+                  </div>
+                  
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                      Address Line 2
+                    </label>
+                    {{ form.address_line2 }}
+                  </div>
+                  
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                        City
+                      </label>
+                      {{ form.city }}
+                    </div>
+                    
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                        State/Province
+                      </label>
+                      {{ form.state }}
+                    </div>
+                    
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                        Postal Code
+                      </label>
+                      {{ form.postal_code }}
+                    </div>
+                    
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                        Country
+                      </label>
+                      {{ form.country }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Tab 3: Professional Information -->
+          <div id="tab-professional" class="tab-pane hidden">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-briefcase text-purple-500"></i>
+                  <h2 class="text-lg font-semibold text-slate-800">Professional Details</h2>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">Your work information and employment details</p>
+              </div>
+              
+              <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                      Job Title
+                    </label>
+                    {{ form.job_title }}
+                  </div>
+                  
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                      Department
+                    </label>
+                    {{ form.department }}
+                  </div>
+                  
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                      Employee ID
+                    </label>
+                    {{ form.employee_id }}
+                  </div>
+                  
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                      Preferred Language
+                    </label>
+                    {{ form.language }}
+                  </div>
+                  
+                  <div class="md:col-span-2">
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                      Timezone
+                    </label>
+                    {{ form.timezone }}
+                    <p class="text-xs text-slate-400 mt-1">Current system time: <span id="current-time"></span></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Tab 4: Notifications -->
+          <div id="tab-notifications" class="tab-pane hidden">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-bell text-amber-500"></i>
+                  <h2 class="text-lg font-semibold text-slate-800">Notification Preferences</h2>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">Choose how you want to receive updates</p>
+              </div>
+              
+              <div class="p-6">
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between p-4 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                        <i class="fas fa-envelope text-blue-500"></i>
+                      </div>
+                      <div>
+                        <p class="font-medium text-slate-800">Email Notifications</p>
+                        <p class="text-xs text-slate-500">Receive updates via email</p>
+                      </div>
+                    </div>
+                    <label class="toggle-switch">
+                      {{ form.notification_email }}
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+                  
+                  <div class="flex items-center justify-between p-4 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                        <i class="fas fa-mobile-alt text-emerald-500"></i>
+                      </div>
+                      <div>
+                        <p class="font-medium text-slate-800">SMS Notifications</p>
+                        <p class="text-xs text-slate-500">Receive alerts via text message</p>
+                      </div>
+                    </div>
+                    <label class="toggle-switch">
+                      {{ form.notification_sms }}
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+                  
+                  <div class="flex items-center justify-between p-4 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                        <i class="fas fa-bell text-purple-500"></i>
+                      </div>
+                      <div>
+                        <p class="font-medium text-slate-800">Push Notifications</p>
+                        <p class="text-xs text-slate-500">Browser push notifications</p>
+                      </div>
+                    </div>
+                    <label class="toggle-switch">
+                      {{ form.notification_push }}
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+                  
+                  <div class="flex items-center justify-between p-4 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
+                        <i class="fas fa-newspaper text-amber-500"></i>
+                      </div>
+                      <div>
+                        <p class="font-medium text-slate-800">Daily Digest</p>
+                        <p class="text-xs text-slate-500">Receive daily summary of activities</p>
+                      </div>
+                    </div>
+                    <label class="toggle-switch">
+                      {{ form.notification_digest }}
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Tab 5: Security -->
+          <div id="tab-security" class="tab-pane hidden">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-shield-alt text-red-500"></i>
+                  <h2 class="text-lg font-semibold text-slate-800">Security Settings</h2>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">Manage your account security</p>
+              </div>
+              
+              <div class="p-6 space-y-6">
+                <div class="p-4 rounded-lg bg-slate-50 border border-slate-200">
+                  <div class="flex items-center justify-between mb-3">
+                    <div>
+                      <p class="font-medium text-slate-800">Change Password</p>
+                      <p class="text-xs text-slate-500">Update your password regularly for security</p>
+                    </div>
+                    <i class="fas fa-lock text-slate-400"></i>
+                  </div>
+                  <a href="{% url 'password_change' %}" 
+                     class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all">
+                    <i class="fas fa-key text-xs"></i>
+                    <span>Change Password</span>
+                  </a>
+                </div>
+                
+                <div class="p-4 rounded-lg bg-slate-50 border border-slate-200">
+                  <div class="flex items-center justify-between mb-3">
+                    <div>
+                      <p class="font-medium text-slate-800">Two-Factor Authentication</p>
+                      <p class="text-xs text-slate-500">Add an extra layer of security</p>
+                    </div>
+                    <i class="fas fa-mobile-alt text-slate-400"></i>
+                  </div>
+                  <button type="button" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all">
+                    <i class="fas fa-qrcode text-xs"></i>
+                    <span>Setup 2FA</span>
+                  </button>
+                </div>
+                
+                <div class="p-4 rounded-lg bg-amber-50 border border-amber-200">
+                  <div class="flex items-start gap-3">
+                    <i class="fas fa-info-circle text-amber-600 mt-0.5"></i>
+                    <div>
+                      <p class="text-sm font-medium text-amber-800">Security Tip</p>
+                      <p class="text-xs text-amber-700 mt-1">Use a strong, unique password and never share it with anyone. Enable 2FA for maximum security.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Form Actions -->
+          <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sticky bottom-4 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-200">
+            <div class="text-xs text-slate-400 flex items-center gap-1">
+              <i class="fas fa-lock text-[10px]"></i>
+              <span>All changes are encrypted and saved securely</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <button type="button" onclick="resetForm()"
+                      class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-600 transition-all">
+                <i class="fas fa-undo-alt text-xs"></i>
+                <span>Reset</span>
+              </button>
+              <button type="submit" id="submitBtn"
+                      class="inline-flex items-center gap-2 px-6 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold shadow-sm transition-all">
+                <i class="fas fa-save text-xs"></i>
+                <span>Save Changes</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </div>
 
-<form method="post" enctype="multipart/form-data" class="space-y-6">
-  {% csrf_token %}
-
-  {% if form.non_field_errors %}
-    <div class="rounded-xl border border-rose-200 bg-rose-50 text-rose-900 px-4 py-3 text-sm">
-      {{ form.non_field_errors }}
-    </div>
-  {% endif %}
-
-  <!-- Card -->
-  <div class="rounded-2xl border border-gray-200 bg-white p-6">
-    <div class="flex items-center justify-between mb-4">
-      <div>
-        <h2 class="text-lg font-semibold text-gray-900">Personal Details</h2>
-        <p class="text-sm text-gray-500">Basic information used across the system.</p>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-      <div>
-        <label class="text-sm font-medium text-gray-700">Phone</label>
-        {{ form.phone }}
-        {% if form.phone.errors %}<div class="text-sm text-rose-600 mt-1">{{ form.phone.errors }}</div>{% endif %}
-      </div>
-
-      <div>
-        <label class="text-sm font-medium text-gray-700">Alternative Phone</label>
-        {{ form.alternative_phone }}
-        {% if form.alternative_phone.errors %}<div class="text-sm text-rose-600 mt-1">{{ form.alternative_phone.errors }}</div>{% endif %}
-      </div>
-
-      <div>
-        <label class="text-sm font-medium text-gray-700">Gender</label>
-        {{ form.gender }}
-        {% if form.gender.errors %}<div class="text-sm text-rose-600 mt-1">{{ form.gender.errors }}</div>{% endif %}
-      </div>
-
-      <div>
-        <label class="text-sm font-medium text-gray-700">Date of Birth</label>
-        {{ form.date_of_birth }}
-        {% if form.date_of_birth.errors %}<div class="text-sm text-rose-600 mt-1">{{ form.date_of_birth.errors }}</div>{% endif %}
-      </div>
-
-      <div>
-        <label class="text-sm font-medium text-gray-700">Job Title</label>
-        {{ form.job_title }}
-        {% if form.job_title.errors %}<div class="text-sm text-rose-600 mt-1">{{ form.job_title.errors }}</div>{% endif %}
-      </div>
-
-      <div>
-        <label class="text-sm font-medium text-gray-700">Department</label>
-        {{ form.department }}
-        {% if form.department.errors %}<div class="text-sm text-rose-600 mt-1">{{ form.department.errors }}</div>{% endif %}
-      </div>
-
-      <div>
-        <label class="text-sm font-medium text-gray-700">Employee ID</label>
-        {{ form.employee_id }}
-        {% if form.employee_id.errors %}<div class="text-sm text-rose-600 mt-1">{{ form.employee_id.errors }}</div>{% endif %}
-      </div>
-
-      <div>
-        <label class="text-sm font-medium text-gray-700">Language</label>
-        {{ form.language }}
-      </div>
-
-      <div>
-        <label class="text-sm font-medium text-gray-700">Timezone</label>
-        {{ form.timezone }}
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Address -->
-  <div class="rounded-2xl border border-gray-200 bg-white p-6">
-    <h2 class="text-lg font-semibold text-gray-900">Address</h2>
-    <p class="text-sm text-gray-500 mb-4">Optional address information.</p>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label class="text-sm font-medium text-gray-700">Address Line 1</label>
-        {{ form.address_line1 }}
-      </div>
-      <div>
-        <label class="text-sm font-medium text-gray-700">Address Line 2</label>
-        {{ form.address_line2 }}
-      </div>
-      <div>
-        <label class="text-sm font-medium text-gray-700">City</label>
-        {{ form.city }}
-      </div>
-      <div>
-        <label class="text-sm font-medium text-gray-700">State</label>
-        {{ form.state }}
-      </div>
-      <div>
-        <label class="text-sm font-medium text-gray-700">Postal Code</label>
-        {{ form.postal_code }}
-      </div>
-      <div>
-        <label class="text-sm font-medium text-gray-700">Country</label>
-        {{ form.country }}
-      </div>
-    </div>
-  </div>
-
-  <!-- Notifications -->
-  <div class="rounded-2xl border border-gray-200 bg-white p-6">
-    <h2 class="text-lg font-semibold text-gray-900">Notifications</h2>
-    <p class="text-sm text-gray-500 mb-4">Choose how you want to receive alerts.</p>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-        {{ form.notification_email }}
-        <span class="text-sm font-medium text-gray-800">Email</span>
-      </label>
-
-      <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-        {{ form.notification_sms }}
-        <span class="text-sm font-medium text-gray-800">SMS</span>
-      </label>
-
-      <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-        {{ form.notification_push }}
-        <span class="text-sm font-medium text-gray-800">Push</span>
-      </label>
-    </div>
-  </div>
-
-  <!-- Actions -->
-  <div class="flex items-center justify-end gap-3">
-    <a href="{% url 'accounts:dashboard' %}"
-       class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 transition">
-      Cancel
-    </a>
-    <button type="submit"
-            class="px-5 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-medium transition">
-      Save Changes
-    </button>
-  </div>
-
-</form>
-
+<script>
+  // Tab Switching
+  function switchTab(tabName) {
+    // Hide all panes
+    document.querySelectorAll('.tab-pane').forEach(pane => {
+      pane.classList.add('hidden');
+      pane.classList.remove('active');
+    });
+    
+    // Show selected pane
+    const selectedPane = document.getElementById(`tab-${tabName}`);
+    if (selectedPane) {
+      selectedPane.classList.remove('hidden');
+      selectedPane.classList.add('active');
+    }
+    
+    // Update nav buttons
+    document.querySelectorAll('.tab-nav').forEach(nav => {
+      nav.classList.remove('bg-blue-50', 'text-blue-700');
+      nav.classList.add('text-slate-600');
+    });
+    
+    const activeNav = document.querySelector(`.tab-nav[data-tab="${tabName}"]`);
+    if (activeNav) {
+      activeNav.classList.add('bg-blue-50', 'text-blue-700');
+      activeNav.classList.remove('text-slate-600');
+    }
+    
+    // Save to localStorage
+    localStorage.setItem('activeProfileTab', tabName);
+  }
+  
+  // Load saved tab
+  const savedTab = localStorage.getItem('activeProfileTab');
+  if (savedTab) {
+    switchTab(savedTab);
+  } else {
+    switchTab('personal');
+  }
+  
+  // Current time display based on timezone
+  function updateCurrentTime() {
+    const timezoneSelect = document.querySelector('select[name="timezone"]');
+    if (timezoneSelect && document.getElementById('current-time')) {
+      const selectedTimezone = timezoneSelect.value;
+      const options = { timeZone: selectedTimezone, hour: '2-digit', minute: '2-digit', second: '2-digit' };
+      try {
+        const currentTime = new Date().toLocaleTimeString('en-US', options);
+        document.getElementById('current-time').textContent = currentTime;
+      } catch(e) {
+        document.getElementById('current-time').textContent = new Date().toLocaleTimeString();
+      }
+    }
+  }
+  
+  document.querySelector('select[name="timezone"]')?.addEventListener('change', updateCurrentTime);
+  updateCurrentTime();
+  setInterval(updateCurrentTime, 1000);
+  
+  // Avatar upload preview
+  document.getElementById('avatar-input')?.addEventListener('change', function(e) {
+    if (e.target.files && e.target.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const avatarImg = document.querySelector('.rounded-full');
+        if (avatarImg && avatarImg.tagName === 'IMG') {
+          avatarImg.src = event.target.result;
+        } else {
+          const avatarDiv = document.querySelector('.w-24.h-24.rounded-full');
+          if (avatarDiv) {
+            const newImg = document.createElement('img');
+            newImg.src = event.target.result;
+            newImg.className = 'w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg';
+            avatarDiv.parentNode.replaceChild(newImg, avatarDiv);
+          }
+        }
+      };
+      reader.readAsDataURL(e.target.files[0]);
+      
+      // Auto-submit avatar
+      const formData = new FormData();
+      formData.append('avatar', e.target.files[0]);
+      formData.append('update_avatar', 'true');
+      
+      fetch(window.location.href, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+      });
+    }
+  });
+  
+  // Form submission with loading state
+  const form = document.getElementById('profileForm');
+  const submitBtn = document.getElementById('submitBtn');
+  
+  form?.addEventListener('submit', function() {
+    submitBtn.classList.add('btn-loading');
+    submitBtn.querySelector('span').textContent = 'Saving...';
+    submitBtn.disabled = true;
+  });
+  
+  // Reset form to original values
+  function resetForm() {
+    if (confirm('Reset all changes? Any unsaved changes will be lost.')) {
+      location.reload();
+    }
+  }
+  
+  // Email confirmation validation
+  const emailInput = document.querySelector('input[name="email"]');
+  const confirmEmailInput = document.querySelector('input[name="confirm_email"]');
+  
+  if (emailInput && confirmEmailInput) {
+    function validateEmailMatch() {
+      if (emailInput.value !== confirmEmailInput.value && confirmEmailInput.value) {
+        confirmEmailInput.style.borderColor = '#e11d48';
+        confirmEmailInput.style.backgroundColor = '#fff1f2';
+      } else {
+        confirmEmailInput.style.borderColor = '#cbd5e1';
+        confirmEmailInput.style.backgroundColor = '';
+      }
+    }
+    
+    emailInput.addEventListener('input', validateEmailMatch);
+    confirmEmailInput.addEventListener('input', validateEmailMatch);
+  }
+  
+  // Smooth scroll to top on tab change
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  
+  // Override switchTab to include scroll
+  const originalSwitchTab = window.switchTab;
+  window.switchTab = function(tabName) {
+    originalSwitchTab(tabName);
+    scrollToTop();
+  };
+</script>
 {% endblock %}

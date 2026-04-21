@@ -1,0 +1,130 @@
+<!-- accounts/templates/accounts/hotel_member_invite.html -->
+{% extends "base.html" %}
+
+{% block title %}Invite Team Member{% endblock %}
+
+{% block breadcrumb %}
+<li class="flex items-center gap-2">
+  <i class="fas fa-chevron-right text-slate-400 text-xs"></i>
+  <a href="{% url 'accounts:hotel_members_list' %}" class="text-slate-600 hover:text-blue-600">Staff</a>
+</li>
+<li class="flex items-center gap-2">
+  <i class="fas fa-chevron-right text-slate-400 text-xs"></i>
+  <span class="text-slate-800 font-semibold">Invite Member</span>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-full mx-auto">
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-8 text-center">
+      <div class="inline-block p-3 bg-white/20 rounded-2xl mb-4">
+        <i class="fas fa-envelope-open-text text-4xl text-white"></i>
+      </div>
+      <h1 class="text-2xl font-bold text-white">Invite Team Member</h1>
+      <p class="text-blue-100 mt-2">Send an invitation to join your hotel team</p>
+    </div>
+    
+    <form method="post" class="p-6 space-y-6">
+      {% csrf_token %}
+      
+      {% if form.errors %}
+      <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+        {% for field, errors in form.errors.items %}
+          {% for error in errors %}
+            <p class="text-red-600 text-sm">{{ error }}</p>
+          {% endfor %}
+        {% endfor %}
+      </div>
+      {% endif %}
+      
+      <!-- Personal Details -->
+      <div class="space-y-4">
+        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <i class="fas fa-user-plus text-blue-600"></i>
+          Personal Information
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">First Name *</label>
+            {{ form.first_name }}
+          </div>
+          <div>
+            <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Last Name *</label>
+            {{ form.last_name }}
+          </div>
+          <div class="md:col-span-2">
+            <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Email Address *</label>
+            {{ form.email }}
+            <p class="text-xs text-slate-500 mt-1">An invitation will be sent to this email address</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Role & Permissions -->
+      <div class="border-t border-slate-200 pt-6 space-y-4">
+        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <i class="fas fa-user-tag text-purple-600"></i>
+          Role & Permissions
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="{{ form.role.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Role *</label>
+            {{ form.role }}
+          </div>
+          <div>
+            <label for="{{ form.permission_level.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Permission Level</label>
+            {{ form.permission_level }}
+          </div>
+          <div>
+            <label for="{{ form.employment_type.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Employment Type</label>
+            {{ form.employment_type }}
+          </div>
+          <div>
+            <label for="{{ form.shift_preference.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Shift Preference</label>
+            {{ form.shift_preference }}
+          </div>
+        </div>
+      </div>
+      
+      <!-- Contact Info -->
+      <div class="border-t border-slate-200 pt-6 space-y-4">
+        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <i class="fas fa-phone-alt text-emerald-600"></i>
+          Contact Information (Optional)
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="{{ form.work_phone.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Work Phone</label>
+            {{ form.work_phone }}
+          </div>
+          <div>
+            <label for="{{ form.work_email.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Work Email</label>
+            {{ form.work_email }}
+          </div>
+        </div>
+      </div>
+      
+      <!-- Invitation Options -->
+      <div class="border-t border-slate-200 pt-6">
+        <div class="flex items-center gap-3 p-4 bg-blue-50 rounded-xl">
+          {{ form.send_invitation_email }}
+          <label for="{{ form.send_invitation_email.id_for_label }}" class="text-sm font-medium text-slate-700">
+            Send invitation email immediately
+          </label>
+        </div>
+      </div>
+      
+      <!-- Actions -->
+      <div class="flex gap-3 pt-4">
+        <button type="submit" class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all">
+          <i class="fas fa-paper-plane mr-2"></i> Send Invitation
+        </button>
+        <a href="{% url 'accounts:hotel_members_list' %}" class="px-6 py-3 bg-slate-100 text-slate-700 rounded-xl font-semibold hover:bg-slate-200 transition-all text-center">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

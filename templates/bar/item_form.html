@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | Bar{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+
+  <!-- Header -->
+  <div class="flex items-center gap-3">
+    <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-sm">
+      <i class="fas fa-wine-bottle text-white text-lg"></i>
+    </div>
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">{{ title }}</h1>
+      <p class="text-sm text-slate-500">Add or edit bar inventory items.</p>
+    </div>
+  </div>
+
+  <!-- Form Card -->
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/50">
+      <div class="flex items-center gap-2">
+        <i class="fas fa-info-circle text-blue-600 text-sm"></i>
+        <h2 class="text-sm font-semibold text-slate-800">Item Information</h2>
+      </div>
+    </div>
+
+    <form method="post" class="p-5">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="mb-5 rounded-xl bg-rose-50 border border-rose-200 px-4 py-3">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-exclamation-triangle text-rose-600 text-sm"></i>
+            <p class="text-sm text-rose-800">{{ form.non_field_errors.0 }}</p>
+          </div>
+        </div>
+      {% endif %}
+
+      <div class="space-y-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+              <i class="fas fa-building text-xs mr-1"></i>Hotel
+            </label>
+            {{ form.hotel }}
+            {% if form.hotel.errors %}
+              <p class="text-sm text-rose-600 mt-1">{{ form.hotel.errors.0 }}</p>
+            {% endif %}
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+              <i class="fas fa-tag text-xs mr-1"></i>Category
+            </label>
+            {{ form.category }}
+            {% if form.category.errors %}
+              <p class="text-sm text-rose-600 mt-1">{{ form.category.errors.0 }}</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+            <i class="fas fa-wine-bottle text-xs mr-1"></i>Item Name
+          </label>
+          {{ form.name }}
+          {% if form.name.errors %}
+            <p class="text-sm text-rose-600 mt-1">{{ form.name.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+              <i class="fas fa-barcode text-xs mr-1"></i>SKU (Optional)
+            </label>
+            {{ form.sku }}
+            {% if form.sku.errors %}
+              <p class="text-sm text-rose-600 mt-1">{{ form.sku.errors.0 }}</p>
+            {% endif %}
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+              <i class="fas fa-cube text-xs mr-1"></i>Unit
+            </label>
+            {{ form.unit }}
+            <p class="text-xs text-slate-500 mt-1">e.g., bottle, glass, can, shot</p>
+            {% if form.unit.errors %}
+              <p class="text-sm text-rose-600 mt-1">{{ form.unit.errors.0 }}</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+              <i class="fas fa-tag text-xs mr-1"></i>Selling Price (UGX)
+            </label>
+            {{ form.selling_price }}
+            {% if form.selling_price.errors %}
+              <p class="text-sm text-rose-600 mt-1">{{ form.selling_price.errors.0 }}</p>
+            {% endif %}
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+              <i class="fas fa-chart-line text-xs mr-1"></i>Cost Price (UGX)
+            </label>
+            {{ form.cost_price }}
+            {% if form.cost_price.errors %}
+              <p class="text-sm text-rose-600 mt-1">{{ form.cost_price.errors.0 }}</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div>
+          <label class="flex items-center gap-3 cursor-pointer">
+            {{ form.track_stock }}
+            <span class="text-sm font-medium text-slate-700">Track Stock</span>
+          </label>
+          <p class="text-xs text-slate-500 mt-1">Enable to monitor inventory levels.</p>
+          {% if form.track_stock.errors %}
+            <p class="text-sm text-rose-600 mt-1">{{ form.track_stock.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 stock-fields" id="stockFields">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+              <i class="fas fa-boxes text-xs mr-1"></i>Current Stock
+            </label>
+            {{ form.stock_qty }}
+            {% if form.stock_qty.errors %}
+              <p class="text-sm text-rose-600 mt-1">{{ form.stock_qty.errors.0 }}</p>
+            {% endif %}
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+              <i class="fas fa-exclamation-triangle text-xs mr-1"></i>Reorder Level
+            </label>
+            {{ form.reorder_level }}
+            <p class="text-xs text-slate-500 mt-1">Alert when stock falls below this level.</p>
+            {% if form.reorder_level.errors %}
+              <p class="text-sm text-rose-600 mt-1">{{ form.reorder_level.errors.0 }}</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div>
+          <label class="flex items-center gap-3 cursor-pointer">
+            {{ form.is_active }}
+            <span class="text-sm font-medium text-slate-700">Active</span>
+          </label>
+          <p class="text-xs text-slate-500 mt-1">Inactive items won't appear in order menus.</p>
+          {% if form.is_active.errors %}
+            <p class="text-sm text-rose-600 mt-1">{{ form.is_active.errors.0 }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="mt-8 pt-5 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="text-xs text-slate-500">
+          <i class="fas fa-lock text-[10px] mr-1"></i>
+          Prices are locked when added to orders.
+        </div>
+        
+        <div class="flex items-center gap-3">
+          <a href="{% url 'bar:item_list' %}"
+             class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition">
+            <i class="fas fa-times text-xs"></i>
+            <span>Cancel</span>
+          </a>
+          
+          <button type="submit"
+                  class="inline-flex items-center justify-center gap-2 px-6 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold shadow-sm transition">
+            <i class="fas fa-save text-xs"></i>
+            <span>{{ submit_text }}</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// Toggle stock fields based on track_stock checkbox
+document.addEventListener('DOMContentLoaded', function() {
+  const trackStockCheckbox = document.querySelector('input[name="track_stock"]');
+  const stockFields = document.getElementById('stockFields');
+  
+  function toggleStockFields() {
+    if (trackStockCheckbox && stockFields) {
+      if (trackStockCheckbox.checked) {
+        stockFields.style.display = 'grid';
+      } else {
+        stockFields.style.display = 'none';
+      }
+    }
+  }
+  
+  if (trackStockCheckbox) {
+    trackStockCheckbox.addEventListener('change', toggleStockFields);
+    toggleStockFields();
+  }
+});
+</script>
+{% endblock %}

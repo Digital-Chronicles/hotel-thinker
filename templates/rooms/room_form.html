@@ -1,116 +1,314 @@
 {% extends "base.html" %}
-{% block title %}{% if form.instance.pk %}Edit Room{% else %}New Room{% endif %} — Hotel Thinker{% endblock %}
+{% load humanize %}
+
+{% block title %}{% if form.instance.pk %}Edit Room{% else %}New Room{% endif %} | Hotel Thinker{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl">
-
-  <!-- Header -->
-  <div class="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+<div class="max-w-4xl mx-auto">
+  
+  <!-- Header Section -->
+  <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-      <div class="text-xs text-gray-500">
-        <a href="{% url 'rooms:room_list' %}" class="hover:underline">Rooms</a>
-        <span class="mx-1">/</span>
-        {% if form.instance.pk %}Edit{% else %}New{% endif %}
+      <div class="flex items-center gap-2 text-sm text-slate-500 mb-1">
+        <a href="{% url 'rooms:room_list' %}" class="hover:text-indigo-600 transition-colors">
+          <i class="fas fa-door-open mr-1"></i>Rooms
+        </a>
+        <i class="fas fa-chevron-right text-xs text-slate-400"></i>
+        <span class="text-slate-600">{% if form.instance.pk %}Edit Room{% else %}Create Room{% endif %}</span>
       </div>
-
-      <h1 class="text-2xl font-bold text-blue-800 mt-1">
-        {% if form.instance.pk %}Edit Room{% else %}Create Room{% endif %}
-      </h1>
-      <p class="text-sm text-gray-600 mt-1">
-        Keep room inventory accurate for front desk and housekeeping.
-      </p>
+      
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 flex items-center justify-center shadow-md">
+          <i class="fas {% if form.instance.pk %}fa-edit{% else %}fa-plus-circle{% endif %} text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-slate-800">
+            {% if form.instance.pk %}Edit Room {{ form.instance.number }}{% else %}Create New Room{% endif %}
+          </h1>
+          <p class="text-sm text-slate-500 mt-0.5">
+            {% if form.instance.pk %}
+              Update room details, status, and availability
+            {% else %}
+              Add a new room to your hotel inventory
+            {% endif %}
+          </p>
+        </div>
+      </div>
     </div>
-
+    
     <a href="{% url 'rooms:room_list' %}"
-       class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
-      Back
+       class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all">
+      <i class="fas fa-arrow-left text-xs"></i>
+      <span>Back to Rooms</span>
     </a>
   </div>
 
   <!-- Form Card -->
-  <form method="post" class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+  <form method="post" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
     {% csrf_token %}
 
-    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-      <div class="text-sm font-semibold text-gray-900">Room Details</div>
-      <div class="text-xs text-gray-500 mt-0.5">Fields marked required must be provided.</div>
+    <!-- Form Header -->
+    <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-200">
+      <div class="flex items-center gap-2">
+        <i class="fas fa-hotel text-indigo-500 text-sm"></i>
+        <span class="text-sm font-semibold text-slate-700">Room Information</span>
+      </div>
+      <p class="text-xs text-slate-500 mt-1 ml-6">Enter the room details below. Fields marked with * are required.</p>
     </div>
 
-    <div class="p-6 space-y-5">
+    <!-- Form Body -->
+    <div class="p-6 space-y-6">
 
+      <!-- Non-field errors -->
       {% if form.non_field_errors %}
-        <div class="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-4 py-3 text-sm">
-          {{ form.non_field_errors }}
+        <div class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3">
+          <div class="flex items-start gap-2">
+            <i class="fas fa-exclamation-triangle text-rose-500 text-sm mt-0.5"></i>
+            <div class="text-sm text-rose-700">
+              {{ form.non_field_errors }}
+            </div>
+          </div>
         </div>
       {% endif %}
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
+      <!-- Main Fields Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        
+        <!-- Room Type -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Room Type</label>
-          {{ form.room_type }}
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+            Room Type <span class="text-rose-500">*</span>
+          </label>
+          <div class="relative">
+            <i class="fas fa-tag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            {{ form.room_type }}
+          </div>
           {% if form.room_type.errors %}
-            <p class="text-xs text-rose-600 mt-1">{{ form.room_type.errors|striptags }}</p>
+            <p class="text-xs text-rose-600 mt-1 flex items-center gap-1">
+              <i class="fas fa-exclamation-circle text-[10px]"></i>
+              {{ form.room_type.errors|striptags }}
+            </p>
           {% else %}
-            <p class="text-xs text-gray-500 mt-1">Select category e.g. Deluxe, Single.</p>
+            <p class="text-xs text-slate-400 mt-1 ml-1">Select room category (Deluxe, Standard, Suite, etc.)</p>
           {% endif %}
         </div>
 
+        <!-- Room Number -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
-          {{ form.number }}
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+            Room Number <span class="text-rose-500">*</span>
+          </label>
+          <div class="relative">
+            <i class="fas fa-door-open absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            {{ form.number }}
+          </div>
           {% if form.number.errors %}
-            <p class="text-xs text-rose-600 mt-1">{{ form.number.errors|striptags }}</p>
+            <p class="text-xs text-rose-600 mt-1 flex items-center gap-1">
+              <i class="fas fa-exclamation-circle text-[10px]"></i>
+              {{ form.number.errors|striptags }}
+            </p>
           {% else %}
-            <p class="text-xs text-gray-500 mt-1">Example: 101, A-01.</p>
+            <p class="text-xs text-slate-400 mt-1 ml-1">Unique identifier for the room (e.g., 101, A-01, Suite 5)</p>
           {% endif %}
         </div>
 
+        <!-- Floor -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Floor</label>
-          {{ form.floor }}
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+            Floor <span class="text-slate-400 text-xs font-normal">(Optional)</span>
+          </label>
+          <div class="relative">
+            <i class="fas fa-layer-group absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            {{ form.floor }}
+          </div>
           {% if form.floor.errors %}
             <p class="text-xs text-rose-600 mt-1">{{ form.floor.errors|striptags }}</p>
           {% else %}
-            <p class="text-xs text-gray-500 mt-1">Optional: Ground, 1st, 2nd…</p>
+            <p class="text-xs text-slate-400 mt-1 ml-1">Floor level (Ground, 1st, 2nd, Basement, etc.)</p>
           {% endif %}
         </div>
 
+        <!-- Status -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-          {{ form.status }}
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+            Status <span class="text-rose-500">*</span>
+          </label>
+          <div class="relative">
+            <i class="fas fa-circle absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[8px]"></i>
+            {{ form.status }}
+          </div>
           {% if form.status.errors %}
             <p class="text-xs text-rose-600 mt-1">{{ form.status.errors|striptags }}</p>
           {% else %}
-            <p class="text-xs text-gray-500 mt-1">Controls room availability.</p>
+            <p class="text-xs text-slate-400 mt-1 ml-1">Controls room availability for front desk and bookings</p>
           {% endif %}
         </div>
 
       </div>
 
-      <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
-        <label class="flex items-center gap-3">
-          {{ form.is_active }}
-          <div>
-            <div class="text-sm font-semibold text-gray-900">Active Room</div>
-            <div class="text-xs text-gray-500">Inactive rooms won’t appear for booking.</div>
+      <!-- Active Status Toggle Card -->
+      <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition-all hover:border-indigo-200">
+        <label class="flex items-start gap-3 cursor-pointer">
+          <div class="relative">
+            {{ form.is_active }}
+          </div>
+          <div class="flex-1">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-power-off text-indigo-500 text-sm"></i>
+              <span class="text-sm font-semibold text-slate-800">Active Room</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">
+              When active, this room can be booked by guests. Inactive rooms are hidden from availability.
+            </p>
           </div>
         </label>
       </div>
 
+      <!-- Preview Section (for existing rooms) -->
+      {% if form.instance.pk and form.instance.room_type %}
+      <div class="rounded-xl bg-indigo-50/30 border border-indigo-100 p-4">
+        <div class="flex items-start gap-3">
+          <i class="fas fa-info-circle text-indigo-400 text-lg"></i>
+          <div>
+            <p class="text-sm font-semibold text-indigo-800">Room Information</p>
+            <div class="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-sm">
+              <div class="flex items-center gap-2">
+                <span class="text-slate-500 text-xs">Type:</span>
+                <span class="font-medium text-slate-700">{{ form.instance.room_type.name }}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-slate-500 text-xs">Base Price:</span>
+                <span class="font-medium text-emerald-600">UGX {{ form.instance.room_type.base_price|default:0|intcomma }}</span>
+              </div>
+              {% if form.instance.floor %}
+              <div class="flex items-center gap-2">
+                <span class="text-slate-500 text-xs">Floor:</span>
+                <span class="font-medium text-slate-700">{{ form.instance.floor }}</span>
+              </div>
+              {% endif %}
+              <div class="flex items-center gap-2">
+                <span class="text-slate-500 text-xs">Current Status:</span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
+                  {% if form.instance.status == 'available' %}bg-emerald-100 text-emerald-700
+                  {% elif form.instance.status == 'occupied' %}bg-rose-100 text-rose-700
+                  {% elif form.instance.status == 'maintenance' %}bg-amber-100 text-amber-700
+                  {% else %}bg-blue-100 text-blue-700{% endif %}">
+                  <span class="w-1.5 h-1.5 rounded-full
+                    {% if form.instance.status == 'available' %}bg-emerald-500
+                    {% elif form.instance.status == 'occupied' %}bg-rose-500
+                    {% elif form.instance.status == 'maintenance' %}bg-amber-500
+                    {% else %}bg-blue-500{% endif %}"></span>
+                  {{ form.instance.get_status_display }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
     </div>
 
-    <!-- Actions -->
-    <div class="px-6 py-4 border-t border-gray-200 bg-white flex items-center justify-end gap-2">
-      <a href="{% url 'rooms:room_list' %}"
-         class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
-        Cancel
-      </a>
-      <button class="px-5 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold">
-        Save Room
-      </button>
+    <!-- Form Actions -->
+    <div class="px-6 py-4 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div class="text-xs text-slate-400">
+        <i class="fas fa-lock mr-1"></i> All changes are logged for audit purposes
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="{% url 'rooms:room_list' %}"
+           class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-600 transition-all">
+          <i class="fas fa-times text-xs"></i>
+          <span>Cancel</span>
+        </a>
+        <button type="submit"
+                class="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white text-sm font-semibold shadow-sm transition-all">
+          <i class="fas fa-save text-xs"></i>
+          <span>{% if form.instance.pk %}Update Room{% else %}Create Room{% endif %}</span>
+        </button>
+      </div>
     </div>
   </form>
 
+  <!-- Help Section -->
+  <div class="mt-6 p-4 bg-gradient-to-r from-indigo-50/30 to-transparent rounded-xl border border-indigo-100">
+    <div class="flex items-start gap-3">
+      <i class="fas fa-lightbulb text-amber-500 text-lg"></i>
+      <div>
+        <p class="text-sm font-semibold text-slate-700">Quick Tips</p>
+        <ul class="text-xs text-slate-500 mt-1 space-y-0.5">
+          <li>• Room numbers must be unique per hotel</li>
+          <li>• Set status to "Maintenance" when rooms are unavailable for cleaning or repairs</li>
+          <li>• Inactive rooms won't appear in booking searches</li>
+          <li>• Room type prices are managed in the Room Types section</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
 </div>
+
+<!-- Add custom CSS for form styling -->
+<style>
+  /* Style form inputs */
+  input, select, textarea {
+    transition: all 0.2s ease;
+  }
+  
+  input:focus, select:focus, textarea:focus {
+    border-color: #6366f1;
+    ring-color: #6366f1;
+  }
+  
+  /* Custom checkbox styling */
+  input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 0.375rem;
+    border: 2px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  input[type="checkbox"]:checked {
+    background-color: #6366f1;
+    border-color: #6366f1;
+  }
+  
+  input[type="checkbox"]:focus {
+    ring-color: #6366f1;
+  }
+</style>
+
+<script>
+  // Add icons to select dropdowns
+  document.addEventListener('DOMContentLoaded', function() {
+    // Style the select elements
+    const selects = document.querySelectorAll('select');
+    selects.forEach(select => {
+      select.classList.add('w-full', 'rounded-lg', 'border-slate-200', 'pl-9', 'pr-3', 'py-2', 'text-sm', 'focus:ring-2', 'focus:ring-indigo-300', 'focus:border-indigo-300', 'bg-white', 'appearance-none');
+      
+      // Add custom dropdown arrow
+      const wrapper = select.parentElement;
+      if (wrapper && !wrapper.querySelector('.custom-arrow')) {
+        const arrow = document.createElement('i');
+        arrow.className = 'fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none custom-arrow';
+        wrapper.style.position = 'relative';
+        wrapper.appendChild(arrow);
+      }
+    });
+    
+    // Style input fields
+    const inputs = document.querySelectorAll('input[type="text"], input[type="number"]');
+    inputs.forEach(input => {
+      input.classList.add('w-full', 'rounded-lg', 'border-slate-200', 'pl-9', 'pr-3', 'py-2', 'text-sm', 'focus:ring-2', 'focus:ring-indigo-300', 'focus:border-indigo-300');
+    });
+    
+    // Style textarea if exists
+    const textareas = document.querySelectorAll('textarea');
+    textareas.forEach(textarea => {
+      textarea.classList.add('w-full', 'rounded-lg', 'border-slate-200', 'px-3', 'py-2', 'text-sm', 'focus:ring-2', 'focus:ring-indigo-300', 'focus:border-indigo-300');
+    });
+  });
+</script>
+
 {% endblock %}

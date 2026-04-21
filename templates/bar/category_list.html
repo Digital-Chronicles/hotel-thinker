@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Bar Categories | Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-sm">
+          <i class="fas fa-tags text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-slate-800">Bar Categories</h1>
+          <p class="text-sm text-slate-500">Organize your bar items by category (Wines, Spirits, Beers, etc.).</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <a href="{% url 'bar:item_list' %}"
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition">
+        <i class="fas fa-wine-bottle text-blue-500 text-sm"></i>
+        <span>Bar Items</span>
+      </a>
+
+      <a href="{% url 'bar:category_create' %}"
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-medium shadow-sm transition">
+        <i class="fas fa-plus-circle text-sm"></i>
+        <span>New Category</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total Categories</p>
+          <p class="text-2xl font-bold text-slate-800 mt-2">{{ total_categories|default:categories.count }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+          <i class="fas fa-folder text-blue-600"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Active Categories</p>
+          <p class="text-2xl font-bold text-emerald-600 mt-2">{{ active_categories|default:0 }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+          <i class="fas fa-check-circle text-emerald-600"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total Items</p>
+          <p class="text-2xl font-bold text-purple-600 mt-2">{{ total_items|default:0 }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+          <i class="fas fa-wine-bottle text-purple-600"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Categories Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for category in categories %}
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all hover:border-blue-300">
+        <div class="p-5">
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
+                <i class="fas fa-tag text-blue-600 text-lg"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-slate-800">{{ category.name }}</h3>
+                <p class="text-xs text-slate-500">{{ category.hotel.name }}</p>
+              </div>
+            </div>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
+              {% if category.is_active %}bg-emerald-50 text-emerald-700 border border-emerald-200
+              {% else %}bg-rose-50 text-rose-700 border border-rose-200{% endif %}">
+              <span class="w-1.5 h-1.5 rounded-full
+                {% if category.is_active %}bg-emerald-500{% else %}bg-rose-500{% endif %}"></span>
+              {% if category.is_active %}Active{% else %}Inactive{% endif %}
+            </span>
+          </div>
+
+          <div class="border-t border-slate-100 pt-4 mt-2">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-xs text-slate-500">Items in category</span>
+              <span class="text-sm font-semibold text-slate-700">{{ category.items.count }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-xs text-slate-500">Sort Order</span>
+              <span class="text-sm font-semibold text-slate-700">{{ category.sort_order|default:"—" }}</span>
+            </div>
+          </div>
+
+          <div class="flex gap-2 mt-4 pt-2">
+            <a href="{% url 'bar:category_update' category.pk %}"
+               class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition">
+              <i class="fas fa-edit text-xs"></i>
+              <span>Edit</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-span-full">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-12 text-center">
+          <div class="flex flex-col items-center justify-center text-slate-400">
+            <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+              <i class="fas fa-tags text-slate-400 text-2xl"></i>
+            </div>
+            <p class="font-medium text-slate-500">No categories found</p>
+            <p class="text-xs mt-1">Create your first category to organize bar items.</p>
+            <a href="{% url 'bar:category_create' %}"
+               class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium hover:from-blue-700 hover:to-indigo-700 transition">
+              <i class="fas fa-plus-circle text-xs"></i>
+              <span>New Category</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+      {% include "partials/pagination.html" %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

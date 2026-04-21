@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Profit & Loss{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto p-6">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold">Profit &amp; Loss</h1>
+      <p class="text-sm text-gray-600">{{ hotel.name }} | {{ start_date }} to {{ end_date }}</p>
+    </div>
+
+    <form method="get" class="flex gap-2">
+      <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" class="border rounded px-3 py-2">
+      <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" class="border rounded px-3 py-2">
+      <button class="bg-blue-600 text-white px-4 py-2 rounded">Filter</button>
+    </form>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white shadow rounded p-4">
+      <p class="text-sm text-gray-500">Total Revenue</p>
+      <p class="text-2xl font-bold text-green-600">{{ total_revenue }}</p>
+    </div>
+    <div class="bg-white shadow rounded p-4">
+      <p class="text-sm text-gray-500">Total Expenses</p>
+      <p class="text-2xl font-bold text-red-600">{{ total_expenses }}</p>
+    </div>
+    <div class="bg-white shadow rounded p-4">
+      <p class="text-sm text-gray-500">Net Profit</p>
+      <p class="text-2xl font-bold {% if net_profit >= 0 %}text-blue-600{% else %}text-red-600{% endif %}">
+        {{ net_profit }}
+      </p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white shadow rounded">
+      <div class="p-4 border-b">
+        <h2 class="font-semibold">Revenue</h2>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="p-3 text-left">Account</th>
+            <th class="p-3 text-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in revenue_lines %}
+          <tr class="border-t">
+            <td class="p-3">{{ item.account__name }}</td>
+            <td class="p-3 text-right">{{ item.total }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="2" class="p-4 text-gray-500">No revenue found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="bg-white shadow rounded">
+      <div class="p-4 border-b">
+        <h2 class="font-semibold">Expenses</h2>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="p-3 text-left">Account</th>
+            <th class="p-3 text-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in expense_lines %}
+          <tr class="border-t">
+            <td class="p-3">{{ item.account__name }}</td>
+            <td class="p-3 text-right">{{ item.total }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="2" class="p-4 text-gray-500">No expenses found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

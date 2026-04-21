@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Assets{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto p-6">
+
+<h1 class="text-2xl font-bold mb-4">Assets</h1>
+
+<table class="w-full bg-white shadow rounded">
+<thead class="bg-gray-100">
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Value</th>
+<th>Status</th>
+</tr>
+</thead>
+
+<tbody>
+{% for a in assets %}
+<tr class="border-t">
+<td class="p-3">
+<a href="{% url 'finance:asset_detail' a.pk %}" class="text-blue-600">
+{{ a.name }}
+</a>
+</td>
+<td>{{ a.asset_type }}</td>
+<td>{{ a.current_value }}</td>
+<td>{{ a.status }}</td>
+</tr>
+{% endfor %}
+</tbody>
+
+</table>
+
+</div>
+{% endblock %}

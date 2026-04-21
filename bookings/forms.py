@@ -1,295 +1,332 @@
-# bookings/forms.py — UPDATED (supports 50% check-in / 100% check-out payment validation)
-from __future__ import annotations
-
-from decimal import Decimal
-
+# bookings/forms.py
 from django import forms
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
-from rooms.models import Room
-from finance.models import Payment
-from .models import Guest, Booking
-
-
-# -------------------------------------------------------------------
-# Tailwind helpers (same style you already use)
-# -------------------------------------------------------------------
-TW_INPUT = (
-    "w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm "
-    "placeholder-gray-400 shadow-sm "
-    "focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
-)
-TW_SELECT = TW_INPUT
-TW_TEXTAREA = (
-    "w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm "
-    "placeholder-gray-400 shadow-sm "
-    "focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
-)
-TW_CHECKBOX = "h-4 w-4 rounded border-gray-300 text-blue-800 focus:ring-2 focus:ring-blue-600"
-TW_FILE = (
-    "block w-full text-sm text-gray-700 "
-    "file:mr-4 file:py-2 file:px-4 file:rounded-lg "
-    "file:border-0 file:text-sm file:font-semibold "
-    "file:bg-gray-100 file:text-gray-800 hover:file:bg-gray-200"
-)
+from .models import Booking, Guest, AdditionalCharge
+from rooms.models import Room, RoomType
 
 
-def apply_tailwind(form: forms.Form) -> None:
-    for _, field in form.fields.items():
-        w = field.widget
-        if isinstance(w, forms.HiddenInput):
-            continue
-        if isinstance(w, forms.CheckboxInput):
-            w.attrs.setdefault("class", TW_CHECKBOX)
-            continue
-        if isinstance(w, forms.ClearableFileInput):
-            w.attrs.setdefault("class", TW_FILE)
-            continue
-        if isinstance(w, forms.Textarea):
-            w.attrs.setdefault("class", TW_TEXTAREA)
-            continue
-        if isinstance(w, (forms.Select, forms.SelectMultiple)):
-            w.attrs.setdefault("class", TW_SELECT)
-            continue
-        w.attrs.setdefault("class", TW_INPUT)
-
-
-def _d(v) -> Decimal:
-    try:
-        return Decimal(v or 0)
-    except Exception:
-        return Decimal("0")
-
-
-# -------------------------------------------------------------------
-# Guests
-# -------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Guest Forms
+# -----------------------------------------------------------------------------
 class GuestFullForm(forms.ModelForm):
+    """Complete guest form with all fields"""
+    
     class Meta:
         model = Guest
         fields = [
-            "full_name", "preferred_name", "guest_type",
-            "phone", "alternative_phone", "email",
-            "id_type", "id_number", "id_issue_date", "id_expiry_date", "id_scan",
-            "nationality", "language",
-            "address", "city", "country", "postal_code",
-            "company_name", "company_vat", "company_address",
-            "special_requests", "dietary_restrictions", "room_preferences", "is_vip",
-            "marketing_consent", "newsletter_subscribed",
-            "is_blacklisted", "blacklist_reason",
+            'full_name', 'preferred_name', 'guest_type',
+            'phone', 'alternative_phone', 'email',
+            'id_type', 'id_number', 'id_issue_date', 'id_expiry_date', 'id_scan',
+            'nationality', 'language',
+            'address', 'city', 'country', 'postal_code',
+            'company_name', 'company_vat', 'company_address',
+            'special_requests', 'dietary_restrictions', 'room_preferences',
+            'is_vip', 'marketing_consent', 'newsletter_subscribed',
         ]
         widgets = {
-            "id_issue_date": forms.DateInput(attrs={"type": "date"}),
-            "id_expiry_date": forms.DateInput(attrs={"type": "date"}),
-            "address": forms.Textarea(attrs={"rows": 2}),
-            "company_address": forms.Textarea(attrs={"rows": 2}),
-            "special_requests": forms.Textarea(attrs={"rows": 3}),
-            "dietary_restrictions": forms.Textarea(attrs={"rows": 2}),
-            "room_preferences": forms.Textarea(attrs={"rows": 2}),
-            "blacklist_reason": forms.Textarea(attrs={"rows": 2}),
+            'id_issue_date': forms.DateInput(attrs={'type': 'date', 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
+            'id_expiry_date': forms.DateInput(attrs={'type': 'date', 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
+            'special_requests': forms.Textarea(attrs={'rows': 3, 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
+            'dietary_restrictions': forms.Textarea(attrs={'rows': 2, 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
+            'room_preferences': forms.Textarea(attrs={'rows': 2, 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
+            'company_address': forms.Textarea(attrs={'rows': 2, 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
+            'address': forms.Textarea(attrs={'rows': 2, 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
         }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        apply_tailwind(self)
-
-        self.fields["full_name"].widget.attrs.setdefault("placeholder", "Guest full name")
-        self.fields["phone"].widget.attrs.setdefault("placeholder", "2567XXXXXXXX")
-        self.fields["email"].widget.attrs.setdefault("placeholder", "Optional")
-        self.fields["preferred_name"].widget.attrs.setdefault("placeholder", "Optional")
-        self.fields["id_scan"].help_text = "Optional ID scan/photo"
-
-    def clean_full_name(self):
-        name = (self.cleaned_data.get("full_name") or "").strip()
-        if len(name) < 2:
-            raise forms.ValidationError("Full name is too short.")
-        return name
+    def clean_phone(self):
+        phone = self.cleaned_data.get('phone')
+        if phone:
+            # Remove any non-digit characters for validation
+            import re
+            clean_phone = re.sub(r'\D', '', phone)
+            if len(clean_phone) < 9:
+                raise ValidationError(_("Phone number must be at least 9 digits."))
+        return phone
 
 
 class GuestQuickCreateForm(forms.ModelForm):
+    """Minimal guest form for quick creation during booking"""
+    
     class Meta:
         model = Guest
-        fields = [
-            "full_name",
-            "phone",
-            "guest_type",
-            "email",
-            "nationality",
-            "country",
-            "id_type",
-            "id_number",
-            "is_vip",
-        ]
+        fields = ['full_name', 'phone', 'email', 'id_number']
+        widgets = {
+            'full_name': forms.TextInput(attrs={
+                'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
+                'placeholder': 'John Doe'
+            }),
+            'phone': forms.TextInput(attrs={
+                'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
+                'placeholder': '+256 XXX XXX XXX'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
+                'placeholder': 'guest@example.com'
+            }),
+            'id_number': forms.TextInput(attrs={
+                'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
+                'placeholder': 'ID/Passport Number'
+            }),
+        }
+    
+    def clean_phone(self):
+        phone = self.cleaned_data.get('phone')
+        if phone:
+            import re
+            clean_phone = re.sub(r'\D', '', phone)
+            if len(clean_phone) < 9:
+                raise ValidationError(_("Phone number must be at least 9 digits."))
+        return phone
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        apply_tailwind(self)
-        self.fields["full_name"].widget.attrs.setdefault("placeholder", "Guest full name")
-        self.fields["phone"].widget.attrs.setdefault("placeholder", "2567XXXXXXXX")
-        self.fields["email"].widget.attrs.setdefault("placeholder", "Optional")
 
-
-# -------------------------------------------------------------------
-# Bookings (REDUCED fields + AUTO room pricing)
-# -------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Booking Forms
+# -----------------------------------------------------------------------------
 class BookingForm(forms.ModelForm):
-    """
-    Reduced booking form:
-    - Staff selects guest, room, dates, people, source, notes, status
-    - Price is fetched automatically from Room.room_type.base_price by Booking.save()
-    """
-
-    use_room_rate = forms.BooleanField(required=False, initial=True, widget=forms.HiddenInput())
-
+    """Form for creating new bookings"""
+    
     class Meta:
         model = Booking
         fields = [
-            "guest", "room",
-            "check_in", "check_out",
-            "adults", "children", "infants",
-            "source",
-            "special_requests", "internal_notes",
-            "status",
-            "use_room_rate",
+            'guest', 'room', 'check_in', 'check_out',
+            'adults', 'children', 'infants',
+            'source', 'source_reference',
+            'special_requests', 'guest_notes',
+            'discount', 'discount_type', 'tax_rate',
         ]
         widgets = {
-            "special_requests": forms.Textarea(attrs={"rows": 3}),
-            "internal_notes": forms.Textarea(attrs={"rows": 3}),
-            "check_in": forms.DateInput(attrs={"type": "date"}),
-            "check_out": forms.DateInput(attrs={"type": "date"}),
+            'check_in': forms.DateInput(attrs={'type': 'date', 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
+            'check_out': forms.DateInput(attrs={'type': 'date', 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
+            'special_requests': forms.Textarea(attrs={'rows': 2, 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
+            'guest_notes': forms.Textarea(attrs={'rows': 2, 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
         }
 
-    def __init__(self, *args, hotel=None, **kwargs):
+    def __init__(self, *args, **kwargs):
+        self.hotel = kwargs.pop('hotel', None)
         super().__init__(*args, **kwargs)
-
-        if hotel is not None:
-            self.fields["guest"].queryset = Guest.objects.filter(hotel=hotel).order_by("full_name")
-            self.fields["room"].queryset = (
-                Room.objects.filter(hotel=hotel, is_active=True)
-                .select_related("room_type")
-                .order_by("number")
-            )
-
-        apply_tailwind(self)
-
+        
+        if self.hotel:
+            # Filter guests by hotel
+            self.fields['guest'].queryset = Guest.objects.filter(hotel=self.hotel).order_by('full_name')
+            # Filter rooms by hotel
+            self.fields['room'].queryset = Room.objects.filter(hotel=self.hotel, is_active=True).select_related('room_type')
+            
+            # Add help text and styling to all fields
+            for field_name, field in self.fields.items():
+                if 'class' not in field.widget.attrs:
+                    field.widget.attrs['class'] = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
+    
     def clean(self):
-        data = super().clean()
-        check_in = data.get("check_in")
-        check_out = data.get("check_out")
-        room = data.get("room")
-
+        cleaned_data = super().clean()
+        check_in = cleaned_data.get('check_in')
+        check_out = cleaned_data.get('check_out')
+        room = cleaned_data.get('room')
+        
         if check_in and check_out and check_out <= check_in:
-            raise ValidationError({"check_out": "Check-out must be after check-in."})
-
-        # Room availability check
+            self.add_error('check_out', _("Check-out must be after check-in."))
+        
         if room and check_in and check_out:
-            qs = Booking.objects.filter(
+            # Check for overlapping bookings
+            overlapping = Booking.objects.filter(
                 room=room,
                 status__in=[Booking.Status.RESERVED, Booking.Status.CONFIRMED, Booking.Status.CHECKED_IN],
                 check_in__lt=check_out,
                 check_out__gt=check_in,
             )
-            if self.instance.pk:
-                qs = qs.exclude(pk=self.instance.pk)
-            if qs.exists():
-                raise ValidationError("Room is not available for the selected dates.")
-
-        return data
-
-
-class BookingUpdateForm(BookingForm):
-    """
-    Update form: same reduced fields + optional payment snapshot editing.
-    """
-    class Meta(BookingForm.Meta):
-        fields = BookingForm.Meta.fields + ["payment_status", "amount_paid"]
-
-    def __init__(self, *args, hotel=None, **kwargs):
-        super().__init__(*args, hotel=hotel, **kwargs)
-        if "amount_paid" in self.fields:
-            self.fields["amount_paid"].widget.attrs.setdefault("inputmode", "decimal")
-            self.fields["amount_paid"].widget.attrs.setdefault("placeholder", "0.00")
+            if self.instance and self.instance.pk:
+                overlapping = overlapping.exclude(pk=self.instance.pk)
+            
+            if overlapping.exists():
+                self.add_error('room', _("Room is not available for the selected dates."))
+        
+        return cleaned_data
 
 
-# -------------------------------------------------------------------
-# Payments (Receive Payment form) — upgraded for check-in/check-out requirements
-# -------------------------------------------------------------------
+class BookingUpdateForm(forms.ModelForm):
+    """Form for updating existing bookings"""
+    
+    class Meta:
+        model = Booking
+        fields = [
+            'guest', 'room', 'check_in', 'check_out',
+            'adults', 'children', 'infants',
+            'status', 'payment_status',
+            'source', 'source_reference',
+            'special_requests', 'guest_notes', 'internal_notes',
+            'nightly_rate', 'extra_bed_charge',
+            'discount', 'discount_type', 'tax_rate',
+        ]
+        widgets = {
+            'check_in': forms.DateInput(attrs={'type': 'date', 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
+            'check_out': forms.DateInput(attrs={'type': 'date', 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
+            'special_requests': forms.Textarea(attrs={'rows': 2, 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
+            'guest_notes': forms.Textarea(attrs={'rows': 2, 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
+            'internal_notes': forms.Textarea(attrs={'rows': 2, 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.hotel = kwargs.pop('hotel', None)
+        super().__init__(*args, **kwargs)
+        
+        if self.hotel:
+            self.fields['guest'].queryset = Guest.objects.filter(hotel=self.hotel).order_by('full_name')
+            self.fields['room'].queryset = Room.objects.filter(hotel=self.hotel, is_active=True).select_related('room_type')
+        
+        for field_name, field in self.fields.items():
+            if 'class' not in field.widget.attrs:
+                field.widget.attrs['class'] = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        check_in = cleaned_data.get('check_in')
+        check_out = cleaned_data.get('check_out')
+        room = cleaned_data.get('room')
+        
+        if check_in and check_out and check_out <= check_in:
+            self.add_error('check_out', _("Check-out must be after check-in."))
+        
+        if room and check_in and check_out:
+            overlapping = Booking.objects.filter(
+                room=room,
+                status__in=[Booking.Status.RESERVED, Booking.Status.CONFIRMED, Booking.Status.CHECKED_IN],
+                check_in__lt=check_out,
+                check_out__gt=check_in,
+            ).exclude(pk=self.instance.pk if self.instance else None)
+            
+            if overlapping.exists():
+                self.add_error('room', _("Room is not available for the selected dates."))
+        
+        return cleaned_data
+
+
+# -----------------------------------------------------------------------------
+# Payment Form
+# -----------------------------------------------------------------------------
 class BookingPaymentForm(forms.Form):
-    """
-    Supports 3 targets:
-      - (default) normal payment: just requires amount > 0
-      - target="checkin": requires that after paying, paid >= 50% of total
-      - target="checkout": requires that after paying, balance becomes 0 (100%)
-    """
-
-    target = forms.ChoiceField(
-        required=False,
-        choices=[
-            ("", "Payment"),
-            ("checkin", "Check-in"),
-            ("checkout", "Check-out"),
-        ],
-        widget=forms.HiddenInput(),
-    )
-
-    method = forms.ChoiceField(choices=Payment.Method.choices)
+    """Form for recording payments against a booking"""
+    
     amount = forms.DecimalField(
         max_digits=12,
         decimal_places=2,
-        validators=[MinValueValidator(Decimal("0.01"))],
+        min_value=0.01,
+        widget=forms.NumberInput(attrs={
+            'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
+            'placeholder': '0.00',
+            'step': '0.01'
+        })
     )
-    reference = forms.CharField(required=False, max_length=120)
-
-    def __init__(self, *args, booking: Booking | None = None, **kwargs):
-        """
-        Pass booking=... when you want payment validation against booking totals.
-        Example:
-            form = BookingPaymentForm(request.POST, booking=booking)
-        """
+    method = forms.ChoiceField(
+        choices=[],
+        widget=forms.Select(attrs={
+            'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
+        })
+    )
+    reference = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
+            'placeholder': 'Transaction/Cheque reference (optional)'
+        })
+    )
+    
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.booking = booking
-        apply_tailwind(self)
-        self.fields["reference"].widget.attrs.setdefault("placeholder", "Optional")
-
+        from finance.models import Payment
+        self.fields['method'].choices = Payment.Method.choices
+    
     def clean_amount(self):
-        amt = _d(self.cleaned_data.get("amount"))
-        if amt <= 0:
-            raise ValidationError("Amount must be greater than 0.")
-        return amt
+        amount = self.cleaned_data.get('amount')
+        if amount and amount <= 0:
+            raise ValidationError(_("Payment amount must be greater than zero."))
+        return amount
 
+
+# -----------------------------------------------------------------------------
+# Additional Charge Form
+# -----------------------------------------------------------------------------
+class AdditionalChargeForm(forms.ModelForm):
+    """Form for adding additional charges to a booking"""
+    
+    class Meta:
+        model = AdditionalCharge
+        fields = ['category', 'description', 'quantity', 'unit_price']
+        widgets = {
+            'category': forms.Select(attrs={
+                'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
+            }),
+            'description': forms.TextInput(attrs={
+                'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
+                'placeholder': 'e.g., Mini Bar items, Laundry service...'
+            }),
+            'quantity': forms.NumberInput(attrs={
+                'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
+                'min': 1,
+                'value': 1
+            }),
+            'unit_price': forms.NumberInput(attrs={
+                'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
+                'placeholder': '0.00',
+                'step': '0.01'
+            }),
+        }
+    
+    def clean_quantity(self):
+        quantity = self.cleaned_data.get('quantity')
+        if quantity and quantity < 1:
+            raise ValidationError(_("Quantity must be at least 1."))
+        return quantity
+    
+    def clean_unit_price(self):
+        unit_price = self.cleaned_data.get('unit_price')
+        if unit_price and unit_price <= 0:
+            raise ValidationError(_("Unit price must be greater than zero."))
+        return unit_price
+
+
+# -----------------------------------------------------------------------------
+# Report Forms
+# -----------------------------------------------------------------------------
+class BookingReportForm(forms.Form):
+    """Form for generating booking reports"""
+    
+    date_from = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
+        })
+    )
+    date_to = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
+        })
+    )
+    status = forms.ChoiceField(
+        required=False,
+        choices=[('', 'All')] + list(Booking.Status.choices),
+        widget=forms.Select(attrs={
+            'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
+        })
+    )
+    payment_status = forms.ChoiceField(
+        required=False,
+        choices=[('', 'All')] + list(Booking.PaymentStatus.choices),
+        widget=forms.Select(attrs={
+            'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
+        })
+    )
+    
     def clean(self):
-        cleaned = super().clean()
-
-        # If no booking passed, behave like a normal payment form.
-        if not self.booking:
-            return cleaned
-
-        target = (cleaned.get("target") or "").strip()
-        amount = _d(cleaned.get("amount"))
-        if amount <= 0:
-            return cleaned
-
-        total = _d(self.booking.total_amount)
-        paid = _d(self.booking.amount_paid)
-        after = paid + amount
-
-        # check-in: after payment must reach >= 50%
-        if target == "checkin":
-            required = _d(getattr(self.booking, "required_checkin_amount", total * Decimal("0.50")))
-            if after < required:
-                need_more = required - after
-                raise ValidationError(
-                    f"Check-in requires at least 50% payment. Add at least {need_more:.2f} more."
-                )
-
-        # check-out: after payment must clear the full balance
-        if target == "checkout":
-            balance = max(total - paid, Decimal("0"))
-            if amount < balance:
-                need_more = balance - amount
-                raise ValidationError(
-                    f"Check-out requires full payment. Add at least {need_more:.2f} more."
-                )
-
-        return cleaned
+        cleaned_data = super().clean()
+        date_from = cleaned_data.get('date_from')
+        date_to = cleaned_data.get('date_to')
+        
+        if date_from and date_to and date_to < date_from:
+            self.add_error('date_to', _("End date must be after start date."))
+        
+        return cleaned_data

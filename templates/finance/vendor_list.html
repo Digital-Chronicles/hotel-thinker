@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Vendors{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto p-6">
+
+<h1 class="text-2xl font-bold mb-4">Vendors</h1>
+
+<table class="w-full bg-white shadow rounded">
+  <thead class="bg-gray-100">
+    <tr>
+      <th class="p-3">Name</th>
+      <th>Phone</th>
+      <th>Email</th>
+      <th>Balance</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for v in vendors %}
+    <tr class="border-t">
+      <td class="p-3">
+        <a href="{% url 'finance:vendor_detail' v.pk %}" class="text-blue-600">
+          {{ v.name }}
+        </a>
+      </td>
+      <td>{{ v.phone }}</td>
+      <td>{{ v.email }}</td>
+      <td>{{ v.payable_balance }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+</div>
+{% endblock %}

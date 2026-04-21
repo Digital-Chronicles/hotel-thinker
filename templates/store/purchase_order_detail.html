@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}PO {{ purchase_order.po_number }} - Hotel Thinker{% endblock %}
+
+{% block breadcrumb %}
+<li class="flex items-center">
+  <span class="mx-2 text-slate-400"><i class="fas fa-chevron-right text-xs"></i></span>
+  <a href="{% url 'store:purchase_order_list' %}" class="text-slate-500 hover:text-blue-600">Purchase Orders</a>
+</li>
+<li class="flex items-center">
+  <span class="mx-2 text-slate-400"><i class="fas fa-chevron-right text-xs"></i></span>
+  <span class="text-slate-600 font-medium">{{ purchase_order.po_number }}</span>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">{{ purchase_order.po_number }}</h1>
+      <p class="text-slate-500 mt-1 text-sm">Purchase Order Details</p>
+    </div>
+    <div class="flex items-center gap-3">
+      {% if purchase_order.status == 'draft' %}
+      <a href="{% url 'store:purchase_order_update' purchase_order.pk %}" 
+         class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all">
+        <i class="fas fa-edit"></i>Edit
+      </a>
+      <form method="post" action="{% url 'store:purchase_order_approve' purchase_order.pk %}" class="inline">
+        {% csrf_token %}
+        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all">
+          <i class="fas fa-check-circle"></i>Approve
+        </button>
+      </form>
+      {% endif %}
+      <a href="{% url 'store:purchase_order_list' %}" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-600 font-medium text-sm hover:bg-slate-50 transition-colors">
+        <i class="fas fa-arrow-left mr-2"></i>Back
+      </a>
+    </div>
+  </div>
+
+  <!-- Status Banner -->
+  <div class="rounded-2xl p-4 {% if purchase_order.status == 'draft' %}bg-slate-50 border border-slate-200{% elif purchase_order.status == 'approved' %}bg-blue-50 border border-blue-200{% elif purchase_order.status == 'partially_received' %}bg-amber-50 border border-amber-200{% elif purchase_order.status == 'received' %}bg-emerald-50 border border-emerald-200{% else %}bg-rose-50 border border-rose-200{% endif %}">
+    <div class="flex items-center gap-3">
+      <div class="h-10 w-10 rounded-full {% if purchase_order.status == 'draft' %}bg-slate-200{% elif purchase_order.status == 'approved' %}bg-blue-200{% elif purchase_order.status == 'partially_received' %}bg-amber-200{% elif purchase_order.status == 'received' %}bg-emerald-200{% else %}bg-rose-200{% endif %} flex items-center justify-center">
+        <i class="fas {% if purchase_order.status == 'draft' %}fa-file-alt{% elif purchase_order.status == 'approved' %}fa-check{% elif purchase_order.status == 'partially_received' %}fa-clock{% elif purchase_order.status == 'received' %}fa-check-double{% else %}fa-ban{% endif %} text-lg"></i>
+      </div>
+      <div>
+        <p class="font-semibold">Status: {{ purchase_order.get_status_display }}</p>
+        {% if purchase_order.approved_by %}
+        <p class="text-sm">Approved by {{ purchase_order.approved_by.get_full_name }} on {{ purchase_order.approved_at|date:"M d, Y H:i" }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main Content -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- Items Table -->
+      <div class="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+          <h2 class="font-bold text-slate-800">Order Items</h2>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-slate-100 bg-slate-50/50">
+                <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Item</th>
+                <th class="px-5 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Ordered</th>
+                <th class="px-5 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Received</th>
+                <th class="px-5 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Pending</th>
+                <th class="px-5 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Unit Cost</th>
+                <th class="px-5 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Total</th>
+               </tr>
+            </thead>
+            <tbody>
+              {% for item in purchase_order.items.all %}
+              <tr class="border-b border-slate-100">
+                <td class="px-5 py-4">
+                  <div class="font-medium text-slate-800">{{ item.item.name }}</div>
+                  <div class="text-xs text-slate-400">{{ item.item.sku|default:"" }}</div>
+                 </td>
+                <td class="px-5 py-4 text-right text-sm text-slate-600">{{ item.qty_ordered|floatformat:2 }}</td>
+                <td class="px-5 py-4 text-right text-sm text-slate-600">{{ item.received_qty|floatformat:2 }}</td>
+                <td class="px-5 py-4 text-right text-sm font-semibold {% if item.pending_qty > 0 %}text-amber-600{% else %}text-emerald-600{% endif %}">
+                  {{ item.pending_qty|floatformat:2 }}
+                 </td>
+                <td class="px-5 py-4 text-right text-sm text-slate-600">${{ item.unit_cost|floatformat:2 }}</td>
+                <td class="px-5 py-4 text-right font-semibold text-slate-800">${{ item.line_total|floatformat:2 }}</td>
+               </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot class="border-t border-slate-200 bg-slate-50">
+              <tr>
+                <td colspan="5" class="px-5 py-3 text-right font-bold text-slate-700">Subtotal</td>
+                <td class="px-5 py-3 text-right font-bold text-slate-800">${{ purchase_order.subtotal|floatformat:2 }}</td>
+               </tr>
+            </tfoot>
+           </table>
+        </div>
+      </div>
+
+      <!-- Goods Receipts -->
+      {% if purchase_order.receipts.all %}
+      <div class="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+          <h2 class="font-bold text-slate-800">Goods Receipts</h2>
+        </div>
+        <div class="divide-y divide-slate-100">
+          {% for receipt in purchase_order.receipts.all %}
+          <div class="p-4 hover:bg-slate-50 transition-colors">
+            <div class="flex items-center justify-between">
+              <div>
+                <a href="{% url 'store:goods_receipt_detail' receipt.pk %}" class="font-mono font-semibold text-blue-600 hover:underline">
+                  {{ receipt.receipt_number }}
+                </a>
+                <p class="text-sm text-slate-500">Received: {{ receipt.received_date|date:"M d, Y" }}</p>
+              </div>
+              <div class="text-right">
+                <p class="font-semibold text-slate-800">${{ receipt.total_amount|floatformat:2 }}</p>
+                <p class="text-xs text-slate-400">Invoice: {{ receipt.supplier_invoice_number|default:"-" }}</p>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="space-y-6">
+      <!-- Supplier Info -->
+      <div class="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+          <h2 class="font-bold text-slate-800">
+            <i class="fas fa-truck mr-2 text-blue-500"></i>Supplier
+          </h2>
+        </div>
+        <div class="p-5 space-y-2">
+          <p class="font-semibold text-slate-800">{{ purchase_order.supplier.name }}</p>
+          {% if purchase_order.supplier.contact_person %}
+          <p class="text-sm text-slate-600"><i class="fas fa-user mr-2 w-4 text-slate-400"></i>{{ purchase_order.supplier.contact_person }}</p>
+          {% endif %}
+          {% if purchase_order.supplier.phone %}
+          <p class="text-sm text-slate-600"><i class="fas fa-phone mr-2 w-4 text-slate-400"></i>{{ purchase_order.supplier.phone }}</p>
+          {% endif %}
+          {% if purchase_order.supplier.email %}
+          <p class="text-sm text-slate-600"><i class="fas fa-envelope mr-2 w-4 text-slate-400"></i>{{ purchase_order.supplier.email }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Order Info -->
+      <div class="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+          <h2 class="font-bold text-slate-800">
+            <i class="fas fa-info-circle mr-2 text-blue-500"></i>Order Information
+          </h2>
+        </div>
+        <div class="p-5 space-y-3">
+          <div>
+            <p class="text-xs text-slate-400 uppercase tracking-wider">Order Date</p>
+            <p class="text-sm font-medium text-slate-700">{{ purchase_order.order_date|date:"F d, Y" }}</p>
+          </div>
+          {% if purchase_order.expected_date %}
+          <div>
+            <p class="text-xs text-slate-400 uppercase tracking-wider">Expected Date</p>
+            <p class="text-sm font-medium text-slate-700">{{ purchase_order.expected_date|date:"F d, Y" }}</p>
+          </div>
+          {% endif %}
+          {% if purchase_order.note %}
+          <div>
+            <p class="text-xs text-slate-400 uppercase tracking-wider">Notes</p>
+            <p class="text-sm text-slate-600">{{ purchase_order.note }}</p>
+          </div>
+          {% endif %}
+          <div>
+            <p class="text-xs text-slate-400 uppercase tracking-wider">Created By</p>
+            <p class="text-sm text-slate-700">{{ purchase_order.created_by.get_full_name|default:purchase_order.created_by.username }}</p>
+            <p class="text-xs text-slate-400">{{ purchase_order.created_at|date:"M d, Y H:i" }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

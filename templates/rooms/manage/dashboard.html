@@ -1,185 +1,310 @@
 {% extends "base.html" %}
-{% block title %}Rooms Manager — Hotel Thinker{% endblock %}
+{% load humanize %}
+
+{% block title %}Rooms Manager | Hotel Thinker{% endblock %}
 
 {% block content %}
-
-<div class="mb-6">
-  <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+<div class="space-y-6">
+  
+  <!-- Header Section -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-      <h1 class="text-2xl font-bold text-blue-800">Rooms Manager</h1>
-      <p class="text-sm text-gray-600 mt-1">
-        Manage rooms and room types for <span class="font-semibold text-gray-900">{{ hotel.name }}</span>.
-      </p>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-md">
+          <i class="fas fa-door-open text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-slate-800">Rooms Manager</h1>
+          <p class="text-sm text-slate-500 mt-0.5">
+            Manage rooms and room types for <span class="font-semibold text-blue-600">{{ hotel.name }}</span>
+          </p>
+        </div>
+      </div>
     </div>
-
-    <div class="flex gap-2">
+    
+    <div class="flex items-center gap-3">
       <a href="{% url 'rooms:room_list' %}"
-         class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
-        View Rooms
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all">
+        <i class="fas fa-door-open text-blue-500 text-sm"></i>
+        <span>View All Rooms</span>
       </a>
       <a href="{% url 'rooms:roomtype_list' %}"
-         class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
-        View Room Types
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all">
+        <i class="fas fa-tags text-blue-500 text-sm"></i>
+        <span>Room Types</span>
       </a>
     </div>
   </div>
-</div>
 
-<!-- Stats -->
-<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
-  <div class="rounded-2xl border border-gray-200 bg-white p-5">
-    <div class="text-sm text-gray-500">Total</div>
-    <div class="text-2xl font-bold text-gray-900 mt-1">{{ total_rooms }}</div>
-  </div>
-
-  <div class="rounded-2xl border border-gray-200 bg-white p-5">
-    <div class="text-sm text-gray-500">Available</div>
-    <div class="text-2xl font-bold text-emerald-700 mt-1">{{ available_rooms }}</div>
-  </div>
-
-  <div class="rounded-2xl border border-gray-200 bg-white p-5">
-    <div class="text-sm text-gray-500">Occupied</div>
-    <div class="text-2xl font-bold text-rose-700 mt-1">{{ occupied_rooms }}</div>
-  </div>
-
-  <div class="rounded-2xl border border-gray-200 bg-white p-5">
-    <div class="text-sm text-gray-500">Maintenance</div>
-    <div class="text-2xl font-bold text-amber-700 mt-1">{{ maintenance_rooms }}</div>
-  </div>
-
-  <div class="rounded-2xl border border-gray-200 bg-white p-5">
-    <div class="text-sm text-gray-500">Cleaning</div>
-    <div class="text-2xl font-bold text-blue-700 mt-1">{{ cleaning_rooms }}</div>
-  </div>
-</div>
-
-<!-- Quick Add -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-
-  <div class="rounded-2xl border border-gray-200 bg-white p-6">
-    <div class="flex items-center justify-between">
-      <div>
-        <div class="text-sm font-semibold text-gray-900">Room Types</div>
-        <div class="text-xs text-gray-500 mt-1">Add types like Single, Double, Deluxe.</div>
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+    
+    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Total Rooms</p>
+          <p class="text-2xl font-bold text-slate-800 mt-1">{{ total_rooms }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+          <i class="fas fa-hotel text-indigo-600 text-lg"></i>
+        </div>
       </div>
-      <button type="button"
-              data-modal-open="modalRoomType"
-              class="px-3 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold">
-        + Add Type
-      </button>
     </div>
-  </div>
 
-  <div class="rounded-2xl border border-gray-200 bg-white p-6">
-    <div class="flex items-center justify-between">
-      <div>
-        <div class="text-sm font-semibold text-gray-900">Rooms</div>
-        <div class="text-xs text-gray-500 mt-1">Add rooms with number, status and floor.</div>
+    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Available</p>
+          <p class="text-2xl font-bold text-emerald-600 mt-1">{{ available_rooms }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+          <i class="fas fa-check-circle text-emerald-600 text-lg"></i>
+        </div>
       </div>
-      <button type="button"
-              data-modal-open="modalRoom"
-              class="px-3 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold">
-        + Add Room
-      </button>
+    </div>
+
+    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Occupied</p>
+          <p class="text-2xl font-bold text-rose-600 mt-1">{{ occupied_rooms }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-rose-50 flex items-center justify-center">
+          <i class="fas fa-user-check text-rose-600 text-lg"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Maintenance</p>
+          <p class="text-2xl font-bold text-amber-600 mt-1">{{ maintenance_rooms }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
+          <i class="fas fa-tools text-amber-600 text-lg"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Cleaning</p>
+          <p class="text-2xl font-bold text-blue-600 mt-1">{{ cleaning_rooms }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+          <i class="fas fa-broom text-blue-600 text-lg"></i>
+        </div>
+      </div>
     </div>
   </div>
 
-</div>
-
-<!-- Recent Rooms -->
-<div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-  <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-    <div>
-      <div class="text-sm font-semibold text-gray-900">Recent Rooms</div>
-      <div class="text-xs text-gray-500">Recently added rooms</div>
+  <!-- Quick Add Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    
+    <!-- Add Room Type Card -->
+    <div class="bg-gradient-to-r from-blue-50 to-white rounded-xl border border-blue-100 p-5 hover:shadow-md transition">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-md">
+            <i class="fas fa-tag text-white text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-semibold text-slate-800">Room Types</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Add categories like Single, Double, Deluxe</p>
+          </div>
+        </div>
+        <button type="button"
+                data-modal-open="modalRoomType"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-medium shadow-sm transition-all">
+          <i class="fas fa-plus-circle text-sm"></i>
+          <span>Add Type</span>
+        </button>
+      </div>
     </div>
-    <a href="{% url 'rooms:room_create' %}"
-       class="px-3 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold">
-      + New Room
-    </a>
+
+    <!-- Add Room Card -->
+    <div class="bg-gradient-to-r from-indigo-50 to-white rounded-xl border border-indigo-100 p-5 hover:shadow-md transition">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-blue-600 flex items-center justify-center shadow-md">
+            <i class="fas fa-door-open text-white text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-semibold text-slate-800">Rooms</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Add rooms with number, status, and floor</p>
+          </div>
+        </div>
+        <button type="button"
+                data-modal-open="modalRoom"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-medium shadow-sm transition-all">
+          <i class="fas fa-plus-circle text-sm"></i>
+          <span>Add Room</span>
+        </button>
+      </div>
+    </div>
   </div>
 
-  <div class="overflow-x-auto">
-    <table class="min-w-full text-sm">
-      <thead class="bg-white text-gray-600">
-        <tr class="border-b border-gray-200">
-          <th class="text-left px-6 py-3 font-semibold">Room</th>
-          <th class="text-left px-6 py-3 font-semibold">Type</th>
-          <th class="text-left px-6 py-3 font-semibold">Status</th>
-          <th class="text-right px-6 py-3 font-semibold">Action</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-200">
-        {% for r in recent_rooms %}
-          <tr class="hover:bg-gray-50 cursor-pointer"
-              onclick="window.location='{% url 'rooms:room_detail' r.id %}'">
-            <td class="px-6 py-4 font-semibold text-blue-800">Room {{ r.number }}</td>
-            <td class="px-6 py-4 text-gray-900 font-semibold">{{ r.room_type.name }}</td>
-            <td class="px-6 py-4">
-              <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold
-                {% if r.status == 'available' %}bg-emerald-100 text-emerald-800
-                {% elif r.status == 'occupied' %}bg-rose-100 text-rose-800
-                {% elif r.status == 'maintenance' %}bg-amber-100 text-amber-800
-                {% else %}bg-blue-100 text-blue-800{% endif %}">
-                {{ r.get_status_display }}
-              </span>
-            </td>
-            <td class="px-6 py-4 text-right" onclick="event.stopPropagation()">
-              <a href="{% url 'rooms:room_update' r.id %}"
-                 class="px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
-                Edit
-              </a>
-            </td>
+  <!-- Recent Rooms Table -->
+  <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div>
+        <div class="flex items-center gap-2">
+          <i class="fas fa-clock text-blue-500 text-sm"></i>
+          <h3 class="text-sm font-semibold text-slate-700">Recent Rooms</h3>
+        </div>
+        <p class="text-xs text-slate-500 mt-0.5 ml-6">Recently added rooms to your inventory</p>
+      </div>
+      <a href="{% url 'rooms:room_create' %}"
+         class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-medium shadow-sm transition-all">
+        <i class="fas fa-plus-circle text-xs"></i>
+        <span>New Room</span>
+      </a>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 border-b border-slate-200">
+          <tr class="text-left text-slate-600">
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Room</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Type</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Floor</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Status</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider text-right">Actions</th>
           </tr>
-        {% empty %}
-          <tr><td colspan="4" class="px-6 py-10 text-center text-gray-500">No rooms yet.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for r in recent_rooms %}
+            <tr class="hover:bg-slate-50 transition-colors group cursor-pointer"
+                onclick="window.location='{% url 'rooms:room_detail' r.id %}'">
+              
+              <td class="px-5 py-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <i class="fas fa-door-open text-blue-500 text-sm"></i>
+                  </div>
+                  <span class="font-semibold text-blue-700">Room {{ r.number }}</span>
+                </div>
+              </td>
+              
+              <td class="px-5 py-3">
+                <span class="text-slate-700 font-medium">{{ r.room_type.name }}</span>
+                <p class="text-xs text-slate-400">UGX {{ r.room_type.base_price|default:0|floatformat:0|intcomma }}</p>
+              </td>
+              
+              <td class="px-5 py-3 text-slate-600">
+                {% if r.floor %}
+                  <span class="inline-flex items-center gap-1">
+                    <i class="fas fa-layer-group text-slate-400 text-xs"></i>
+                    {{ r.floor }}{% if r.floor|add:0 == 1 %}st{% elif r.floor|add:0 == 2 %}nd{% elif r.floor|add:0 == 3 %}rd{% else %}th{% endif %} Floor
+                  </span>
+                {% else %}
+                  <span class="text-slate-400">—</span>
+                {% endif %}
+              </td>
+              
+              <td class="px-5 py-3">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
+                  {% if r.status == 'available' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+                  {% elif r.status == 'occupied' %}bg-rose-50 text-rose-700 border border-rose-200
+                  {% elif r.status == 'maintenance' %}bg-amber-50 text-amber-700 border border-amber-200
+                  {% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+                  <span class="w-1.5 h-1.5 rounded-full
+                    {% if r.status == 'available' %}bg-emerald-500
+                    {% elif r.status == 'occupied' %}bg-rose-500
+                    {% elif r.status == 'maintenance' %}bg-amber-500
+                    {% else %}bg-blue-500{% endif %}"></span>
+                  {{ r.get_status_display }}
+                </span>
+              </td>
+              
+              <td class="px-5 py-3 text-right" onclick="event.stopPropagation()">
+                <a href="{% url 'rooms:room_update' r.id %}"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-blue-50 hover:border-blue-300 text-sm font-medium text-slate-600 hover:text-blue-600 transition-all">
+                  <i class="fas fa-edit text-xs"></i>
+                  <span>Edit</span>
+                </a>
+              </td>
+              
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="px-5 py-12 text-center">
+                <div class="flex flex-col items-center justify-center text-slate-400">
+                  <i class="fas fa-door-open text-4xl mb-3 opacity-40"></i>
+                  <p class="font-medium text-slate-500">No rooms added yet</p>
+                  <p class="text-xs mt-1">Click "Add Room" to create your first room</p>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
+
 </div>
 
 <!-- ===================== MODALS ===================== -->
-<style>
-  .modal-backdrop { background: rgba(0,0,0,.45); }
-</style>
 
 <!-- Add Room Type Modal -->
 <div id="modalRoomType" class="hidden fixed inset-0 z-50">
-  <div class="absolute inset-0 modal-backdrop" data-modal-close="modalRoomType"></div>
-  <div class="relative mx-auto mt-16 w-full max-w-2xl px-4">
-    <div class="rounded-2xl bg-white border border-gray-200 shadow-lg overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-        <div class="font-semibold text-gray-900">Add Room Type</div>
-        <button type="button" class="text-gray-500 hover:text-gray-900" data-modal-close="modalRoomType">✕</button>
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" data-modal-close="modalRoomType"></div>
+  <div class="relative mx-auto mt-16 w-full max-w-lg px-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-white border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
+            <i class="fas fa-tag text-white text-sm"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold text-slate-800">Add Room Type</h3>
+            <p class="text-xs text-slate-500">Create a new room category</p>
+          </div>
+        </div>
+        <button type="button" class="text-slate-400 hover:text-slate-600 transition-all text-xl" data-modal-close="modalRoomType">×</button>
       </div>
 
-      <form method="post" class="p-6 space-y-4">
+      <form method="post" class="p-6 space-y-5">
         {% csrf_token %}
         <input type="hidden" name="action" value="add_roomtype">
 
         <div>
-          <label class="text-sm font-medium text-gray-700">Name</label>
-          {{ roomtype_form.name }}
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Type Name <span class="text-rose-500">*</span></label>
+          <div class="relative">
+            <i class="fas fa-tag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            {{ roomtype_form.name }}
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Example: Single, Double, Deluxe Suite</p>
         </div>
 
         <div>
-          <label class="text-sm font-medium text-gray-700">Description</label>
-          {{ roomtype_form.description }}
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Description</label>
+          <div class="relative">
+            <i class="fas fa-align-left absolute left-3 top-3 text-slate-400 text-sm"></i>
+            {{ roomtype_form.description }}
+          </div>
         </div>
 
         <div>
-          <label class="text-sm font-medium text-gray-700">Base Price</label>
-          {{ roomtype_form.base_price }}
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Base Price <span class="text-rose-500">*</span></label>
+          <div class="relative">
+            <i class="fas fa-dollar-sign absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            {{ roomtype_form.base_price }}
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Default price per night for this room type</p>
         </div>
 
-        <div class="flex justify-end gap-2">
+        <div class="flex justify-end gap-3 pt-2">
           <button type="button" data-modal-close="modalRoomType"
-                  class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
+                  class="px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-600 transition-all">
             Cancel
           </button>
-          <button class="px-5 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold">
-            Save
+          <button type="submit"
+                  class="px-5 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold shadow-sm transition-all">
+            <i class="fas fa-save text-xs mr-1"></i>
+            Save Room Type
           </button>
         </div>
       </form>
@@ -189,54 +314,77 @@
 
 <!-- Add Room Modal -->
 <div id="modalRoom" class="hidden fixed inset-0 z-50">
-  <div class="absolute inset-0 modal-backdrop" data-modal-close="modalRoom"></div>
-  <div class="relative mx-auto mt-16 w-full max-w-2xl px-4">
-    <div class="rounded-2xl bg-white border border-gray-200 shadow-lg overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-        <div class="font-semibold text-gray-900">Add Room</div>
-        <button type="button" class="text-gray-500 hover:text-gray-900" data-modal-close="modalRoom">✕</button>
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" data-modal-close="modalRoom"></div>
+  <div class="relative mx-auto mt-16 w-full max-w-lg px-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div class="px-6 py-4 bg-gradient-to-r from-indigo-50 to-white border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-blue-600 flex items-center justify-center">
+            <i class="fas fa-door-open text-white text-sm"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold text-slate-800">Add Room</h3>
+            <p class="text-xs text-slate-500">Add a new room to inventory</p>
+          </div>
+        </div>
+        <button type="button" class="text-slate-400 hover:text-slate-600 transition-all text-xl" data-modal-close="modalRoom">×</button>
       </div>
 
-      <form method="post" class="p-6 space-y-4">
+      <form method="post" class="p-6 space-y-5">
         {% csrf_token %}
         <input type="hidden" name="action" value="add_room">
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="text-sm font-medium text-gray-700">Room Type</label>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Room Type <span class="text-rose-500">*</span></label>
+          <div class="relative">
+            <i class="fas fa-tag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
             {{ room_form.room_type }}
-          </div>
-
-          <div>
-            <label class="text-sm font-medium text-gray-700">Room Number</label>
-            {{ room_form.number }}
-          </div>
-
-          <div>
-            <label class="text-sm font-medium text-gray-700">Floor</label>
-            {{ room_form.floor }}
-          </div>
-
-          <div>
-            <label class="text-sm font-medium text-gray-700">Status</label>
-            {{ room_form.status }}
-          </div>
-
-          <div class="md:col-span-2">
-            <label class="flex items-center gap-3">
-              {{ room_form.is_active }}
-              <span class="text-sm font-medium text-gray-700">Active</span>
-            </label>
           </div>
         </div>
 
-        <div class="flex justify-end gap-2">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Room Number <span class="text-rose-500">*</span></label>
+          <div class="relative">
+            <i class="fas fa-hashtag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            {{ room_form.number }}
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Unique identifier for the room (e.g., 101, A-01)</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Floor</label>
+          <div class="relative">
+            <i class="fas fa-layer-group absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            {{ room_form.floor }}
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Optional: Ground, 1st, 2nd, etc.</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Status</label>
+          <div class="relative">
+            <i class="fas fa-circle absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[8px]"></i>
+            {{ room_form.status }}
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+          {{ room_form.is_active }}
+          <div>
+            <label class="text-sm font-semibold text-slate-700 cursor-pointer">Active Room</label>
+            <p class="text-xs text-slate-400">Inactive rooms won't appear for booking</p>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-2">
           <button type="button" data-modal-close="modalRoom"
-                  class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
+                  class="px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-600 transition-all">
             Cancel
           </button>
-          <button class="px-5 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold">
-            Save
+          <button type="submit"
+                  class="px-5 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold shadow-sm transition-all">
+            <i class="fas fa-save text-xs mr-1"></i>
+            Save Room
           </button>
         </div>
       </form>
@@ -244,12 +392,76 @@
   </div>
 </div>
 
+<!-- Modal Animation CSS -->
+<style>
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  .animate-in {
+    animation: fade-in 0.2s ease-out;
+  }
+  
+  /* Style form inputs in modals */
+  #modalRoomType input:not([type="checkbox"]),
+  #modalRoomType select,
+  #modalRoomType textarea,
+  #modalRoom input:not([type="checkbox"]),
+  #modalRoom select {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    padding-left: 2.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+  
+  #modalRoomType input:focus,
+  #modalRoomType select:focus,
+  #modalRoomType textarea:focus,
+  #modalRoom input:focus,
+  #modalRoom select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  }
+  
+  #modalRoomType textarea {
+    padding-left: 2.5rem;
+  }
+  
+  input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 0.375rem;
+    border: 2px solid #cbd5e1;
+    cursor: pointer;
+  }
+  
+  input[type="checkbox"]:checked {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+  }
+</style>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  function openModal(id){ document.getElementById(id)?.classList.remove("hidden"); }
-  function closeModal(id){ document.getElementById(id)?.classList.add("hidden"); }
+  function openModal(id) { 
+    document.getElementById(id)?.classList.remove("hidden"); 
+  }
+  function closeModal(id) { 
+    document.getElementById(id)?.classList.add("hidden"); 
+  }
 
   document.querySelectorAll("[data-modal-open]").forEach(btn => {
     btn.addEventListener("click", () => openModal(btn.dataset.modalOpen));
@@ -259,9 +471,20 @@
     el.addEventListener("click", () => closeModal(el.dataset.modalClose));
   });
 
+  // Close modal on escape key
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
-    ["modalRoomType","modalRoom"].forEach(closeModal);
+    ["modalRoomType", "modalRoom"].forEach(closeModal);
+  });
+
+  // Close modal when clicking backdrop
+  document.querySelectorAll(".modal-backdrop, [data-modal-close]").forEach(el => {
+    el.addEventListener("click", (e) => {
+      if (e.target === el || el.hasAttribute('data-modal-close')) {
+        const modalId = el.closest('[id^="modal"]')?.id;
+        if (modalId) closeModal(modalId);
+      }
+    });
   });
 </script>
 {% endblock %}

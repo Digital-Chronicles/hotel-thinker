@@ -1,0 +1,501 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Edit Menu Item{% else %}Add Menu Item{% endif %} - Restaurant{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Custom animations */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .fade-in-up {
+    animation: fadeInUp 0.4s ease-out;
+  }
+  
+  /* Image upload preview styling */
+  .image-preview {
+    transition: all 0.3s ease;
+  }
+  
+  .image-preview:hover {
+    transform: scale(1.02);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Number input spinners */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    opacity: 0.5;
+  }
+  
+  input[type="number"]:hover::-webkit-inner-spin-button,
+  input[number]:hover::-webkit-outer-spin-button {
+    opacity: 1;
+  }
+  
+  /* Custom select styling */
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25rem;
+    padding-right: 2.5rem;
+    appearance: none;
+  }
+  
+  /* Custom checkbox styling */
+  input[type="checkbox"] {
+    width: 1.125rem;
+    height: 1.125rem;
+    border-radius: 0.25rem;
+    border: 2px solid #cbd5e1;
+    cursor: pointer;
+    accent-color: #3b82f6;
+  }
+  
+  input[type="checkbox"]:checked {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+  }
+  
+  /* Focus styles */
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  /* Loading state */
+  button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="flex items-center">
+  <span class="mx-2 text-slate-400"><i class="fas fa-chevron-right text-xs"></i></span>
+  <a href="{% url 'restaurant:manage_dashboard' %}" class="text-slate-500 hover:text-blue-600 transition-colors">Restaurant</a>
+</li>
+<li class="flex items-center">
+  <span class="mx-2 text-slate-400"><i class="fas fa-chevron-right text-xs"></i></span>
+  <a href="{% url 'restaurant:item_list' %}" class="text-slate-500 hover:text-blue-600 transition-colors">Menu Items</a>
+</li>
+<li class="flex items-center">
+  <span class="mx-2 text-slate-400"><i class="fas fa-chevron-right text-xs"></i></span>
+  <span class="text-slate-600 font-medium">{% if form.instance.pk %}Edit{% else %}Add{% endif %}</span>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto fade-in-up">
+  
+  <!-- Header Section -->
+  <div class="mb-8">
+    <div class="flex items-center gap-4 mb-3">
+      <div class="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg">
+        <i class="fas fa-utensils text-white text-2xl"></i>
+      </div>
+      <div>
+        <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">
+          {% if form.instance.pk %}Edit Menu Item{% else %}Create New Menu Item{% endif %}
+        </h1>
+        <p class="text-sm text-slate-500 mt-1">
+          {% if form.instance.pk %}
+          Update item details, pricing, and availability settings
+          {% else %}
+          Add a delicious new dish or beverage to your restaurant menu
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Two Column Layout -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- Main Form -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- Basic Information Card -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-info-circle text-blue-500 text-sm"></i>
+            <span class="text-sm font-semibold text-slate-700">Basic Information</span>
+          </div>
+        </div>
+        
+        <form method="post" enctype="multipart/form-data" class="p-6">
+          {% csrf_token %}
+          
+          {% if form.non_field_errors %}
+          <div class="mb-6 rounded-xl bg-rose-50 border border-rose-200 px-4 py-3">
+            <div class="flex items-start gap-3">
+              <i class="fas fa-exclamation-triangle text-rose-600 text-sm mt-0.5"></i>
+              <div>
+                <p class="text-sm font-semibold text-rose-800 mb-1">Please correct the following errors:</p>
+                {% for error in form.non_field_errors %}
+                <p class="text-sm text-rose-700">{{ error }}</p>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          
+          <div class="space-y-5">
+            <!-- Hotel and Category -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div class="group">
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
+                  <i class="fas fa-building mr-1 text-blue-500"></i>Hotel <span class="text-rose-500">*</span>
+                </label>
+                <div class="relative">
+                  <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10">
+                    <i class="fas fa-hotel text-sm"></i>
+                  </div>
+                  {{ form.hotel }}
+                </div>
+                {% if form.hotel.errors %}
+                <p class="text-xs text-rose-600 mt-1">{{ form.hotel.errors.0 }}</p>
+                {% endif %}
+              </div>
+              
+              <div class="group">
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
+                  <i class="fas fa-folder mr-1 text-blue-500"></i>Category <span class="text-rose-500">*</span>
+                </label>
+                <div class="relative">
+                  <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10">
+                    <i class="fas fa-tag text-sm"></i>
+                  </div>
+                  {{ form.category }}
+                </div>
+                {% if form.category.errors %}
+                <p class="text-xs text-rose-600 mt-1">{{ form.category.errors.0 }}</p>
+                {% endif %}
+              </div>
+            </div>
+            
+            <!-- Item Name -->
+            <div class="group">
+              <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
+                <i class="fas fa-font mr-1 text-blue-500"></i>Item Name <span class="text-rose-500">*</span>
+              </label>
+              <div class="relative">
+                <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10">
+                  <i class="fas fa-tag text-sm"></i>
+                </div>
+                {{ form.name }}
+              </div>
+              {% if form.name.errors %}
+              <p class="text-xs text-rose-600 mt-1">{{ form.name.errors.0 }}</p>
+              {% endif %}
+              <p class="text-xs text-slate-400 mt-1">Example: Grilled Salmon, Margherita Pizza, Caesar Salad</p>
+            </div>
+            
+            <!-- Description -->
+            <div class="group">
+              <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
+                <i class="fas fa-align-left mr-1 text-blue-500"></i>Description
+              </label>
+              <div class="relative">
+                <div class="absolute left-3 top-3 text-slate-400 z-10">
+                  <i class="fas fa-pen text-sm"></i>
+                </div>
+                {{ form.description }}
+              </div>
+              {% if form.description.errors %}
+              <p class="text-xs text-rose-600 mt-1">{{ form.description.errors.0 }}</p>
+              {% endif %}
+              <p class="text-xs text-slate-400 mt-1">Brief description of the dish, ingredients, or serving style</p>
+            </div>
+            
+            <!-- Pricing -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div class="group">
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
+                  <i class="fas fa-dollar-sign mr-1 text-emerald-500"></i>Selling Price <span class="text-rose-500">*</span>
+                </label>
+                <div class="relative">
+                  <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10">
+                    <i class="fas fa-tag text-sm"></i>
+                  </div>
+                  {{ form.price }}
+                </div>
+                {% if form.price.errors %}
+                <p class="text-xs text-rose-600 mt-1">{{ form.price.errors.0 }}</p>
+                {% endif %}
+              </div>
+              
+              <div class="group">
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
+                  <i class="fas fa-chart-line mr-1 text-amber-500"></i>Cost Price
+                </label>
+                <div class="relative">
+                  <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10">
+                    <i class="fas fa-coins text-sm"></i>
+                  </div>
+                  {{ form.cost }}
+                </div>
+                {% if form.cost.errors %}
+                <p class="text-xs text-rose-600 mt-1">{{ form.cost.errors.0 }}</p>
+                {% endif %}
+                <p class="text-xs text-slate-400 mt-1">Used for profit margin calculation</p>
+              </div>
+            </div>
+            
+            <!-- Ingredients -->
+            <div class="group">
+              <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
+                <i class="fas fa-list-ul mr-1 text-blue-500"></i>Ingredients
+              </label>
+              <div class="relative">
+                <div class="absolute left-3 top-3 text-slate-400 z-10">
+                  <i class="fas fa-carrot text-sm"></i>
+                </div>
+                {{ form.ingredients }}
+              </div>
+              {% if form.ingredients.errors %}
+              <p class="text-xs text-rose-600 mt-1">{{ form.ingredients.errors.0 }}</p>
+              {% endif %}
+              <p class="text-xs text-slate-400 mt-1">List main ingredients (useful for dietary information)</p>
+            </div>
+            
+            <!-- Dietary & Feature Tags -->
+            <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">
+                <i class="fas fa-leaf mr-1 text-green-500"></i>Dietary & Features
+              </label>
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {% for field in form %}
+                  {% if field.name in 'vegetarian,vegan,gluten_free,is_featured,recommended' %}
+                  <label class="flex items-center gap-2 cursor-pointer group">
+                    {{ field }}
+                    <span class="text-sm text-slate-700 group-hover:text-blue-600 transition-colors">{{ field.label }}</span>
+                  </label>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+            
+            <!-- Availability -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+              <div class="flex items-center justify-between">
+                <div>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    {{ form.is_available }}
+                    <span class="text-sm font-semibold text-slate-700">Available for ordering</span>
+                  </label>
+                  <p class="text-xs text-slate-500 mt-1 ml-7">Unavailable items won't appear in customer ordering</p>
+                </div>
+                <i class="fas fa-check-circle text-blue-400 text-2xl"></i>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Form Actions -->
+          <div class="flex items-center justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
+            <a href="{% url 'restaurant:item_list' %}" 
+               class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-600 font-medium text-sm hover:bg-slate-50 hover:border-slate-400 transition-all flex items-center gap-2">
+              <i class="fas fa-times text-sm"></i>
+              Cancel
+            </a>
+            <button type="submit" 
+                    class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center gap-2">
+              <i class="fas fa-save text-sm"></i>
+              {% if form.instance.pk %}Update Item{% else %}Create Item{% endif %}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="space-y-6">
+      <!-- Image Upload Card -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden sticky top-6">
+        <div class="px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-image text-purple-500 text-sm"></i>
+            <span class="text-sm font-semibold text-slate-700">Item Image</span>
+          </div>
+        </div>
+        
+        <div class="p-5">
+          <div id="imagePreviewContainer" class="mb-4">
+            {% if form.instance.image %}
+            <div class="relative image-preview">
+              <img id="currentImage" src="{{ form.instance.image.url }}" alt="{{ form.instance.name }}" 
+                   class="w-full h-48 object-cover rounded-xl border border-slate-200 shadow-sm">
+              <button type="button" id="removeImageBtn" 
+                      class="absolute top-2 right-2 p-1.5 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors">
+                <i class="fas fa-trash-alt text-xs"></i>
+              </button>
+            </div>
+            {% else %}
+            <div id="imagePlaceholder" class="w-full h-48 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center">
+              <i class="fas fa-cloud-upload-alt text-4xl text-slate-400 mb-2"></i>
+              <p class="text-sm text-slate-500">No image selected</p>
+              <p class="text-xs text-slate-400">Click below to upload</p>
+            </div>
+            <img id="imagePreview" class="hidden w-full h-48 object-cover rounded-xl border border-slate-200 shadow-sm">
+            {% endif %}
+          </div>
+          
+          <label class="block">
+            <span class="sr-only">Choose image</span>
+            <input type="file" name="image" id="id_image" accept="image/*" class="block w-full text-sm text-slate-500
+              file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold
+              file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+          </label>
+          <p class="text-xs text-slate-400 mt-2">
+            <i class="fas fa-info-circle mr-1"></i>Recommended: Square image, min 300x300px
+          </p>
+        </div>
+      </div>
+      
+      <!-- Quick Tips Card -->
+      <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200 p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <i class="fas fa-lightbulb text-amber-500 text-lg"></i>
+          <h3 class="font-semibold text-slate-800">Pro Tips</h3>
+        </div>
+        <ul class="space-y-2 text-sm text-slate-700">
+          <li class="flex items-start gap-2">
+            <i class="fas fa-check-circle text-emerald-500 text-xs mt-0.5"></i>
+            <span>Use clear, descriptive item names</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <i class="fas fa-check-circle text-emerald-500 text-xs mt-0.5"></i>
+            <span>Highlight signature dishes as "Recommended"</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <i class="fas fa-check-circle text-emerald-500 text-xs mt-0.5"></i>
+            <span>Add dietary tags to help customers filter</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <i class="fas fa-check-circle text-emerald-500 text-xs mt-0.5"></i>
+            <span>Update prices regularly based on cost changes</span>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- Profit Margin Card (if editing) -->
+      {% if form.instance.pk and form.instance.cost and form.instance.price and form.instance.cost > 0 %}
+      {% with profit=form.instance.price|floatformat:2|add:"0" margin=form.instance.price|floatformat:2|add:"0" %}
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-lg p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <i class="fas fa-chart-line text-emerald-500"></i>
+          <h3 class="font-semibold text-slate-800">Profit Analysis</h3>
+        </div>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-slate-600">Selling Price</span>
+            <span class="font-semibold text-slate-800">${{ form.instance.price|floatformat:2 }}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-slate-600">Cost Price</span>
+            <span class="font-semibold text-slate-800">${{ form.instance.cost|floatformat:2 }}</span>
+          </div>
+          <div class="flex justify-between items-center pt-2 border-t border-slate-200">
+            <span class="text-sm font-semibold text-slate-700">Profit Margin</span>
+            <span class="text-lg font-bold text-emerald-600">
+              {% widthratio form.instance.cost form.instance.price 100 as cost_percent %}
+              {% widthratio 100|add:"-100" 1 cost_percent as profit_percent %}
+              {{ profit_percent|floatformat:0 }}%
+            </span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-slate-600">Profit per item</span>
+            <span class="font-semibold text-emerald-600">${{ form.instance.price|floatformat:2|add:"-"|add:form.instance.cost|floatformat:2 }}</span>
+          </div>
+        </div>
+      </div>
+      {% endwith %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const submitBtn = form?.querySelector('button[type="submit"]');
+    const imageInput = document.getElementById('id_image');
+    const imagePreview = document.getElementById('imagePreview');
+    const imagePlaceholder = document.getElementById('imagePlaceholder');
+    const currentImage = document.getElementById('currentImage');
+    
+    // Apply padding to form inputs
+    function applyInputPadding() {
+      const hotelField = document.getElementById('id_hotel');
+      const categoryField = document.getElementById('id_category');
+      const nameField = document.getElementById('id_name');
+      const priceField = document.getElementById('id_price');
+      const costField = document.getElementById('id_cost');
+      const descriptionField = document.getElementById('id_description');
+      const ingredientsField = document.getElementById('id_ingredients');
+      
+      if (hotelField) hotelField.classList.add('pl-10');
+      if (categoryField) categoryField.classList.add('pl-10');
+      if (nameField) nameField.classList.add('pl-10');
+      if (priceField) priceField.classList.add('pl-10');
+      if (costField) costField.classList.add('pl-10');
+      if (descriptionField) descriptionField.classList.add('pl-10');
+      if (ingredientsField) ingredientsField.classList.add('pl-10');
+    }
+    
+    applyInputPadding();
+    
+    // Image preview functionality
+    if (imageInput) {
+      imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            if (imagePreview) {
+              imagePreview.src = e.target.result;
+              imagePreview.classList.remove('hidden');
+              if (imagePlaceholder) imagePlaceholder.classList.add('hidden');
+              if (currentImage) currentImage.style.display = 'none';
+            }
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+    
+    // Remove image button
+    const removeBtn = document.getElementById('removeImageBtn');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', function() {
+        if (currentImage) currentImage.style.display = 'none';
+        if (imageInput) imageInput.value = '';
+        if (imagePreview) imagePreview.classList.add('hidden');
+        if (imagePlaceholder) imagePlaceholder.classList.remove('hidden');
+      });
+    }
+    
+    // Form submission loading state
+    if (form && submitBtn) {
+      form.addEventListener('submit', function() {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin text-sm"></i> Saving...';
+        submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+      });
+    }
+  });
+</script>
+{% endblock %}

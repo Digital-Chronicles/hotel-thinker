@@ -1,208 +1,415 @@
 {% extends "base.html" %}
 {% load humanize %}
 
-{% block title %}Booking {{ booking.booking_number }}{% endblock %}
+{% block title %}Booking {{ booking.booking_number }} | Hotel Thinker{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto py-6">
+<div class="max-w-7xl mx-auto space-y-6">
 
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold">
-      Booking {{ booking.booking_number }}
-    </h1>
+  <!-- Header -->
+  <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+    <div class="flex items-start gap-3">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-sm">
+        <i class="fas fa-receipt text-white text-lg"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-slate-800">Booking {{ booking.booking_number }}</h1>
+        <p class="text-sm text-slate-500 mt-1">Manage reservation details, guest payments, and check-in or check-out actions.</p>
+      </div>
+    </div>
 
-    <div class="flex gap-2">
+    <div class="flex flex-wrap items-center gap-3">
       <a href="{% url 'bookings:booking_update' booking.id %}"
-         class="px-4 py-2 bg-blue-600 text-white rounded-lg">
-         Edit
+         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-medium shadow-sm transition">
+        <i class="fas fa-edit text-xs"></i>
+        <span>Edit Booking</span>
       </a>
 
       <a href="{% url 'bookings:booking_list' %}"
-         class="px-4 py-2 bg-gray-200 rounded-lg">
-         Back
+         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition">
+        <i class="fas fa-arrow-left text-xs"></i>
+        <span>Back to Bookings</span>
       </a>
     </div>
   </div>
 
-  <!-- Booking Info -->
-  <div class="bg-white rounded-xl shadow p-6 mb-6">
-    <h2 class="text-lg font-semibold mb-4">Booking Information</h2>
-
-    <div class="grid grid-cols-2 gap-4 text-sm">
-      <div>
-        <span class="text-gray-500">Room</span><br>
-        <strong>{{ booking.room.number }}</strong>
-        <div class="text-xs text-gray-500 mt-1">
-          {{ booking.room.room_type.name }} • Rate: {{ booking.room.room_type.base_price|intcomma }}
+  <!-- Status Banner -->
+  <div class="rounded-2xl border
+    {% if booking.status == 'confirmed' or booking.status == 'reserved' %}border-amber-200 bg-amber-50/70
+    {% elif booking.status == 'checked_in' %}border-blue-200 bg-blue-50/70
+    {% elif booking.status == 'checked_out' %}border-emerald-200 bg-emerald-50/70
+    {% elif booking.status == 'cancelled' %}border-rose-200 bg-rose-50/70
+    {% else %}border-slate-200 bg-slate-50/70{% endif %} px-5 py-4">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center
+          {% if booking.status == 'confirmed' or booking.status == 'reserved' %}bg-amber-100
+          {% elif booking.status == 'checked_in' %}bg-blue-100
+          {% elif booking.status == 'checked_out' %}bg-emerald-100
+          {% elif booking.status == 'cancelled' %}bg-rose-100
+          {% else %}bg-slate-100{% endif %}">
+          <i class="fas
+            {% if booking.status == 'confirmed' or booking.status == 'reserved' %}fa-clock text-amber-600
+            {% elif booking.status == 'checked_in' %}fa-key text-blue-600
+            {% elif booking.status == 'checked_out' %}fa-check-circle text-emerald-600
+            {% elif booking.status == 'cancelled' %}fa-ban text-rose-600
+            {% else %}fa-question-circle text-slate-600{% endif %}"></i>
+        </div>
+        <div>
+          <p class="text-xs uppercase tracking-wide text-slate-500">Current Status</p>
+          <p class="text-base font-bold
+            {% if booking.status == 'confirmed' or booking.status == 'reserved' %}text-amber-700
+            {% elif booking.status == 'checked_in' %}text-blue-700
+            {% elif booking.status == 'checked_out' %}text-emerald-700
+            {% elif booking.status == 'cancelled' %}text-rose-700
+            {% else %}text-slate-700{% endif %}">
+            {{ booking.get_status_display }}
+          </p>
         </div>
       </div>
 
-      <div>
-        <span class="text-gray-500">Guest</span><br>
-        <strong>{{ booking.guest.full_name }}</strong>
-      </div>
-
-      <div>
-        <span class="text-gray-500">Check In</span><br>
-        <strong>{{ booking.check_in }}</strong>
-      </div>
-
-      <div>
-        <span class="text-gray-500">Check Out</span><br>
-        <strong>{{ booking.check_out }}</strong>
-      </div>
-
-      <div>
-        <span class="text-gray-500">Adults</span><br>
-        {{ booking.adults }}
-      </div>
-
-      <div>
-        <span class="text-gray-500">Children</span><br>
-        {{ booking.children }}
-      </div>
-
-      <div>
-        <span class="text-gray-500">Status</span><br>
-        <span class="px-2 py-1 bg-gray-100 rounded">
-          {{ booking.get_status_display }}
-        </span>
-      </div>
-
-      <div>
-        <span class="text-gray-500">Payment Status</span><br>
-        <span class="px-2 py-1 bg-gray-100 rounded">
-          {{ booking.get_payment_status_display }}
-        </span>
+      <div class="flex flex-wrap items-center gap-4 text-xs text-slate-500">
+        <span><i class="fas fa-calendar-alt mr-1"></i>Created: {{ booking.created_at|date:"d M Y, H:i" }}</span>
+        <span><i class="fas fa-moon mr-1"></i>{{ booking.nights }} night{{ booking.nights|pluralize }}</span>
       </div>
     </div>
   </div>
 
-  <!-- Financial Summary -->
-  <div class="bg-white rounded-xl shadow p-6 mb-6">
-    <h2 class="text-lg font-semibold mb-4">Financial Summary</h2>
+  <!-- Main Layout -->
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
-    <div class="grid grid-cols-4 gap-4 text-sm">
-      <div>
-        <span class="text-gray-500">Nightly Rate</span><br>
-        {{ booking.nightly_rate|intcomma }}
+    <!-- Main -->
+    <div class="xl:col-span-2 space-y-6">
+
+      <!-- Booking Information -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-info-circle text-blue-500 text-sm"></i>
+            <h2 class="text-lg font-semibold text-slate-800">Booking Information</h2>
+          </div>
+        </div>
+
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+              <div class="flex items-start gap-3">
+                <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center mt-0.5">
+                  <i class="fas fa-door-open text-blue-500 text-sm"></i>
+                </div>
+                <div>
+                  <p class="text-xs uppercase tracking-wide text-slate-500">Room</p>
+                  <p class="text-base font-bold text-slate-800">Room {{ booking.room.number }}</p>
+                  <p class="text-xs text-slate-500">{{ booking.room.room_type.name }} • UGX {{ booking.room.room_type.base_price|intcomma }}/night</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3">
+                <div class="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center mt-0.5">
+                  <i class="fas fa-user text-indigo-500 text-sm"></i>
+                </div>
+                <div>
+                  <p class="text-xs uppercase tracking-wide text-slate-500">Guest</p>
+                  <p class="text-base font-bold text-slate-800">{{ booking.guest.full_name }}</p>
+                  <p class="text-xs text-slate-500">{{ booking.guest.phone|default:"No phone" }}{% if booking.guest.email %} • {{ booking.guest.email }}{% endif %}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <div class="flex items-start gap-3">
+                <div class="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center mt-0.5">
+                  <i class="fas fa-calendar-check text-emerald-500 text-sm"></i>
+                </div>
+                <div>
+                  <p class="text-xs uppercase tracking-wide text-slate-500">Stay Period</p>
+                  <p class="text-base font-bold text-slate-800">{{ booking.check_in|date:"d M Y" }} → {{ booking.check_out|date:"d M Y" }}</p>
+                  <p class="text-xs text-slate-500">{{ booking.nights }} night{{ booking.nights|pluralize }}</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3">
+                <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center mt-0.5">
+                  <i class="fas fa-users text-amber-500 text-sm"></i>
+                </div>
+                <div>
+                  <p class="text-xs uppercase tracking-wide text-slate-500">Guests</p>
+                  <p class="text-base font-bold text-slate-800">
+                    {{ booking.adults }} Adult{{ booking.adults|pluralize }}
+                    {% if booking.children > 0 %}, {{ booking.children }} Child{{ booking.children|pluralize }}{% endif %}
+                    {% if booking.infants > 0 %}, {{ booking.infants }} Infant{{ booking.infants|pluralize }}{% endif %}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {% if booking.special_requests %}
+            <div class="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
+              <div class="flex items-start gap-2">
+                <i class="fas fa-star text-amber-500 text-sm mt-0.5"></i>
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-wide text-amber-700">Special Requests</p>
+                  <p class="text-sm text-amber-800 mt-1">{{ booking.special_requests }}</p>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+
+          {% if booking.guest_notes %}
+            <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div class="flex items-start gap-2">
+                <i class="fas fa-note-sticky text-slate-500 text-sm mt-0.5"></i>
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-wide text-slate-600">Guest Notes</p>
+                  <p class="text-sm text-slate-700 mt-1">{{ booking.guest_notes }}</p>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+
+          {% if booking.internal_notes %}
+            <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div class="flex items-start gap-2">
+                <i class="fas fa-lock text-slate-500 text-sm mt-0.5"></i>
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-wide text-slate-600">Internal Notes</p>
+                  <p class="text-sm text-slate-700 mt-1">{{ booking.internal_notes }}</p>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        </div>
       </div>
 
-      <div>
-        <span class="text-gray-500">Subtotal</span><br>
-        {{ booking.subtotal|intcomma }}
+      <!-- Financial Summary -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-chart-line text-blue-500 text-sm"></i>
+            <h2 class="text-lg font-semibold text-slate-800">Financial Summary</h2>
+          </div>
+        </div>
+
+        <div class="p-6 space-y-5">
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="rounded-xl bg-slate-50 p-4 text-center border border-slate-100">
+              <p class="text-xs text-slate-500">Nightly Rate</p>
+              <p class="text-lg font-bold text-slate-800 mt-1">UGX {{ booking.nightly_rate|intcomma }}</p>
+            </div>
+            <div class="rounded-xl bg-slate-50 p-4 text-center border border-slate-100">
+              <p class="text-xs text-slate-500">Subtotal</p>
+              <p class="text-lg font-bold text-slate-800 mt-1">UGX {{ booking.subtotal|intcomma }}</p>
+            </div>
+            <div class="rounded-xl bg-slate-50 p-4 text-center border border-slate-100">
+              <p class="text-xs text-slate-500">Tax</p>
+              <p class="text-lg font-bold text-slate-800 mt-1">UGX {{ booking.tax_amount|intcomma }}</p>
+            </div>
+            <div class="rounded-xl bg-blue-50 p-4 text-center border border-blue-100">
+              <p class="text-xs text-slate-500">Total Amount</p>
+              <p class="text-xl font-bold text-blue-600 mt-1" id="uiTotal">UGX {{ booking.total_amount|intcomma }}</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="rounded-xl bg-emerald-50 border border-emerald-100 p-4 flex items-center justify-between gap-3">
+              <span class="text-sm font-medium text-slate-700">Amount Paid</span>
+              <span class="text-lg font-bold text-emerald-600" id="uiPaid">UGX {{ booking.amount_paid|intcomma }}</span>
+            </div>
+            <div class="rounded-xl bg-amber-50 border border-amber-100 p-4 flex items-center justify-between gap-3">
+              <span class="text-sm font-medium text-slate-700">Balance Due</span>
+              <span class="text-lg font-bold text-amber-600" id="uiBalance">UGX {{ booking.balance_due|intcomma }}</span>
+            </div>
+            <div class="rounded-xl bg-indigo-50 border border-indigo-100 p-4 flex items-center justify-between gap-3">
+              <span class="text-sm font-medium text-slate-700">Required for Check-in</span>
+              <span class="text-lg font-bold text-indigo-600" id="uiReq50">UGX {{ booking.required_checkin_amount|intcomma }}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div>
-        <span class="text-gray-500">Tax</span><br>
-        {{ booking.tax_amount|intcomma }}
+      <!-- Actions -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <div class="flex flex-wrap gap-3">
+          {% if booking.status != "checked_in" and booking.status != "checked_out" and booking.status != "cancelled" %}
+            <button type="button" id="openCheckInModal"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white text-sm font-semibold shadow-sm transition">
+              <i class="fas fa-key text-xs"></i>
+              <span>Check In Guest</span>
+            </button>
+          {% endif %}
+
+          {% if booking.status == "checked_in" %}
+            <button type="button" id="openCheckOutModal"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-semibold shadow-sm transition">
+              <i class="fas fa-door-open text-xs"></i>
+              <span>Check Out Guest</span>
+            </button>
+          {% endif %}
+
+          {% if booking.status != "checked_out" and booking.status != "cancelled" %}
+            <button type="button" id="openCancelModal"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-rose-200 bg-white hover:bg-rose-50 text-sm font-medium text-rose-600 transition">
+              <i class="fas fa-ban text-xs"></i>
+              <span>Cancel Booking</span>
+            </button>
+          {% endif %}
+        </div>
       </div>
 
-      <div>
-        <span class="text-gray-500">Total</span><br>
-        <strong id="uiTotal">{{ booking.total_amount|intcomma }}</strong>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="space-y-6">
+
+      <!-- Payment Status -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-credit-card text-blue-500 text-sm"></i>
+            <h3 class="font-semibold text-slate-800">Payment Status</h3>
+          </div>
+        </div>
+
+        <div class="p-5">
+          <div class="text-center">
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full
+              {% if booking.payment_status == 'paid' %}bg-emerald-100 text-emerald-700
+              {% elif booking.payment_status == 'partially_paid' %}bg-amber-100 text-amber-700
+              {% elif booking.payment_status == 'pending' %}bg-slate-100 text-slate-700
+              {% else %}bg-rose-100 text-rose-700{% endif %}">
+              <i class="fas
+                {% if booking.payment_status == 'paid' %}fa-check-circle
+                {% elif booking.payment_status == 'partially_paid' %}fa-clock
+                {% elif booking.payment_status == 'pending' %}fa-hourglass-half
+                {% else %}fa-times-circle{% endif %} text-sm"></i>
+              <span class="text-sm font-semibold">{{ booking.get_payment_status_display }}</span>
+            </div>
+          </div>
+
+          <div class="mt-5 space-y-3 text-sm">
+            <div class="flex justify-between">
+              <span class="text-slate-500">Total Amount</span>
+              <span class="font-semibold text-slate-800">UGX {{ booking.total_amount|intcomma }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Amount Paid</span>
+              <span class="font-semibold text-emerald-600">UGX {{ booking.amount_paid|intcomma }}</span>
+            </div>
+            <div class="flex justify-between pt-3 border-t border-slate-100">
+              <span class="text-slate-500">Balance Due</span>
+              <span class="font-semibold text-amber-600">UGX {{ booking.balance_due|intcomma }}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div>
-        <span class="text-gray-500">Amount Paid</span><br>
-        <span id="uiPaid">{{ booking.amount_paid|intcomma }}</span>
+      <!-- Quick Actions -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-bolt text-blue-500 text-sm"></i>
+            <h3 class="font-semibold text-slate-800">Quick Actions</h3>
+          </div>
+        </div>
+
+        <div class="p-4 space-y-2">
+          <a href="#" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition">
+            <i class="fas fa-print text-slate-400 text-sm"></i>
+            <span class="text-sm text-slate-600">Print Invoice</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition">
+            <i class="fas fa-envelope text-slate-400 text-sm"></i>
+            <span class="text-sm text-slate-600">Send Confirmation Email</span>
+          </a>
+          <a href="{% url 'bookings:guest_detail' booking.guest.id %}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition">
+            <i class="fas fa-user text-slate-400 text-sm"></i>
+            <span class="text-sm text-slate-600">View Guest Profile</span>
+          </a>
+        </div>
       </div>
 
-      <div>
-        <span class="text-gray-500">Balance</span><br>
-        <strong id="uiBalance">{{ booking.balance_due|intcomma }}</strong>
+      <!-- Help -->
+      <div class="rounded-2xl border border-blue-100 bg-blue-50 p-5">
+        <div class="flex items-start gap-3">
+          <i class="fas fa-lightbulb text-blue-500 text-lg mt-0.5"></i>
+          <div>
+            <p class="text-sm font-semibold text-blue-800">Need Assistance?</p>
+            <p class="text-xs text-blue-700 mt-1">Front desk staff can use the payment actions below to meet the required check-in and check-out rules.</p>
+          </div>
+        </div>
       </div>
 
-      <div>
-        <span class="text-gray-500">Required for Check-in (50%)</span><br>
-        <strong id="uiReq50">{{ booking.required_checkin_amount|intcomma }}</strong>
-      </div>
-
-      <div>
-        <span class="text-gray-500">Minimum to Pay Now</span><br>
-        <strong id="uiMinNow">{{ min_pay_for_checkin_now|intcomma }}</strong>
-      </div>
     </div>
   </div>
-
-  <!-- Actions -->
-  <div class="flex gap-3 flex-wrap">
-
-    {% if booking.status != "checked_in" and booking.status != "checked_out" and booking.status != "cancelled" %}
-      <button type="button" id="openCheckInModal"
-              class="px-4 py-2 bg-green-600 text-white rounded-lg">
-        Check In
-      </button>
-    {% endif %}
-
-    {% if booking.status == "checked_in" %}
-      <button type="button" id="openCheckOutModal"
-              class="px-4 py-2 bg-indigo-600 text-white rounded-lg">
-        Check Out
-      </button>
-    {% endif %}
-
-    {% if booking.status != "checked_out" and booking.status != "cancelled" %}
-      <form method="post" action="{% url 'bookings:booking_cancel' booking.id %}">
-        {% csrf_token %}
-        <button class="px-4 py-2 bg-red-600 text-white rounded-lg">
-          Cancel
-        </button>
-      </form>
-    {% endif %}
-  </div>
-
 </div>
 
-<!-- ===========================================================
-     CHECK-IN MODAL (requires at least 50% paid)
-=========================================================== -->
+<!-- CHECK-IN MODAL -->
 <div id="checkInModal" class="hidden fixed inset-0 z-50">
-  <div class="absolute inset-0 bg-black/50" data-close="checkInModal"></div>
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" data-close="checkInModal"></div>
 
-  <div class="relative mx-auto mt-16 w-full max-w-lg px-4">
-    <div class="rounded-2xl bg-white shadow border border-gray-200 overflow-hidden">
-      <div class="px-6 py-4 border-b bg-gray-50 flex items-center justify-between">
-        <div>
-          <div class="font-bold text-gray-900">Check In</div>
-          <div class="text-xs text-gray-500">Must reach at least 50% payment before check-in.</div>
+  <div class="relative mx-auto mt-10 md:mt-16 w-full max-w-lg px-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in">
+      <div class="px-6 py-4 bg-gradient-to-r from-emerald-50 to-white border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-green-600 flex items-center justify-center">
+            <i class="fas fa-key text-white text-sm"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold text-slate-800">Check In Guest</h3>
+            <p class="text-xs text-slate-500">At least 50% of the booking amount must be paid.</p>
+          </div>
         </div>
-        <button type="button" class="text-gray-500 hover:text-gray-900" data-close="checkInModal">✕</button>
+        <button type="button" class="text-slate-400 hover:text-slate-600 text-xl" data-close="checkInModal">×</button>
       </div>
 
       <div class="p-6 space-y-4">
-        <div class="rounded-xl border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm">
-          Total: <span class="font-semibold" id="ciTotal"></span><br/>
-          Paid: <span class="font-semibold" id="ciPaid"></span><br/>
-          Required (50%): <span class="font-semibold" id="ciRequired"></span><br/>
-          Minimum to pay now: <span class="font-semibold" id="ciMinPay"></span>
+        <div class="rounded-xl bg-amber-50 border border-amber-100 p-4">
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span class="text-slate-600">Total Amount</span><span class="font-semibold text-slate-800" id="ciTotal"></span></div>
+            <div class="flex justify-between"><span class="text-slate-600">Amount Paid</span><span class="font-semibold text-emerald-600" id="ciPaid"></span></div>
+            <div class="flex justify-between pt-2 border-t border-amber-200"><span class="text-slate-600">Required (50%)</span><span class="font-semibold text-amber-700" id="ciRequired"></span></div>
+            <div class="flex justify-between"><span class="text-slate-600">Minimum to Pay Now</span><span class="font-semibold text-blue-600" id="ciMinPay"></span></div>
+          </div>
         </div>
 
-        <div id="ciError" class="hidden rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-4 py-3 text-sm"></div>
+        <div id="ciError" class="hidden rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"></div>
 
         <form id="ciPayForm" method="post" action="{% url 'bookings:booking_add_payment' booking.id %}">
           {% csrf_token %}
           <input type="hidden" name="target" value="checkin">
           <input type="hidden" name="method" id="ciMethodHidden" value="cash">
 
-          <label class="text-sm font-medium text-gray-700">Amount to Pay Now</label>
-          <input id="ciAmount" name="amount" type="number" step="0.01" required
-                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Amount to Pay Now</label>
+            <div class="relative">
+              <i class="fas fa-money-bill-wave absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+              <input type="number" id="ciAmount" name="amount" step="0.01" required
+                     class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-emerald-300 focus:border-emerald-300">
+            </div>
+          </div>
 
-          <label class="text-sm font-medium text-gray-700 mt-3 block">Reference (optional)</label>
-          <input name="reference"
-                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                 placeholder="Optional">
+          <div class="mt-3">
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Reference (optional)</label>
+            <div class="relative">
+              <i class="fas fa-hashtag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+              <input type="text" name="reference"
+                     class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-emerald-300"
+                     placeholder="Transaction or cheque reference">
+            </div>
+          </div>
 
-          <div class="mt-4 flex items-center justify-between gap-3">
-            <select id="ciMethod" class="rounded-lg border border-gray-300 px-3 py-2 text-sm w-44">
-              {% for key,label in payment_methods %}
-                <option value="{{ key }}">{{ label }}</option>
-              {% endfor %}
-            </select>
-
-            <button id="ciPayBtn"
-                    class="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-700">
+          <div class="mt-4 flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
+            <div class="flex-1">
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Payment Method</label>
+              <select id="ciMethod" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-emerald-300 bg-white">
+                {% for key, label in payment_methods %}
+                  <option value="{{ key }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <button type="submit" id="ciPayBtn"
+                    class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white text-sm font-semibold shadow-sm transition">
               Pay & Continue
             </button>
           </div>
@@ -216,54 +423,71 @@
   </div>
 </div>
 
-<!-- ===========================================================
-     CHECK-OUT MODAL (requires 100% paid)
-=========================================================== -->
+<!-- CHECK-OUT MODAL -->
 <div id="checkOutModal" class="hidden fixed inset-0 z-50">
-  <div class="absolute inset-0 bg-black/50" data-close="checkOutModal"></div>
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" data-close="checkOutModal"></div>
 
-  <div class="relative mx-auto mt-16 w-full max-w-lg px-4">
-    <div class="rounded-2xl bg-white shadow border border-gray-200 overflow-hidden">
-      <div class="px-6 py-4 border-b bg-gray-50 flex items-center justify-between">
-        <div>
-          <div class="font-bold text-gray-900">Check Out</div>
-          <div class="text-xs text-gray-500">Must clear the full balance before check-out.</div>
+  <div class="relative mx-auto mt-10 md:mt-16 w-full max-w-lg px-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in">
+      <div class="px-6 py-4 bg-gradient-to-r from-indigo-50 to-white border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
+            <i class="fas fa-door-open text-white text-sm"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold text-slate-800">Check Out Guest</h3>
+            <p class="text-xs text-slate-500">The full balance must be cleared before check-out.</p>
+          </div>
         </div>
-        <button type="button" class="text-gray-500 hover:text-gray-900" data-close="checkOutModal">✕</button>
+        <button type="button" class="text-slate-400 hover:text-slate-600 text-xl" data-close="checkOutModal">×</button>
       </div>
 
       <div class="p-6 space-y-4">
-        <div class="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-4 py-3 text-sm">
-          Total: <span class="font-semibold" id="coTotal"></span><br/>
-          Paid: <span class="font-semibold" id="coPaid"></span><br/>
-          Balance due: <span class="font-semibold" id="coBalance"></span>
+        <div class="rounded-xl bg-rose-50 border border-rose-100 p-4">
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span class="text-slate-600">Total Amount</span><span class="font-semibold text-slate-800" id="coTotal"></span></div>
+            <div class="flex justify-between"><span class="text-slate-600">Amount Paid</span><span class="font-semibold text-emerald-600" id="coPaid"></span></div>
+            <div class="flex justify-between pt-2 border-t border-rose-200"><span class="text-slate-600">Balance Due</span><span class="font-semibold text-rose-700" id="coBalance"></span></div>
+          </div>
         </div>
 
-        <div id="coError" class="hidden rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-4 py-3 text-sm"></div>
+        <div id="coError" class="hidden rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"></div>
 
         <form id="coPayForm" method="post" action="{% url 'bookings:booking_add_payment' booking.id %}">
           {% csrf_token %}
           <input type="hidden" name="target" value="checkout">
           <input type="hidden" name="method" id="coMethodHidden" value="cash">
 
-          <label class="text-sm font-medium text-gray-700">Amount to Pay Now</label>
-          <input id="coAmount" name="amount" type="number" step="0.01" required
-                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Amount to Pay Now</label>
+            <div class="relative">
+              <i class="fas fa-money-bill-wave absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+              <input type="number" id="coAmount" name="amount" step="0.01" required
+                     class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300">
+            </div>
+          </div>
 
-          <label class="text-sm font-medium text-gray-700 mt-3 block">Reference (optional)</label>
-          <input name="reference"
-                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                 placeholder="Optional">
+          <div class="mt-3">
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Reference (optional)</label>
+            <div class="relative">
+              <i class="fas fa-hashtag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+              <input type="text" name="reference"
+                     class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-300"
+                     placeholder="Transaction or cheque reference">
+            </div>
+          </div>
 
-          <div class="mt-4 flex items-center justify-between gap-3">
-            <select id="coMethod" class="rounded-lg border border-gray-300 px-3 py-2 text-sm w-44">
-              {% for key,label in payment_methods %}
-                <option value="{{ key }}">{{ label }}</option>
-              {% endfor %}
-            </select>
-
-            <button id="coPayBtn"
-                    class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700">
+          <div class="mt-4 flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
+            <div class="flex-1">
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Payment Method</label>
+              <select id="coMethod" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-300 bg-white">
+                {% for key, label in payment_methods %}
+                  <option value="{{ key }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <button type="submit" id="coPayBtn"
+                    class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-semibold shadow-sm transition">
               Pay & Continue
             </button>
           </div>
@@ -277,100 +501,189 @@
   </div>
 </div>
 
+<!-- CANCEL MODAL -->
+<div id="cancelModal" class="hidden fixed inset-0 z-50">
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" data-close="cancelModal"></div>
+
+  <div class="relative mx-auto mt-10 md:mt-16 w-full max-w-md px-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in">
+      <div class="px-6 py-4 bg-gradient-to-r from-rose-50 to-white border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-600 to-red-600 flex items-center justify-center">
+            <i class="fas fa-ban text-white text-sm"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold text-slate-800">Cancel Booking</h3>
+            <p class="text-xs text-slate-500">This action cannot be undone.</p>
+          </div>
+        </div>
+        <button type="button" class="text-slate-400 hover:text-slate-600 text-xl" data-close="cancelModal">×</button>
+      </div>
+
+      <form method="post" action="{% url 'bookings:booking_cancel' booking.id %}" class="p-6 space-y-4">
+        {% csrf_token %}
+
+        <div class="rounded-xl bg-amber-50 border border-amber-100 p-4">
+          <div class="flex items-start gap-2">
+            <i class="fas fa-exclamation-triangle text-amber-600 text-sm mt-0.5"></i>
+            <p class="text-sm text-amber-800">Cancelling this booking will release the room and end the reservation workflow.</p>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Cancellation Reason</label>
+          <textarea name="reason" rows="3" required
+                    class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-300 focus:border-rose-300"
+                    placeholder="Enter the reason for cancellation..."></textarea>
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-end gap-3 pt-2">
+          <button type="button" data-close="cancelModal"
+                  class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-600 transition">
+            Go Back
+          </button>
+          <button type="submit"
+                  class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 text-white text-sm font-semibold shadow-sm transition">
+            <i class="fas fa-ban text-xs mr-1"></i>
+            Confirm Cancellation
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes fade-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes zoom-in {
+    from { opacity: 0; transform: scale(0.92); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .animate-in {
+    animation: fade-in 0.2s ease-out;
+  }
+
+  .zoom-in {
+    animation: zoom-in 0.2s ease-out;
+  }
+</style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  // Helpers
-  function openModal(id){ document.getElementById(id)?.classList.remove("hidden"); }
-  function closeModal(id){ document.getElementById(id)?.classList.add("hidden"); }
-  function showErr(id, msg){
-    const box = document.getElementById(id);
-    if(!box) return;
-    box.textContent = msg;
-    box.classList.remove("hidden");
-  }
-  function clearErr(id){
-    const box = document.getElementById(id);
-    if(!box) return;
-    box.textContent = "";
-    box.classList.add("hidden");
+  function openModal(id) {
+    document.getElementById(id)?.classList.remove("hidden");
   }
 
-  // Close modals
+  function closeModal(id) {
+    document.getElementById(id)?.classList.add("hidden");
+  }
+
+  function showErr(id, msg) {
+    const box = document.getElementById(id);
+    if (box) {
+      box.textContent = msg;
+      box.classList.remove("hidden");
+    }
+  }
+
+  function clearErr(id) {
+    const box = document.getElementById(id);
+    if (box) {
+      box.textContent = "";
+      box.classList.add("hidden");
+    }
+  }
+
   document.querySelectorAll("[data-close]").forEach(el => {
     el.addEventListener("click", () => closeModal(el.dataset.close));
   });
+
   document.addEventListener("keydown", (e) => {
-    if(e.key === "Escape"){ closeModal("checkInModal"); closeModal("checkOutModal"); }
+    if (e.key === "Escape") {
+      closeModal("checkInModal");
+      closeModal("checkOutModal");
+      closeModal("cancelModal");
+    }
   });
 
-  // Numbers from backend
-  const TOTAL = parseFloat("{{ booking.total_amount|default:0 }}") || 0;
-  const PAID  = parseFloat("{{ booking.amount_paid|default:0 }}") || 0;
-
-  function money(n){ return (Math.round(n * 100) / 100).toFixed(2); }
-
-  // Populate check-in modal (50%)
+  document.getElementById("openCancelModal")?.addEventListener("click", () => openModal("cancelModal"));
   document.getElementById("openCheckInModal")?.addEventListener("click", () => {
     clearErr("ciError");
     const required = TOTAL * 0.5;
     const minPay = Math.max(required - PAID, 0);
 
-    document.getElementById("ciTotal").textContent = money(TOTAL);
-    document.getElementById("ciPaid").textContent = money(PAID);
-    document.getElementById("ciRequired").textContent = money(required);
-    document.getElementById("ciMinPay").textContent = money(minPay);
+    document.getElementById("ciTotal").textContent = "UGX " + money(TOTAL);
+    document.getElementById("ciPaid").textContent = "UGX " + money(PAID);
+    document.getElementById("ciRequired").textContent = "UGX " + money(required);
+    document.getElementById("ciMinPay").textContent = "UGX " + money(minPay);
 
     const amt = document.getElementById("ciAmount");
-    amt.value = money(minPay);
-    amt.min = money(minPay);
+    if (amt) {
+      amt.value = money(minPay);
+      amt.min = money(minPay);
+    }
 
     openModal("checkInModal");
   });
 
-  // Populate check-out modal (100%)
   document.getElementById("openCheckOutModal")?.addEventListener("click", () => {
     clearErr("coError");
     const balance = Math.max(TOTAL - PAID, 0);
 
-    document.getElementById("coTotal").textContent = money(TOTAL);
-    document.getElementById("coPaid").textContent = money(PAID);
-    document.getElementById("coBalance").textContent = money(balance);
+    document.getElementById("coTotal").textContent = "UGX " + money(TOTAL);
+    document.getElementById("coPaid").textContent = "UGX " + money(PAID);
+    document.getElementById("coBalance").textContent = "UGX " + money(balance);
 
     const amt = document.getElementById("coAmount");
-    amt.value = money(balance);
-    amt.min = money(balance);
+    if (amt) {
+      amt.value = money(balance);
+      amt.min = money(balance);
+    }
 
     openModal("checkOutModal");
   });
 
-  // Bind payment method select -> hidden input
-  function bindMethod(selectId, hiddenId){
+  const TOTAL = parseFloat("{{ booking.total_amount|default:0 }}") || 0;
+  const PAID = parseFloat("{{ booking.amount_paid|default:0 }}") || 0;
+
+  function money(n) {
+    return (Math.round(n * 100) / 100).toFixed(2);
+  }
+
+  function bindMethod(selectId, hiddenId) {
     const sel = document.getElementById(selectId);
     const hid = document.getElementById(hiddenId);
-    if(!sel || !hid) return;
-    hid.value = sel.value;
-    sel.addEventListener("change", () => hid.value = sel.value);
+    if (sel && hid) {
+      hid.value = sel.value;
+      sel.addEventListener("change", () => {
+        hid.value = sel.value;
+      });
+    }
   }
+
   bindMethod("ciMethod", "ciMethodHidden");
   bindMethod("coMethod", "coMethodHidden");
 
-  // AJAX payment then submit action
-  async function payThenSubmit(payFormId, actionFormId, errorBoxId, btnId){
+  async function payThenSubmit(payFormId, actionFormId, errorBoxId, btnId) {
     const payForm = document.getElementById(payFormId);
     const actionForm = document.getElementById(actionFormId);
     const btn = document.getElementById(btnId);
-    if(!payForm || !actionForm) return;
+    if (!payForm || !actionForm || !btn) return;
 
     payForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       clearErr(errorBoxId);
 
       btn.disabled = true;
-      btn.classList.add("opacity-70","cursor-not-allowed");
+      btn.classList.add("opacity-70", "cursor-not-allowed");
 
-      try{
+      try {
         const csrf = payForm.querySelector('input[name="csrfmiddlewaretoken"]').value;
         const fd = new FormData(payForm);
 
@@ -385,20 +698,24 @@
 
         const data = await res.json().catch(() => ({}));
 
-        if(!res.ok || !data.ok){
-          const msg = data.error || "Payment failed. Please check the amount and try again.";
-          showErr(errorBoxId, msg);
+        if (!res.ok || !data.ok) {
+          showErr(errorBoxId, data.error || "Payment failed. Please check the amount and try again.");
           return;
         }
 
-        // Payment OK → now submit action (server still validates)
-        actionForm.submit();
+        if (data.amount_paid) {
+          const paidEl = document.getElementById("uiPaid");
+          const balanceEl = document.getElementById("uiBalance");
+          if (paidEl) paidEl.textContent = "UGX " + money(parseFloat(data.amount_paid));
+          if (balanceEl) balanceEl.textContent = "UGX " + money(parseFloat(data.balance_due));
+        }
 
-      }catch(err){
+        actionForm.submit();
+      } catch (err) {
         showErr(errorBoxId, "Network error. Please try again.");
-      }finally{
+      } finally {
         btn.disabled = false;
-        btn.classList.remove("opacity-70","cursor-not-allowed");
+        btn.classList.remove("opacity-70", "cursor-not-allowed");
       }
     });
   }

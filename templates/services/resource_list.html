@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Service Resources • Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Service Resources</h1>
+      <p class="text-sm text-slate-500 mt-1">Manage halls, sauna rooms, pool spaces, garden spaces, vans, and other resources.</p>
+    </div>
+    <a href="{% url 'services:resource_create' %}" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">New Resource</a>
+  </div>
+
+  <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50 text-slate-600">
+        <tr>
+          <th class="px-4 py-3 text-left">Name</th>
+          <th class="px-4 py-3 text-left">Service</th>
+          <th class="px-4 py-3 text-left">Hotel</th>
+          <th class="px-4 py-3 text-left">Capacity</th>
+          <th class="px-4 py-3 text-left">Status</th>
+          <th class="px-4 py-3 text-right">Action</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for resource in resources %}
+        <tr>
+          <td class="px-4 py-3 font-medium">{{ resource.name }}</td>
+          <td class="px-4 py-3">{{ resource.service.name }}</td>
+          <td class="px-4 py-3">{{ resource.hotel.name }}</td>
+          <td class="px-4 py-3">{{ resource.capacity }}</td>
+          <td class="px-4 py-3">{{ resource.is_active|yesno:"Active,Inactive" }}</td>
+          <td class="px-4 py-3 text-right"><a href="{% url 'services:resource_update' resource.pk %}" class="font-medium text-slate-700">Edit</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">No resources found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Account{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto p-6">
+
+  <h1 class="text-2xl font-bold mb-4">{{ account.name }}</h1>
+
+  <div class="grid grid-cols-2 gap-4 mb-6">
+    <div><b>Code:</b> {{ account.account_code }}</div>
+    <div><b>Type:</b> {{ account.account_type }}</div>
+    <div><b>Balance:</b> {{ account.balance }}</div>
+  </div>
+
+  <h2 class="text-lg font-semibold mb-2">Recent Transactions</h2>
+
+  <table class="w-full text-sm bg-white shadow rounded">
+    <thead class="bg-gray-100">
+      <tr>
+        <th class="p-3">Date</th>
+        <th>Description</th>
+        <th>Debit</th>
+        <th>Credit</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for line in recent_lines %}
+      <tr class="border-t">
+        <td class="p-3">{{ line.journal_entry.entry_date }}</td>
+        <td>{{ line.description }}</td>
+        <td>{{ line.debit }}</td>
+        <td>{{ line.credit }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+{% endblock %}

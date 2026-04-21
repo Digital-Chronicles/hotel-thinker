@@ -1,97 +1,714 @@
 {% extends "base.html" %}
-{% block title %}{% if form.instance.pk %}Edit Room Type{% else %}New Room Type{% endif %} — Hotel Thinker{% endblock %}
+{% load humanize %}
+
+{% block title %}{% if form.instance.pk %}Edit {{ form.instance.name }}{% else %}Create Room Type{% endif %} — Hotel Thinker{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl">
-
-  <div class="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  
+  <!-- Header Section -->
+  <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-      <div class="text-xs text-gray-500">
-        <a href="{% url 'rooms:roomtype_list' %}" class="hover:underline">Room Types</a>
-        <span class="mx-1">/</span>
-        {% if form.instance.pk %}Edit{% else %}New{% endif %}
+      <div class="flex items-center gap-2 text-sm text-slate-500 mb-1">
+        <a href="{% url 'rooms:roomtype_list' %}" class="hover:text-indigo-600 transition-colors">
+          <i class="fas fa-tags mr-1"></i>Room Types
+        </a>
+        <i class="fas fa-chevron-right text-xs text-slate-400"></i>
+        <span class="text-slate-600">{% if form.instance.pk %}Edit{% else %}Create{% endif %}</span>
       </div>
-
-      <h1 class="text-2xl font-bold text-blue-800 mt-1">
-        {% if form.instance.pk %}Edit Room Type{% else %}Create Room Type{% endif %}
-      </h1>
-      <p class="text-sm text-gray-600 mt-1">Room types define base pricing and category information.</p>
+      
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 flex items-center justify-center shadow-md">
+          <i class="fas {% if form.instance.pk %}fa-edit{% else %}fa-plus-circle{% endif %} text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-slate-800">
+            {% if form.instance.pk %}Edit Room Type{% else %}Create New Room Type{% endif %}
+          </h1>
+          <p class="text-sm text-slate-500 mt-0.5">
+            {% if form.instance.pk %}
+              Modify room category details and pricing configuration
+            {% else %}
+              Add a new room category to your hotel inventory
+            {% endif %}
+          </p>
+        </div>
+      </div>
     </div>
-
+    
     <a href="{% url 'rooms:roomtype_list' %}"
-       class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
-      Back
+       class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all">
+      <i class="fas fa-arrow-left text-xs"></i>
+      <span>Back to Room Types</span>
     </a>
   </div>
 
-  <form method="post" class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+  <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Main Content Area -->
+      <div class="lg:col-span-2 space-y-6">
+        
+        <!-- Basic Information Card -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-200">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-info-circle text-indigo-500 text-sm"></i>
+              <span class="text-sm font-semibold text-slate-700">Basic Information</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1 ml-6">Essential details for this room type</p>
+          </div>
+          
+          <div class="p-6 space-y-5">
+            {% if form.non_field_errors %}
+              <div class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3">
+                <div class="flex items-start gap-2">
+                  <i class="fas fa-exclamation-triangle text-rose-500 text-sm mt-0.5"></i>
+                  <div class="text-sm text-rose-700">
+                    {{ form.non_field_errors }}
+                  </div>
+                </div>
+              </div>
+            {% endif %}
 
-    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-      <div class="text-sm font-semibold text-gray-900">Type Details</div>
-      <div class="text-xs text-gray-500 mt-0.5">Example: Single, Double, Deluxe.</div>
-    </div>
+            <!-- Name Field -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                Room Type Name <span class="text-rose-500">*</span>
+              </label>
+              <div class="relative">
+                <i class="fas fa-tag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                {{ form.name }}
+              </div>
+              {% if form.name.errors %}
+                <p class="text-xs text-rose-600 mt-1 flex items-center gap-1">
+                  <i class="fas fa-exclamation-circle text-[10px]"></i>
+                  {{ form.name.errors|striptags }}
+                </p>
+              {% else %}
+                <p class="text-xs text-slate-400 mt-1 ml-1">Examples: Standard Single, Deluxe Double, Executive Suite</p>
+              {% endif %}
+            </div>
 
-    <div class="p-6 space-y-5">
-      {% if form.non_field_errors %}
-        <div class="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-4 py-3 text-sm">
-          {{ form.non_field_errors }}
+            <!-- Description Field -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                Description <span class="text-slate-400 text-xs font-normal">(Optional)</span>
+              </label>
+              <div class="relative">
+                <i class="fas fa-align-left absolute left-3 top-3 text-slate-400 text-sm"></i>
+                {{ form.description }}
+              </div>
+              {% if form.description.errors %}
+                <p class="text-xs text-rose-600 mt-1">{{ form.description.errors|striptags }}</p>
+              {% else %}
+                <p class="text-xs text-slate-400 mt-1 ml-1">Describe amenities, size, view, and special features</p>
+              {% endif %}
+              <div id="charCounter" class="text-xs text-slate-400 mt-1 text-right"></div>
+            </div>
+
+            <!-- Capacity Field -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                Maximum Capacity <span class="text-rose-500">*</span>
+              </label>
+              <div class="relative">
+                <i class="fas fa-users absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                {{ form.capacity }}
+              </div>
+              {% if form.capacity.errors %}
+                <p class="text-xs text-rose-600 mt-1">{{ form.capacity.errors|striptags }}</p>
+              {% else %}
+                <p class="text-xs text-slate-400 mt-1 ml-1">Maximum number of guests allowed</p>
+              {% endif %}
+            </div>
+
+            <!-- Size Field -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                Room Size <span class="text-slate-400 text-xs font-normal">(Optional)</span>
+              </label>
+              <div class="relative">
+                <i class="fas fa-arrows-alt absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                {{ form.size }}
+              </div>
+              {% if form.size.errors %}
+                <p class="text-xs text-rose-600 mt-1">{{ form.size.errors|striptags }}</p>
+              {% else %}
+                <p class="text-xs text-slate-400 mt-1 ml-1">e.g., 25 m², 300 sq ft</p>
+              {% endif %}
+            </div>
+
+            <!-- Bed Configuration -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                Bed Configuration <span class="text-slate-400 text-xs font-normal">(Optional)</span>
+              </label>
+              <div class="relative">
+                <i class="fas fa-bed absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                {{ form.bed_configuration }}
+              </div>
+              {% if form.bed_configuration.errors %}
+                <p class="text-xs text-rose-600 mt-1">{{ form.bed_configuration.errors|striptags }}</p>
+              {% else %}
+                <p class="text-xs text-slate-400 mt-1 ml-1">e.g., 1 King Bed, 2 Queen Beds, 1 Single Bed</p>
+              {% endif %}
+            </div>
+          </div>
         </div>
-      {% endif %}
 
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
-        {{ form.name }}
-        {% if form.name.errors %}
-          <p class="text-xs text-rose-600 mt-1">{{ form.name.errors|striptags }}</p>
-        {% else %}
-          <p class="text-xs text-gray-500 mt-1">Displayed across bookings and reports.</p>
-        {% endif %}
-      </div>
+        <!-- Pricing Configuration Card -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-200">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-dollar-sign text-indigo-500 text-sm"></i>
+              <span class="text-sm font-semibold text-slate-700">Pricing Configuration</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1 ml-6">Set the base rate for this room type</p>
+          </div>
+          
+          <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Base Price Field -->
+              <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                  Base Price <span class="text-rose-500">*</span>
+                </label>
+                <div class="relative">
+                  <i class="fas fa-money-bill-wave absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                  {{ form.base_price }}
+                </div>
+                {% if form.base_price.errors %}
+                  <p class="text-xs text-rose-600 mt-1">{{ form.base_price.errors|striptags }}</p>
+                {% else %}
+                  <p class="text-xs text-slate-400 mt-1 ml-1">Default nightly rate in Ugandan Shillings</p>
+                {% endif %}
+              </div>
 
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-        {{ form.description }}
-        {% if form.description.errors %}
-          <p class="text-xs text-rose-600 mt-1">{{ form.description.errors|striptags }}</p>
-        {% else %}
-          <p class="text-xs text-gray-500 mt-1">Optional details about this type.</p>
-        {% endif %}
-      </div>
+              <!-- Price Summary Card -->
+              <div class="bg-gradient-to-br from-indigo-50 to-slate-50 rounded-xl p-4 border border-indigo-100">
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-sm font-semibold text-slate-700">Price Summary</span>
+                  <i class="fas fa-calculator text-indigo-400"></i>
+                </div>
+                <div class="space-y-2 text-sm">
+                  <div class="flex justify-between">
+                    <span class="text-slate-600">Base Rate:</span>
+                    <span class="font-medium text-slate-800" id="basePriceDisplay">UGX 0</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-600">Tax (18%):</span>
+                    <span class="font-medium text-slate-800" id="taxDisplay">UGX 0</span>
+                  </div>
+                  <div class="border-t border-indigo-200 pt-2 mt-2">
+                    <div class="flex justify-between items-center">
+                      <span class="font-semibold text-slate-800">Total per night:</span>
+                      <span class="font-bold text-indigo-600 text-lg" id="totalDisplay">UGX 0</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Base Price</label>
-          {{ form.base_price }}
-          {% if form.base_price.errors %}
-            <p class="text-xs text-rose-600 mt-1">{{ form.base_price.errors|striptags }}</p>
-          {% else %}
-            <p class="text-xs text-gray-500 mt-1">Used as default nightly price.</p>
-          {% endif %}
+            <!-- Seasonal Pricing Note -->
+            <div class="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+              <div class="flex items-start gap-2">
+                <i class="fas fa-chart-line text-amber-600 text-sm mt-0.5"></i>
+                <div>
+                  <p class="text-xs text-amber-800">
+                    <span class="font-semibold">Note:</span> You can set different prices for peak seasons, weekends, or special events in the 
+                    <a href="#" class="text-amber-700 underline hover:text-amber-900">Dynamic Pricing</a> section.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 flex items-center">
-          <div>
-            <div class="text-sm font-semibold text-gray-900">Tip</div>
-            <div class="text-xs text-gray-500 mt-1">
-              You can override pricing later on bookings/offers.
+        <!-- Amenities Card -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-200">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-concierge-bell text-indigo-500 text-sm"></i>
+              <span class="text-sm font-semibold text-slate-700">Amenities & Features</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1 ml-6">Select what this room type offers</p>
+          </div>
+          
+          <div class="p-6">
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {% for amenity in form.amenities %}
+                <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-all">
+                  {{ amenity.tag }}
+                  <span class="text-sm text-slate-700">{{ amenity.choice_label }}</span>
+                </label>
+              {% endfor %}
+            </div>
+            {% if form.amenities.errors %}
+              <p class="text-xs text-rose-600 mt-2">{{ form.amenities.errors|striptags }}</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Image Upload Card -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-200">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-images text-indigo-500 text-sm"></i>
+              <span class="text-sm font-semibold text-slate-700">Room Images</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1 ml-6">Upload photos to showcase this room type</p>
+          </div>
+          
+          <div class="p-6">
+            <div class="border-2 border-dashed border-slate-200 rounded-lg p-6 text-center hover:border-indigo-300 transition-colors cursor-pointer" id="dropzone">
+              <i class="fas fa-cloud-upload-alt text-4xl text-slate-400 mb-2"></i>
+              <p class="text-sm text-slate-600 mb-1">Drag & drop images here or click to browse</p>
+              <p class="text-xs text-slate-400">Maximum 10 images, supports JPG, PNG, WebP (Max 5MB each)</p>
+              {{ form.images }}
+            </div>
+            {% if form.instance.pk and form.instance.images.exists %}
+              <div class="mt-4 grid grid-cols-4 gap-3" id="existingImages">
+                {% for image in form.instance.images.all %}
+                  <div class="relative group">
+                    <img src="{{ image.image.url }}" alt="Room image" class="w-full h-20 object-cover rounded-lg">
+                    <button type="button" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs hidden group-hover:flex items-center justify-center delete-image" data-id="{{ image.id }}">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Tips Card -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-5">
+          <div class="flex items-start gap-3">
+            <i class="fas fa-lightbulb text-amber-500 text-lg mt-0.5"></i>
+            <div>
+              <h3 class="text-sm font-semibold text-slate-800 mb-2">Best Practices</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-600">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-check-circle text-emerald-500 text-xs"></i>
+                  <span>Use descriptive, guest-friendly names</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-check-circle text-emerald-500 text-xs"></i>
+                  <span>Research competitor pricing regularly</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-check-circle text-emerald-500 text-xs"></i>
+                  <span>Include unique selling points in description</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-check-circle text-emerald-500 text-xs"></i>
+                  <span>Upload high-quality, well-lit photos</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-check-circle text-emerald-500 text-xs"></i>
+                  <span>Update pricing based on demand</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-check-circle text-emerald-500 text-xs"></i>
+                  <span>Highlight unique amenities</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-    </div>
+      <!-- Sidebar -->
+      <div class="space-y-6">
+        <!-- Action Card -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm sticky top-6 overflow-hidden">
+          <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-200">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-save text-indigo-500 text-sm"></i>
+              <span class="text-sm font-semibold text-slate-700">Actions</span>
+            </div>
+          </div>
+          
+          <div class="p-6">
+            <div class="space-y-3">
+              <button type="submit" 
+                      class="w-full px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white text-sm font-semibold rounded-lg transition-all shadow-sm">
+                <i class="fas fa-save mr-2"></i>
+                {% if form.instance.pk %}Update Room Type{% else %}Create Room Type{% endif %}
+              </button>
+              
+              <button type="submit" name="action" value="save_and_continue"
+                      class="w-full px-4 py-2.5 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-medium rounded-lg transition-all">
+                <i class="fas fa-save mr-2"></i>
+                Save & Continue Editing
+              </button>
+              
+              <a href="{% url 'rooms:roomtype_list' %}"
+                 class="w-full px-4 py-2.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg transition-all flex items-center justify-center">
+                <i class="fas fa-times mr-2"></i>
+                Cancel
+              </a>
+            </div>
+          </div>
+        </div>
 
-    <div class="px-6 py-4 border-t border-gray-200 bg-white flex items-center justify-end gap-2">
-      <a href="{% url 'rooms:roomtype_list' %}"
-         class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
-        Cancel
-      </a>
-      <button class="px-5 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold">
-        Save Type
-      </button>
+        <!-- Statistics Card (Only in Edit Mode) -->
+        {% if form.instance.pk %}
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-200">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-chart-pie text-indigo-500 text-sm"></i>
+                <span class="text-sm font-semibold text-slate-700">Room Statistics</span>
+              </div>
+            </div>
+            <div class="p-6 space-y-4">
+              <div class="text-center">
+                <div class="text-3xl font-bold text-slate-800">{{ form.instance.rooms.count }}</div>
+                <div class="text-sm text-slate-500 mt-1">Total Rooms</div>
+                <div class="w-full bg-slate-200 rounded-full h-2 mt-2">
+                  <div class="bg-indigo-600 h-2 rounded-full" style="width: 100%"></div>
+                </div>
+              </div>
+              
+              <div class="grid grid-cols-2 gap-3">
+                <div class="text-center p-3 bg-emerald-50 rounded-lg">
+                  <div class="text-2xl font-bold text-emerald-600">{{ form.instance.rooms.available.count }}</div>
+                  <div class="text-xs text-slate-600 mt-1">Available</div>
+                </div>
+                <div class="text-center p-3 bg-rose-50 rounded-lg">
+                  <div class="text-2xl font-bold text-rose-600">{{ form.instance.rooms.occupied.count }}</div>
+                  <div class="text-xs text-slate-600 mt-1">Occupied</div>
+                </div>
+                <div class="text-center p-3 bg-amber-50 rounded-lg">
+                  <div class="text-2xl font-bold text-amber-600">{{ form.instance.rooms.maintenance.count }}</div>
+                  <div class="text-xs text-slate-600 mt-1">Maintenance</div>
+                </div>
+                <div class="text-center p-3 bg-blue-50 rounded-lg">
+                  <div class="text-2xl font-bold text-blue-600">{{ form.instance.rooms.reserved.count }}</div>
+                  <div class="text-xs text-slate-600 mt-1">Reserved</div>
+                </div>
+              </div>
+              
+              <div class="text-center pt-2">
+                <a href="{% url 'rooms:room_list' %}?type={{ form.instance.pk }}" 
+                   class="text-xs text-indigo-600 hover:text-indigo-700 font-medium">
+                  View all rooms <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+
+        <!-- Status Toggle Card -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-200">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-toggle-on text-indigo-500 text-sm"></i>
+              <span class="text-sm font-semibold text-slate-700">Status</span>
+            </div>
+          </div>
+          <div class="p-6">
+            <label class="flex items-center justify-between cursor-pointer">
+              <div class="flex items-center gap-3">
+                <i class="fas fa-power-off text-indigo-500"></i>
+                <div>
+                  <span class="text-sm font-medium text-slate-700">Active Room Type</span>
+                  <p class="text-xs text-slate-500">When active, this room type can be booked</p>
+                </div>
+              </div>
+              {{ form.is_active }}
+            </label>
+          </div>
+        </div>
+
+        <!-- Help Card -->
+        <div class="bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl border border-slate-200 p-5">
+          <div class="flex items-start gap-3">
+            <i class="fas fa-question-circle text-indigo-500 text-lg"></i>
+            <div>
+              <h4 class="text-sm font-semibold text-slate-800 mb-1">Need Assistance?</h4>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                Contact support for help with pricing strategy, room configuration, or bulk updates.
+              </p>
+              <button class="mt-3 text-xs text-indigo-600 hover:text-indigo-700 font-medium">
+                <i class="fas fa-headset mr-1"></i> Contact Support
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </form>
-
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Style all form inputs
+  const styleInputs = () => {
+    // Text inputs
+    document.querySelectorAll('input[type="text"], input[type="number"], textarea').forEach(input => {
+      input.classList.add('w-full', 'rounded-lg', 'border-slate-200', 'pl-9', 'pr-3', 'py-2', 'text-sm', 'focus:ring-2', 'focus:ring-indigo-300', 'focus:border-indigo-300');
+    });
+    
+    // Select dropdowns
+    document.querySelectorAll('select').forEach(select => {
+      select.classList.add('w-full', 'rounded-lg', 'border-slate-200', 'pl-9', 'pr-3', 'py-2', 'text-sm', 'focus:ring-2', 'focus:ring-indigo-300', 'focus:border-indigo-300', 'bg-white', 'appearance-none');
+      
+      // Add custom arrow
+      const wrapper = select.parentElement;
+      if (wrapper && !wrapper.querySelector('.custom-arrow')) {
+        const arrow = document.createElement('i');
+        arrow.className = 'fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none custom-arrow';
+        wrapper.style.position = 'relative';
+        wrapper.appendChild(arrow);
+      }
+    });
+  };
+  
+  styleInputs();
+  
+  // Character counter for description
+  const descriptionField = document.querySelector('textarea[name="description"]');
+  const charCounter = document.getElementById('charCounter');
+  
+  if (descriptionField && charCounter) {
+    function updateCounter() {
+      const length = descriptionField.value.length;
+      charCounter.textContent = `${length} characters`;
+      if (length > 500) {
+        charCounter.classList.add('text-amber-600');
+        charCounter.classList.remove('text-slate-400');
+      } else {
+        charCounter.classList.remove('text-amber-600');
+        charCounter.classList.add('text-slate-400');
+      }
+    }
+    
+    descriptionField.addEventListener('input', updateCounter);
+    updateCounter();
+  }
+  
+  // Price calculation
+  const priceInput = document.querySelector('input[name="base_price"]');
+  const basePriceDisplay = document.getElementById('basePriceDisplay');
+  const taxDisplay = document.getElementById('taxDisplay');
+  const totalDisplay = document.getElementById('totalDisplay');
+  
+  function formatCurrency(amount) {
+    return 'UGX ' + amount.toLocaleString();
+  }
+  
+  function updatePriceSummary() {
+    let price = parseFloat(priceInput?.value) || 0;
+    let tax = price * 0.18;
+    let total = price + tax;
+    
+    if (basePriceDisplay) basePriceDisplay.textContent = formatCurrency(price);
+    if (taxDisplay) taxDisplay.textContent = formatCurrency(Math.round(tax));
+    if (totalDisplay) totalDisplay.textContent = formatCurrency(Math.round(total));
+  }
+  
+  if (priceInput) {
+    priceInput.addEventListener('input', updatePriceSummary);
+    priceInput.addEventListener('blur', function() {
+      let value = parseFloat(this.value);
+      if (!isNaN(value)) {
+        this.value = Math.round(value);
+        updatePriceSummary();
+      }
+    });
+    updatePriceSummary();
+  }
+  
+  // Image upload dropzone
+  const dropzone = document.getElementById('dropzone');
+  const imageInput = document.querySelector('input[type="file"]');
+  
+  if (dropzone && imageInput) {
+    dropzone.addEventListener('click', () => imageInput.click());
+    
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('border-indigo-400', 'bg-indigo-50');
+    });
+    
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('border-indigo-400', 'bg-indigo-50');
+    });
+    
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('border-indigo-400', 'bg-indigo-50');
+      imageInput.files = e.dataTransfer.files;
+    });
+    
+    imageInput.addEventListener('change', function() {
+      if (this.files.length > 0) {
+        dropzone.innerHTML = `
+          <i class="fas fa-check-circle text-4xl text-emerald-500 mb-2"></i>
+          <p class="text-sm text-slate-600 mb-1">${this.files.length} file(s) selected</p>
+          <p class="text-xs text-slate-400">Click to change</p>
+        `;
+      }
+    });
+  }
+  
+  // Delete image confirmation
+  document.querySelectorAll('.delete-image').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (confirm('Are you sure you want to remove this image?')) {
+        // Add AJAX call to delete image
+        const imageId = this.dataset.id;
+        // Implement delete logic
+      }
+    });
+  });
+  
+  // Form validation before submit
+  const form = document.querySelector('form');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      const nameInput = document.querySelector('input[name="name"]');
+      const priceInput = document.querySelector('input[name="base_price"]');
+      const capacityInput = document.querySelector('input[name="capacity"]');
+      
+      if (!nameInput?.value.trim()) {
+        e.preventDefault();
+        alert('Please enter a room type name.');
+        nameInput?.focus();
+        return false;
+      }
+      
+      if (!priceInput?.value || parseFloat(priceInput.value) < 0) {
+        e.preventDefault();
+        alert('Please enter a valid base price.');
+        priceInput?.focus();
+        return false;
+      }
+      
+      if (!capacityInput?.value || parseInt(capacityInput.value) < 1) {
+        e.preventDefault();
+        alert('Please enter a valid capacity (minimum 1 guest).');
+        capacityInput?.focus();
+        return false;
+      }
+    });
+  }
+  
+  // Toggle switch styling
+  const toggleSwitch = document.querySelector('input[name="is_active"]');
+  if (toggleSwitch) {
+    toggleSwitch.classList.add('w-10', 'h-5', 'rounded-full', 'bg-slate-300', 'relative', 'cursor-pointer', 'transition-colors');
+    
+    // Add slider dot
+    const slider = document.createElement('span');
+    slider.className = 'absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform';
+    toggleSwitch.parentElement.style.position = 'relative';
+    toggleSwitch.parentElement.appendChild(slider);
+    
+    toggleSwitch.addEventListener('change', function() {
+      slider.style.transform = this.checked ? 'translateX(20px)' : 'translateX(0)';
+    });
+  }
+});
+</script>
+
+<style>
+  /* Custom styling for better UX */
+  input, textarea, select {
+    transition: all 0.2s ease;
+  }
+  
+  input:focus, textarea:focus, select:focus {
+    border-color: #6366f1;
+    ring-color: #6366f1;
+  }
+  
+  /* Custom checkbox styling for amenities */
+  input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0.25rem;
+    border: 2px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  input[type="checkbox"]:checked {
+    background-color: #6366f1;
+    border-color: #6366f1;
+  }
+  
+  /* Custom toggle switch */
+  input[type="checkbox"][name="is_active"] {
+    appearance: none;
+    width: 44px;
+    height: 24px;
+    background-color: #cbd5e1;
+    border-radius: 12px;
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  input[type="checkbox"][name="is_active"]:checked {
+    background-color: #6366f1;
+  }
+  
+  input[type="checkbox"][name="is_active"]::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background-color: white;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.2s;
+  }
+  
+  input[type="checkbox"][name="is_active"]:checked::before {
+    transform: translateX(20px);
+  }
+  
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+  
+  /* Number input spinner styling */
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+  
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    opacity: 0.5;
+  }
+  
+  /* Smooth transitions */
+  .transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+</style>
 {% endblock %}

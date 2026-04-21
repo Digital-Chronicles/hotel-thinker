@@ -1,133 +1,441 @@
 {% extends "base.html" %}
 {% load humanize %}
 
-{% block title %}Restaurant Orders — Hotel Thinker{% endblock %}
+{% block title %}Restaurant Orders | Hotel Thinker{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto">
+<div class="space-y-6">
 
-  <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+  <!-- Header -->
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
     <div>
-      <h1 class="text-2xl font-bold text-slate-900">Restaurant Orders</h1>
-      <p class="text-sm text-slate-600 mt-1">Track orders from Open to Paid, print receipts, and manage the kitchen flow.</p>
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-sm">
+          <i class="fas fa-utensils text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-slate-800">Restaurant Orders</h1>
+          <p class="text-sm text-slate-500">Track orders, manage kitchen flow, and process payments.</p>
+        </div>
+      </div>
     </div>
 
-    <div class="flex gap-2">
+    <div class="flex flex-wrap items-center gap-3">
       <a href="{% url 'restaurant:manage_dashboard' %}"
-         class="px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50">
-        Manage Setup
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition">
+        <i class="fas fa-sliders-h text-blue-500 text-sm"></i>
+        <span>Manage Setup</span>
       </a>
+
       <a href="{% url 'restaurant:order_create' %}"
-         class="px-4 py-2 rounded-lg bg-slate-900 text-sm font-semibold text-white hover:bg-slate-950">
-        + New Order
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-medium shadow-sm transition">
+        <i class="fas fa-plus-circle text-sm"></i>
+        <span>New Order</span>
       </a>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Active Orders</p>
+          <p class="text-2xl font-bold text-slate-800 mt-2">{{ active_orders|default:0 }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+          <i class="fas fa-clock text-blue-600"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">In Kitchen</p>
+          <p class="text-2xl font-bold text-amber-600 mt-2">{{ kitchen_orders|default:0 }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+          <i class="fas fa-fire text-amber-600"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Ready to Serve</p>
+          <p class="text-2xl font-bold text-emerald-600 mt-2">{{ ready_orders|default:0 }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+          <i class="fas fa-bell text-emerald-600"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Today's Revenue</p>
+          <p class="text-2xl font-bold text-purple-600 mt-2">UGX {{ today_revenue|default:0|intcomma }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+          <i class="fas fa-chart-line text-purple-600"></i>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- Filters -->
-  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 mb-6">
-    <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-3">
-      <input name="q" value="{{ request.GET.q }}"
-             placeholder="Search: order number, customer, table..."
-             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900" />
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/70 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div>
+        <div class="flex items-center gap-2">
+          <i class="fas fa-filter text-slate-400 text-sm"></i>
+          <span class="text-sm font-semibold text-slate-700">Filters</span>
+        </div>
+        <p class="text-xs text-slate-500 mt-1">Search by order number, customer name, or table.</p>
+      </div>
 
-      <select name="status"
-              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900">
-        <option value="">All statuses</option>
-        {% for v, label in orders.model.Status.choices %}
-          <option value="{{ v }}" {% if request.GET.status == v %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
+      {% if request.GET.q or request.GET.status %}
+        <a href="{% url 'restaurant:order_list' %}"
+           class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-600 transition">
+          <i class="fas fa-times text-xs"></i>
+          <span>Clear Filters</span>
+        </a>
+      {% endif %}
+    </div>
 
-      <button class="px-4 py-2 rounded-lg bg-slate-900 text-sm font-semibold text-white hover:bg-slate-950">
-        Filter
-      </button>
+    <form method="get" class="p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div class="xl:col-span-2">
+        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Search</label>
+        <div class="relative">
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input type="text"
+                 name="q"
+                 value="{{ request.GET.q|default:'' }}"
+                 placeholder="Order #, customer name, table..."
+                 class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-300">
+        </div>
+      </div>
 
-      <a href="{% url 'restaurant:order_list' %}"
-         class="px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 text-center">
-        Reset
-      </a>
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Status</label>
+        <select name="status"
+                class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-300 bg-white">
+          <option value="">All Statuses</option>
+          {% for v, label in status_choices %}
+            <option value="{{ v }}" {% if request.GET.status == v %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex items-end gap-2">
+        <button type="submit"
+                class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white text-sm font-semibold transition">
+          <i class="fas fa-search text-xs"></i>
+          <span>Apply Filters</span>
+        </button>
+      </div>
     </form>
   </div>
 
-  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-    <div class="p-4 border-b border-slate-200 font-semibold text-slate-900">Orders</div>
+  <!-- Desktop Table -->
+  <div class="hidden lg:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i class="fas fa-receipt text-slate-400 text-sm"></i>
+        <span class="text-sm text-slate-600">
+          Showing <span class="font-semibold text-slate-800">{{ page_obj.paginator.count }}</span> order(s)
+        </span>
+      </div>
+      <div class="text-xs text-slate-400">
+        <i class="fas fa-mouse-pointer mr-1"></i> Click a row to view details
+      </div>
+    </div>
 
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
-        <thead class="bg-slate-50 text-slate-600">
-          <tr>
-            <th class="text-left p-3">Order</th>
-            <th class="text-left p-3">Table</th>
-            <th class="text-left p-3">Customer</th>
-            <th class="text-left p-3">Status</th>
-            <th class="text-right p-3">Total</th>
-            <th class="text-left p-3">Created</th>
-            <th class="text-right p-3">Action</th>
+        <thead class="bg-slate-50 border-b border-slate-200">
+          <tr class="text-left text-slate-600">
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Order</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Table/Customer</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Status</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Items</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider text-right">Total</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Created</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider text-right">Action</th>
           </tr>
         </thead>
-        <tbody>
+
+        <tbody class="divide-y divide-slate-100">
           {% for o in orders %}
-          <tr class="border-t hover:bg-slate-50">
-            <td class="p-3 font-semibold text-slate-900">
-              {{ o.order_number|default:o.id }}
-            </td>
-            <td class="p-3">
-              {% if o.table %}{{ o.table.number }}{% else %}<span class="text-slate-400">Walk-in</span>{% endif %}
-            </td>
-            <td class="p-3">
-              <div class="text-slate-900">{{ o.customer_name|default:"—" }}</div>
-              <div class="text-xs text-slate-500">{{ o.customer_phone|default:"" }}</div>
-            </td>
-            <td class="p-3">
-              <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold
-                {% if o.status == 'paid' %} bg-emerald-50 text-emerald-700
-                {% elif o.status == 'billed' %} bg-amber-50 text-amber-800
-                {% elif o.status == 'kitchen' %} bg-blue-50 text-blue-800
-                {% elif o.status == 'served' %} bg-indigo-50 text-indigo-800
-                {% elif o.status == 'cancelled' %} bg-rose-50 text-rose-700
-                {% else %} bg-slate-100 text-slate-700 {% endif %}">
-                {{ o.get_status_display }}
-              </span>
-            </td>
-            <td class="p-3 text-right font-semibold">UGX {{ o.total|intcomma }}</td>
-            <td class="p-3 text-slate-600">{{ o.created_at|date:"d M Y, H:i" }}</td>
-            <td class="p-3 text-right">
-              <a href="{% url 'restaurant:order_detail' o.pk %}"
-                 class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
-                Open
-              </a>
-            </td>
-          </tr>
+            <tr class="hover:bg-slate-50 transition cursor-pointer"
+                onclick="window.location='{% url 'restaurant:order_detail' o.pk %}'">
+              <td class="px-5 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
+                    <i class="fas fa-receipt text-blue-500 text-sm"></i>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-blue-700">{{ o.order_number|default:o.id }}</p>
+                    <p class="text-xs text-slate-400">Order #{{ o.id }}</p>
+                  </div>
+                </div>
+              </td>
+
+              <td class="px-5 py-4">
+                <div>
+                  {% if o.table %}
+                    <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium">
+                      <i class="fas fa-chair text-[10px]"></i>
+                      Table {{ o.table.number }}
+                    </span>
+                  {% else %}
+                    <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100 text-slate-500 text-xs">
+                      <i class="fas fa-walking text-[10px]"></i>
+                      Walk-in
+                    </span>
+                  {% endif %}
+                  <p class="font-medium text-slate-800 mt-1.5">{{ o.customer_name|default:"Guest" }}</p>
+                  {% if o.customer_phone %}
+                    <p class="text-xs text-slate-400 mt-0.5">{{ o.customer_phone }}</p>
+                  {% endif %}
+                </div>
+              </td>
+
+              <td class="px-5 py-4">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
+                  {% if o.status == 'paid' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+                  {% elif o.status == 'billed' %}bg-amber-50 text-amber-700 border border-amber-200
+                  {% elif o.status == 'kitchen' %}bg-blue-50 text-blue-700 border border-blue-200
+                  {% elif o.status == 'served' %}bg-indigo-50 text-indigo-700 border border-indigo-200
+                  {% elif o.status == 'cancelled' %}bg-rose-50 text-rose-700 border border-rose-200
+                  {% else %}bg-slate-100 text-slate-600 border border-slate-200{% endif %}">
+                  <span class="w-1.5 h-1.5 rounded-full
+                    {% if o.status == 'paid' %}bg-emerald-500
+                    {% elif o.status == 'billed' %}bg-amber-500
+                    {% elif o.status == 'kitchen' %}bg-blue-500
+                    {% elif o.status == 'served' %}bg-indigo-500
+                    {% elif o.status == 'cancelled' %}bg-rose-500
+                    {% else %}bg-slate-400{% endif %}"></span>
+                  {{ o.get_status_display }}
+                </span>
+                
+                {% if o.status == 'kitchen' %}
+                  <div class="mt-1">
+                    <span class="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">Cooking</span>
+                  </div>
+                {% elif o.status == 'served' %}
+                  <div class="mt-1">
+                    <span class="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Completed</span>
+                  </div>
+                {% endif %}
+              </td>
+
+              <td class="px-5 py-4">
+                <div>
+                  <p class="text-slate-700 font-medium">{{ o.items_count|default:0 }} item{{ o.items_count|pluralize }}</p>
+                  <p class="text-xs text-slate-400 mt-0.5">{{ o.unique_items|default:0 }} unique</p>
+                </div>
+              </td>
+
+              <td class="px-5 py-4 text-right">
+                <p class="font-bold text-emerald-600">UGX {{ o.total|intcomma }}</p>
+                {% if o.payment_status == 'partial' %}
+                  <p class="text-xs text-amber-600 mt-0.5">Partial payment</p>
+                {% elif o.payment_status == 'paid' %}
+                  <p class="text-xs text-emerald-600 mt-0.5">Paid in full</p>
+                {% else %}
+                  <p class="text-xs text-slate-400 mt-0.5">Unpaid</p>
+                {% endif %}
+              </td>
+
+              <td class="px-5 py-4 text-slate-600">
+                <div>
+                  <p class="text-slate-700">{{ o.created_at|date:"d M Y" }}</p>
+                  <p class="text-xs text-slate-400">{{ o.created_at|time:"H:i" }}</p>
+                </div>
+              </td>
+
+              <td class="px-5 py-4 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  {% if o.status != 'paid' and o.status != 'cancelled' %}
+                    <a href="{% url 'restaurant:order_set_status' o.pk %}"
+                       onclick="event.stopPropagation()"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-600 hover:bg-slate-50 transition">
+                      <i class="fas fa-sync-alt text-[10px]"></i>
+                      <span>Update</span>
+                    </a>
+                  {% endif %}
+                  
+                  {% if o.status == 'paid' %}
+                    <a href="{% url 'restaurant:receipt_print' o.pk %}"
+                       onclick="event.stopPropagation()"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-medium transition">
+                      <i class="fas fa-print text-[10px]"></i>
+                      <span>Receipt</span>
+                    </a>
+                  {% endif %}
+                  
+                  <a href="{% url 'restaurant:order_detail' o.pk %}"
+                     onclick="event.stopPropagation()"
+                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition shadow-sm">
+                    <i class="fas fa-eye text-[10px]"></i>
+                    <span>View</span>
+                  </a>
+                </div>
+              </td>
+            </tr>
           {% empty %}
-          <tr>
-            <td colspan="7" class="p-6 text-center text-slate-500">No orders found.</td>
-          </tr>
+            <tr>
+              <td colspan="7" class="px-6 py-14 text-center">
+                <div class="flex flex-col items-center justify-center text-slate-400">
+                  <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+                    <i class="fas fa-utensils text-slate-400 text-2xl"></i>
+                  </div>
+                  <p class="font-medium text-slate-500">No orders found</p>
+                  <p class="text-xs mt-1">
+                    {% if request.GET.q or request.GET.status %}
+                      Try adjusting your filters.
+                    {% else %}
+                      Create your first restaurant order to get started.
+                    {% endif %}
+                  </p>
+                  <a href="{% url 'restaurant:order_create' %}"
+                     class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium hover:from-blue-700 hover:to-indigo-700 transition">
+                    <i class="fas fa-plus-circle text-xs"></i>
+                    <span>New Order</span>
+                  </a>
+                </div>
+              </td>
+            </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
 
-    {% if is_paginated %}
-      <div class="p-4 border-t bg-white flex items-center justify-between text-sm">
-        <div class="text-slate-600">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</div>
-        <div class="flex gap-2">
-          {% if page_obj.has_previous %}
-            <a class="px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-50"
-               href="?q={{ request.GET.q }}&status={{ request.GET.status }}&page={{ page_obj.previous_page_number }}">
-              Prev
-            </a>
-          {% endif %}
-          {% if page_obj.has_next %}
-            <a class="px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-50"
-               href="?q={{ request.GET.q }}&status={{ request.GET.status }}&page={{ page_obj.next_page_number }}">
-              Next
-            </a>
-          {% endif %}
-        </div>
+    {% if page_obj.paginator.num_pages > 1 %}
+      <div class="px-5 py-4 border-t border-slate-200 bg-slate-50/30">
+        {% include "partials/pagination.html" %}
       </div>
     {% endif %}
   </div>
 
+  <!-- Mobile Cards -->
+  <div class="lg:hidden space-y-4">
+    {% for o in orders %}
+      <a href="{% url 'restaurant:order_detail' o.pk %}"
+         class="block bg-white rounded-2xl border border-slate-200 shadow-sm p-4 hover:border-blue-300 transition">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="font-semibold text-blue-700">{{ o.order_number|default:o.id }}</p>
+            <p class="text-xs text-slate-400 mt-1">{{ o.created_at|date:"d M Y, H:i" }}</p>
+          </div>
+
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold
+            {% if o.status == 'paid' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+            {% elif o.status == 'billed' %}bg-amber-50 text-amber-700 border border-amber-200
+            {% elif o.status == 'kitchen' %}bg-blue-50 text-blue-700 border border-blue-200
+            {% elif o.status == 'served' %}bg-indigo-50 text-indigo-700 border border-indigo-200
+            {% elif o.status == 'cancelled' %}bg-rose-50 text-rose-700 border border-rose-200
+            {% else %}bg-slate-100 text-slate-600 border border-slate-200{% endif %}">
+            {{ o.get_status_display }}
+          </span>
+        </div>
+
+        <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <p class="text-slate-400 text-xs">Table</p>
+            <p class="font-medium text-slate-800">
+              {% if o.table %}Table {{ o.table.number }}{% else %}Walk-in{% endif %}
+            </p>
+          </div>
+          <div>
+            <p class="text-slate-400 text-xs">Customer</p>
+            <p class="font-medium text-slate-800">{{ o.customer_name|default:"Guest" }}</p>
+          </div>
+          <div>
+            <p class="text-slate-400 text-xs">Items</p>
+            <p class="font-medium text-slate-800">{{ o.items_count|default:0 }} items</p>
+          </div>
+          <div>
+            <p class="text-slate-400 text-xs">Total</p>
+            <p class="font-bold text-emerald-600">UGX {{ o.total|intcomma }}</p>
+          </div>
+        </div>
+
+        <div class="mt-4 flex items-center justify-between pt-3 border-t border-slate-100">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-credit-card text-slate-400 text-xs"></i>
+            <span class="text-xs text-slate-600">
+              {% if o.payment_status == 'paid' %}Paid{% elif o.payment_status == 'partial' %}Partial{% else %}Pending{% endif %}
+            </span>
+          </div>
+          <div class="flex gap-2">
+            {% if o.status == 'paid' %}
+              <a href="{% url 'restaurant:receipt_print' o.pk %}"
+                 onclick="event.stopPropagation()"
+                 class="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-medium">
+                <i class="fas fa-print text-[10px]"></i>
+                <span>Print</span>
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </a>
+    {% empty %}
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-12 text-center">
+        <i class="fas fa-utensils text-4xl text-slate-300 mb-3"></i>
+        <p class="font-medium text-slate-500">No orders found</p>
+      </div>
+    {% endfor %}
+
+    {% if page_obj.paginator.num_pages > 1 %}
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+        {% include "partials/pagination.html" %}
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+    <a href="{% url 'restaurant:order_create' %}"
+       class="bg-white border border-slate-200 rounded-xl px-4 py-3 flex items-center justify-between hover:border-blue-300 hover:shadow-sm transition group">
+      <div class="flex items-center gap-3">
+        <i class="fas fa-plus-circle text-blue-500"></i>
+        <span class="text-sm font-medium text-slate-700">New Order</span>
+      </div>
+      <i class="fas fa-chevron-right text-slate-300 group-hover:text-blue-400 transition text-xs"></i>
+    </a>
+
+    <a href="{% url 'restaurant:item_list' %}"
+       class="bg-white border border-slate-200 rounded-xl px-4 py-3 flex items-center justify-between hover:border-blue-300 hover:shadow-sm transition group">
+      <div class="flex items-center gap-3">
+        <i class="fas fa-book-open text-blue-500"></i>
+        <span class="text-sm font-medium text-slate-700">Menu Items</span>
+      </div>
+      <i class="fas fa-chevron-right text-slate-300 group-hover:text-blue-400 transition text-xs"></i>
+    </a>
+
+    <a href="{% url 'restaurant:table_list' %}"
+       class="bg-white border border-slate-200 rounded-xl px-4 py-3 flex items-center justify-between hover:border-blue-300 hover:shadow-sm transition group">
+      <div class="flex items-center gap-3">
+        <i class="fas fa-chair text-blue-500"></i>
+        <span class="text-sm font-medium text-slate-700">Table Manager</span>
+      </div>
+      <i class="fas fa-chevron-right text-slate-300 group-hover:text-blue-400 transition text-xs"></i>
+    </a>
+
+    <a href="{% url 'restaurant:manage_dashboard' %}"
+       class="bg-white border border-slate-200 rounded-xl px-4 py-3 flex items-center justify-between hover:border-blue-300 hover:shadow-sm transition group">
+      <div class="flex items-center gap-3">
+        <i class="fas fa-chart-line text-blue-500"></i>
+        <span class="text-sm font-medium text-slate-700">Reports</span>
+      </div>
+      <i class="fas fa-chevron-right text-slate-300 group-hover:text-blue-400 transition text-xs"></i>
+    </a>
+  </div>
 </div>
+
 {% endblock %}

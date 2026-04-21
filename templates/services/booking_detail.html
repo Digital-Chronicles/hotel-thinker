@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}{{ service_booking.reference }} • Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">{{ service_booking.reference }}</h1>
+      <p class="text-sm text-slate-500 mt-1">Service booking details, payments, and attendance.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <a href="{% url 'services:booking_update' service_booking.pk %}" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700">Edit</a>
+      <a href="{% url 'services:payment_create' service_booking.pk %}" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Add Payment</a>
+      <a href="{% url 'services:booking_check_in' service_booking.pk %}" class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white">Check In</a>
+      <a href="{% url 'services:booking_check_out' service_booking.pk %}" class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white">Check Out</a>
+      <a href="{% url 'services:booking_complete' service_booking.pk %}" class="rounded-xl bg-violet-600 px-4 py-2 text-sm font-medium text-white">Complete</a>
+      <a href="{% url 'services:booking_cancel' service_booking.pk %}" class="rounded-xl bg-rose-600 px-4 py-2 text-sm font-medium text-white">Cancel</a>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <div class="xl:col-span-2 space-y-6">
+      <div class="bg-white border border-slate-200 rounded-2xl p-5">
+        <h2 class="font-semibold text-slate-900 mb-4">Booking Information</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div><span class="text-slate-500">Customer:</span> <span class="font-medium">{{ service_booking.customer_name }}</span></div>
+          <div><span class="text-slate-500">Phone:</span> <span class="font-medium">{{ service_booking.customer_phone|default:"-" }}</span></div>
+          <div><span class="text-slate-500">Service:</span> <span class="font-medium">{{ service_booking.service.name }}</span></div>
+          <div><span class="text-slate-500">Resource:</span> <span class="font-medium">{{ service_booking.resource|default:"-" }}</span></div>
+          <div><span class="text-slate-500">Start:</span> <span class="font-medium">{{ service_booking.scheduled_start|date:"M d, Y H:i" }}</span></div>
+          <div><span class="text-slate-500">End:</span> <span class="font-medium">{{ service_booking.scheduled_end|date:"M d, Y H:i"|default:"-" }}</span></div>
+          <div><span class="text-slate-500">Attendants:</span> <span class="font-medium">{{ service_booking.attendants }}</span></div>
+          <div><span class="text-slate-500">Assigned To:</span> <span class="font-medium">{{ service_booking.assigned_to|default:"-" }}</span></div>
+        </div>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200">
+          <h2 class="font-semibold text-slate-900">Payments</h2>
+        </div>
+        <table class="min-w-full text-sm">
+          <thead class="bg-slate-50 text-slate-600">
+            <tr>
+              <th class="px-4 py-3 text-left">Amount</th>
+              <th class="px-4 py-3 text-left">Method</th>
+              <th class="px-4 py-3 text-left">Reference</th>
+              <th class="px-4 py-3 text-left">Date</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for payment in service_booking.payments.all %}
+            <tr>
+              <td class="px-4 py-3 font-medium">{{ payment.amount }}</td>
+              <td class="px-4 py-3">{{ payment.get_method_display }}</td>
+              <td class="px-4 py-3">{{ payment.reference|default:"-" }}</td>
+              <td class="px-4 py-3">{{ payment.paid_at|date:"M d, Y H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="px-4 py-8 text-center text-slate-500">No payments recorded.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-2xl p-5">
+      <h2 class="font-semibold text-slate-900 mb-4">Financial Summary</h2>
+      <div class="space-y-3 text-sm">
+        <div class="flex justify-between"><span class="text-slate-500">Pricing Mode</span><span class="font-medium">{{ service_booking.get_pricing_mode_display }}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Unit Price</span><span class="font-medium">{{ service_booking.unit_price }}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Quantity</span><span class="font-medium">{{ service_booking.quantity }}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Subtotal</span><span class="font-medium">{{ service_booking.subtotal }}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Discount</span><span class="font-medium">{{ service_booking.discount }}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Tax</span><span class="font-medium">{{ service_booking.tax }}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Total</span><span class="font-medium">{{ service_booking.total_amount }}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Paid</span><span class="font-medium">{{ service_booking.deposit_paid }}</span></div>
+        <div class="border-t pt-3 flex justify-between text-base"><span class="font-semibold">Balance</span><span class="font-bold">{{ service_booking.balance_due }}</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

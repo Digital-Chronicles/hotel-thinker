@@ -1,4 +1,4 @@
-# bookings/models.py — UPDATED FULL REWRITE (50% check-in, 100% check-out)
+# bookings/models.py
 from __future__ import annotations
 
 import hashlib

@@ -1,159 +1,577 @@
 {% extends "base.html" %}
-{% block title %}Rooms — Hotel Thinker{% endblock %}
+{% load humanize %}
+
+{% block title %}Rooms Management | Hotel Thinker{% endblock %}
 
 {% block content %}
-
-<div class="mb-6">
-  <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+<div class="space-y-6">
+  
+  <!-- Header Section -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-      <h1 class="text-2xl font-bold text-blue-800">Rooms</h1>
-      <p class="text-sm text-gray-600 mt-1">Search, filter, and track room availability.</p>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 flex items-center justify-center shadow-md">
+          <i class="fas fa-door-open text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-slate-800">Rooms Management</h1>
+          <p class="text-sm text-slate-500 mt-0.5">Manage hotel rooms, availability, and room types</p>
+        </div>
+      </div>
     </div>
-
-    <div class="flex gap-2">
+    
+    <div class="flex items-center gap-3">
       <a href="{% url 'rooms:roomtype_list' %}"
-         class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
-        Room Types
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all">
+        <i class="fas fa-tags text-indigo-500 text-sm"></i>
+        <span>Room Types</span>
       </a>
       <a href="{% url 'rooms:room_create' %}"
-         class="px-4 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold">
-        + New Room
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white text-sm font-medium shadow-sm transition-all">
+        <i class="fas fa-plus-circle text-sm"></i>
+        <span>New Room</span>
       </a>
     </div>
   </div>
-</div>
 
-<!-- Filters -->
-<div class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
-  <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-    <div>
-      <div class="text-sm font-semibold text-gray-900">Filters</div>
-      <div class="text-xs text-gray-500">Search by number, floor, or room type.</div>
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition group">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Total</p>
+          <p class="text-2xl font-bold text-slate-800 mt-1">{{ total_rooms|default:0 }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-indigo-50 group-hover:bg-indigo-100 transition flex items-center justify-center">
+          <i class="fas fa-hotel text-indigo-600 text-lg"></i>
+        </div>
+      </div>
     </div>
+    
+    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition group">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Available</p>
+          <p class="text-2xl font-bold text-emerald-600 mt-1">{{ available_count|default:0 }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-emerald-50 group-hover:bg-emerald-100 transition flex items-center justify-center">
+          <i class="fas fa-check-circle text-emerald-600 text-lg"></i>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition group">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Occupied</p>
+          <p class="text-2xl font-bold text-rose-600 mt-1">{{ occupied_count|default:0 }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-rose-50 group-hover:bg-rose-100 transition flex items-center justify-center">
+          <i class="fas fa-user-check text-rose-600 text-lg"></i>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition group">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Cleaning</p>
+          <p class="text-2xl font-bold text-blue-600 mt-1">{{ cleaning_count|default:0 }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-blue-50 group-hover:bg-blue-100 transition flex items-center justify-center">
+          <i class="fas fa-broom text-blue-600 text-lg"></i>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition group">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Maintenance</p>
+          <p class="text-2xl font-bold text-amber-600 mt-1">{{ maintenance_count|default:0 }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-amber-50 group-hover:bg-amber-100 transition flex items-center justify-center">
+          <i class="fas fa-tools text-amber-600 text-lg"></i>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition group">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Occupancy</p>
+          <p class="text-2xl font-bold text-purple-600 mt-1">{{ occupancy_rate|default:0 }}%</p>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-purple-50 group-hover:bg-purple-100 transition flex items-center justify-center">
+          <i class="fas fa-chart-line text-purple-600 text-lg"></i>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    {% if request.GET.q or request.GET.status or request.GET.room_type %}
-      <a href="{% url 'rooms:room_list' %}"
-         class="px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
-        Clear
-      </a>
+  <!-- Bulk Actions Bar -->
+  <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden" id="bulk-actions-bar" style="display: none;">
+    <div class="px-5 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <i class="fas fa-check-circle text-indigo-600"></i>
+        <span class="text-sm font-medium text-indigo-900">
+          <span id="selected-count">0</span> room(s) selected
+        </span>
+      </div>
+      <div class="flex items-center gap-2">
+        <select id="bulk-status" class="text-sm rounded-lg border border-indigo-200 px-3 py-1.5 bg-white">
+          <option value="">Change Status...</option>
+          <option value="available">Available</option>
+          <option value="occupied">Occupied</option>
+          <option value="cleaning">Cleaning</option>
+          <option value="maintenance">Maintenance</option>
+        </select>
+        <button onclick="bulkUpdateStatus()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition">
+          Apply
+        </button>
+        <button onclick="clearSelection()" class="px-3 py-1.5 rounded-lg border border-indigo-200 bg-white hover:bg-slate-50 text-sm font-medium transition">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 bg-slate-50/80 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div>
+        <div class="flex items-center gap-2">
+          <i class="fas fa-filter text-slate-400 text-sm"></i>
+          <span class="text-sm font-semibold text-slate-700">Filters</span>
+        </div>
+        <p class="text-xs text-slate-500 mt-0.5">Search by room number, floor, or room type</p>
+      </div>
+      
+      <div class="flex items-center gap-2">
+        {% if request.GET.q or request.GET.status or request.GET.room_type or request.GET.is_active or request.GET.sort %}
+          <a href="{% url 'rooms:room_list' %}"
+             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-600 transition-all">
+            <i class="fas fa-times text-xs"></i>
+            <span>Clear All</span>
+          </a>
+        {% endif %}
+      </div>
+    </div>
+    
+    <form method="get" class="p-5 grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div class="md:col-span-2">
+        <label class="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1 block">Search</label>
+        <div class="relative">
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input type="text" name="q" value="{{ request.GET.q|default:'' }}"
+                 placeholder="Room number, floor, or type..."
+                 class="w-full rounded-lg border border-slate-200 pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 transition">
+        </div>
+      </div>
+      
+      <div>
+        <label class="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1 block">Status</label>
+        <select name="status"
+                class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
+          <option value="">All Statuses</option>
+          {% for v, label in statuses %}
+            <option value="{{ v }}" {% if request.GET.status == v %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div>
+        <label class="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1 block">Room Type</label>
+        <select name="room_type"
+                class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
+          <option value="">All Types</option>
+          {% for rt in room_types %}
+            <option value="{{ rt.id }}" {% if request.GET.room_type|stringformat:"s" == rt.id|stringformat:"s" %}selected{% endif %}>
+              {{ rt.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div>
+        <label class="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1 block">Sort By</label>
+        <select name="sort"
+                class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
+          <option value="number" {% if request.GET.sort == 'number' or not request.GET.sort %}selected{% endif %}>Room Number</option>
+          <option value="floor" {% if request.GET.sort == 'floor' %}selected{% endif %}>Floor</option>
+          <option value="status" {% if request.GET.sort == 'status' %}selected{% endif %}>Status</option>
+          <option value="type" {% if request.GET.sort == 'type' %}selected{% endif %}>Room Type</option>
+        </select>
+      </div>
+      
+      <div class="flex items-end">
+        <button type="submit"
+                class="w-full px-5 py-2 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold transition-all flex items-center justify-center gap-2">
+          <i class="fas fa-search text-xs"></i>
+          <span>Apply Filters</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Rooms Table -->
+  <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="select-all" class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+          <label for="select-all" class="text-sm text-slate-600">Select All</label>
+        </div>
+        <div class="w-px h-5 bg-slate-300"></div>
+        <div class="flex items-center gap-2">
+          <i class="fas fa-door-open text-slate-400 text-sm"></i>
+          <span class="text-sm text-slate-600">
+            Showing <span class="font-semibold text-slate-800">{{ page_obj.paginator.count }}</span> room(s)
+          </span>
+        </div>
+      </div>
+      <div class="text-xs text-slate-400 hidden sm:block">
+        <i class="fas fa-mouse-pointer mr-1"></i> Click any row to view details
+      </div>
+    </div>
+    
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 border-b border-slate-200">
+          <tr class="text-left text-slate-600">
+            <th class="px-5 py-3 w-10">
+              <input type="checkbox" id="select-all-header" class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+            </th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Room</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Type</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Floor</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Status</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider text-center">Active</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider text-right">Actions</th>
+           </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for room in rooms %}
+            <tr class="hover:bg-slate-50 transition-colors group cursor-pointer" onclick="window.location='{% url 'rooms:room_detail' room.id %}'" data-room-id="{{ room.id }}">
+              <td class="px-5 py-3" onclick="event.stopPropagation()">
+                <input type="checkbox" class="room-select w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" data-room-id="{{ room.id }}">
+              </td>
+              <td class="px-5 py-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-100 to-indigo-200 flex items-center justify-center">
+                    <i class="fas fa-door-open text-indigo-500 text-sm"></i>
+                  </div>
+                  <div>
+                    <span class="font-semibold text-indigo-700">Room {{ room.number }}</span>
+                    {% if not room.is_active %}
+                      <span class="ml-2 text-xs text-slate-400">(Inactive)</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </td>
+              <td class="px-5 py-3">
+                <span class="text-slate-700 font-medium">{{ room.room_type.name }}</span>
+                <p class="text-xs text-slate-400">Ugx{{ room.room_type.base_price|floatformat:2 }}/night</p>
+              </td>
+              <td class="px-5 py-3">
+                {% if room.floor %}
+                  <span class="inline-flex items-center gap-1">
+                    <i class="fas fa-layer-group text-slate-400 text-xs"></i>
+                    {{ room.floor }}
+                  </span>
+                {% else %}
+                  <span class="text-slate-400">—</span>
+                {% endif %}
+              </td>
+              <td class="px-5 py-3">
+                <div class="relative">
+                  <select class="status-select text-xs rounded-lg border-0 bg-transparent font-semibold focus:ring-2 focus:ring-indigo-500 cursor-pointer
+                    {% if room.status == 'available' %}text-emerald-700
+                    {% elif room.status == 'occupied' %}text-rose-700
+                    {% elif room.status == 'maintenance' %}text-amber-700
+                    {% elif room.status == 'cleaning' %}text-blue-700
+                    {% endif %}"
+                    data-room-id="{{ room.id }}" data-current-status="{{ room.status }}"
+                    onclick="event.stopPropagation()" onchange="updateRoomStatus(this, {{ room.id }})">
+                    {% for v, label in statuses %}
+                      <option value="{{ v }}" {% if room.status == v %}selected{% endif %} class="text-slate-700">
+                        {{ label }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                  <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full
+                    {% if room.status == 'available' %}bg-emerald-500
+                    {% elif room.status == 'occupied' %}bg-rose-500
+                    {% elif room.status == 'maintenance' %}bg-amber-500
+                    {% elif room.status == 'cleaning' %}bg-blue-500
+                    {% else %}bg-slate-400{% endif %}"></div>
+                </div>
+              </td>
+              <td class="px-5 py-3 text-center">
+                {% if room.is_active %}
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">
+                    <i class="fas fa-check-circle text-[10px]"></i> Active
+                  </span>
+                {% else %}
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-xs font-medium">
+                    <i class="fas fa-ban text-[10px]"></i> Inactive
+                  </span>
+                {% endif %}
+              </td>
+              <td class="px-5 py-3 text-right" onclick="event.stopPropagation()">
+                <div class="flex items-center justify-end gap-2">
+                  <a href="{% url 'rooms:room_update' room.id %}"
+                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-indigo-50 hover:border-indigo-300 text-sm font-medium text-slate-600 hover:text-indigo-600 transition-all">
+                    <i class="fas fa-edit text-xs"></i>
+                    <span>Edit</span>
+                  </a>
+                  <button onclick="toggleRoomActive({{ room.id }})"
+                          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-300 text-sm font-medium text-slate-600 hover:text-amber-600 transition-all">
+                    <i class="fas {% if room.is_active %}fa-ban{% else %}fa-check-circle{% endif %} text-xs"></i>
+                    <span>{% if room.is_active %}Deactivate{% else %}Activate{% endif %}</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="7" class="px-5 py-12 text-center">
+                <div class="flex flex-col items-center justify-center text-slate-400">
+                  <i class="fas fa-door-open text-4xl mb-3 opacity-40"></i>
+                  <p class="font-medium text-slate-500">No rooms found</p>
+                  <p class="text-xs mt-1">Try adjusting your filters or add a new room</p>
+                  <a href="{% url 'rooms:room_create' %}" class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition">
+                    <i class="fas fa-plus-circle text-xs"></i>
+                    Add Room
+                  </a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if page_obj.paginator.num_pages > 1 %}
+      <div class="px-5 py-4 border-t border-slate-200 bg-slate-50/30">
+        {% include "partials/pagination.html" %}
+      </div>
     {% endif %}
   </div>
-
-  <form method="get" class="p-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-    <div class="md:col-span-2">
-      <label class="text-sm font-medium text-gray-700">Search</label>
-      <input type="text" name="q" value="{{ request.GET.q }}"
-             placeholder="Room 101, 1st floor, Deluxe..."
-             class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600">
-    </div>
-
-    <div>
-      <label class="text-sm font-medium text-gray-700">Status</label>
-      <select name="status"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600">
-        <option value="">All</option>
-        {% for v,label in statuses %}
-          <option value="{{ v }}" {% if request.GET.status == v %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div>
-      <label class="text-sm font-medium text-gray-700">Room Type</label>
-      <select name="room_type"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600">
-        <option value="">All</option>
-        {% for rt in room_types %}
-          <option value="{{ rt.id }}" {% if request.GET.room_type == rt.id|stringformat:"s" %}selected{% endif %}>
-            {{ rt.name }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div class="md:col-span-4 flex justify-end">
-      <button class="px-5 py-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold">
-        Apply
-      </button>
-    </div>
-  </form>
 </div>
 
-<!-- Table -->
-<div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-  <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-    <div class="text-sm text-gray-600">
-      Showing <span class="font-semibold text-gray-900">{{ page_obj.paginator.count }}</span> room(s)
-    </div>
-    <div class="text-xs text-gray-500 hidden sm:block">Click a room to open details</div>
-  </div>
+<!-- JavaScript for enhanced functionality -->
+<script>
+  // Select All functionality
+  const selectAllCheckbox = document.getElementById('select-all');
+  const selectAllHeader = document.getElementById('select-all-header');
+  const roomCheckboxes = document.querySelectorAll('.room-select');
+  const bulkActionsBar = document.getElementById('bulk-actions-bar');
+  const selectedCountSpan = document.getElementById('selected-count');
+  
+  function updateBulkActionsBar() {
+    const selectedCount = document.querySelectorAll('.room-select:checked').length;
+    if (selectedCount > 0) {
+      bulkActionsBar.style.display = 'block';
+      selectedCountSpan.textContent = selectedCount;
+    } else {
+      bulkActionsBar.style.display = 'none';
+    }
+  }
+  
+  function updateSelectAllCheckbox() {
+    const totalCheckboxes = roomCheckboxes.length;
+    const checkedCheckboxes = document.querySelectorAll('.room-select:checked').length;
+    
+    if (selectAllCheckbox) {
+      selectAllCheckbox.checked = totalCheckboxes > 0 && checkedCheckboxes === totalCheckboxes;
+      selectAllCheckbox.indeterminate = checkedCheckboxes > 0 && checkedCheckboxes < totalCheckboxes;
+    }
+    
+    if (selectAllHeader) {
+      selectAllHeader.checked = totalCheckboxes > 0 && checkedCheckboxes === totalCheckboxes;
+      selectAllHeader.indeterminate = checkedCheckboxes > 0 && checkedCheckboxes < totalCheckboxes;
+    }
+  }
+  
+  function toggleSelectAll() {
+    const isChecked = this.checked;
+    roomCheckboxes.forEach(cb => {
+      cb.checked = isChecked;
+    });
+    updateBulkActionsBar();
+    updateSelectAllCheckbox();
+  }
+  
+  if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener('change', toggleSelectAll);
+  }
+  
+  if (selectAllHeader) {
+    selectAllHeader.addEventListener('change', toggleSelectAll);
+  }
+  
+  roomCheckboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      updateBulkActionsBar();
+      updateSelectAllCheckbox();
+    });
+  });
+  
+  function clearSelection() {
+    roomCheckboxes.forEach(cb => {
+      cb.checked = false;
+    });
+    updateBulkActionsBar();
+    updateSelectAllCheckbox();
+  }
+  
+  // Bulk status update
+  function bulkUpdateStatus() {
+    const selectedRooms = Array.from(document.querySelectorAll('.room-select:checked')).map(cb => cb.dataset.roomId);
+    const newStatus = document.getElementById('bulk-status').value;
+    
+    if (!newStatus) {
+      alert('Please select a status');
+      return;
+    }
+    
+    if (selectedRooms.length === 0) {
+      alert('No rooms selected');
+      return;
+    }
+    
+    if (confirm(`Update ${selectedRooms.length} room(s) to ${newStatus}?`)) {
+      fetch('{% url "rooms:room_bulk_status_update" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: `room_ids=${selectedRooms.join(',')}&status=${newStatus}`
+      }).then(response => {
+        if (response.ok) {
+          window.location.reload();
+        } else {
+          alert('Error updating rooms');
+        }
+      }).catch(error => {
+        console.error('Error:', error);
+        alert('Error updating rooms');
+      });
+    }
+  }
+  
+  // Individual status update via AJAX
+  function updateRoomStatus(selectElement, roomId) {
+    const newStatus = selectElement.value;
+    const oldStatus = selectElement.dataset.currentStatus;
+    
+    if (newStatus === oldStatus) return;
+    
+    fetch(`/rooms/${roomId}/set-status/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': getCookie('csrftoken'),
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: `status=${newStatus}`
+    }).then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          selectElement.dataset.currentStatus = newStatus;
+          const dot = selectElement.parentElement.querySelector('.rounded-full');
+          const dotClass = {
+            'available': 'bg-emerald-500',
+            'occupied': 'bg-rose-500',
+            'maintenance': 'bg-amber-500',
+            'cleaning': 'bg-blue-500'
+          }[newStatus] || 'bg-slate-400';
+          
+          dot.className = `absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full ${dotClass}`;
+          showToast('Status updated successfully', 'success');
+        } else {
+          alert('Error updating status');
+          window.location.reload();
+        }
+      }).catch(error => {
+        console.error('Error:', error);
+        alert('Error updating status');
+        window.location.reload();
+      });
+  }
+  
+  // Toggle room active status
+  function toggleRoomActive(roomId) {
+    if (confirm('Toggle room active status?')) {
+      fetch(`/rooms/${roomId}/toggle-active/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: ''
+      }).then(response => {
+        if (response.ok) {
+          window.location.reload();
+        } else {
+          alert('Error toggling room status');
+        }
+      }).catch(error => {
+        console.error('Error:', error);
+        alert('Error toggling room status');
+      });
+    }
+  }
+  
+  // Helper function to get CSRF token
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  
+  // Toast notification
+  function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-white text-sm ${
+      type === 'success' ? 'bg-emerald-500' : type === 'error' ? 'bg-rose-500' : 'bg-indigo-500'
+    }`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.remove();
+    }, 3000);
+  }
+</script>
 
-  <div class="overflow-x-auto">
-    <table class="min-w-full text-sm">
-      <thead class="bg-white text-gray-600">
-        <tr class="border-b border-gray-200">
-          <th class="text-left px-6 py-3 font-semibold">Room</th>
-          <th class="text-left px-6 py-3 font-semibold">Type</th>
-          <th class="text-left px-6 py-3 font-semibold">Floor</th>
-          <th class="text-left px-6 py-3 font-semibold">Status</th>
-          <th class="text-right px-6 py-3 font-semibold">Active</th>
-          <th class="text-right px-6 py-3 font-semibold">Action</th>
-        </tr>
-      </thead>
-
-      <tbody class="divide-y divide-gray-200">
-        {% for room in rooms %}
-          <tr class="hover:bg-gray-50 cursor-pointer"
-              onclick="window.location='{% url 'rooms:room_detail' room.id %}'">
-
-            <td class="px-6 py-4">
-              <div class="font-semibold text-blue-800">Room {{ room.number }}</div>
-            </td>
-
-            <td class="px-6 py-4 text-gray-900 font-semibold">{{ room.room_type.name }}</td>
-
-            <td class="px-6 py-4 text-gray-700">{{ room.floor|default:"—" }}</td>
-
-            <td class="px-6 py-4">
-              <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold
-                {% if room.status == 'available' %}bg-emerald-100 text-emerald-800
-                {% elif room.status == 'occupied' %}bg-rose-100 text-rose-800
-                {% elif room.status == 'maintenance' %}bg-amber-100 text-amber-800
-                {% else %}bg-blue-100 text-blue-800{% endif %}">
-                {{ room.get_status_display }}
-              </span>
-            </td>
-
-            <td class="px-6 py-4 text-right">
-              {% if room.is_active %}
-                <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold">Yes</span>
-              {% else %}
-                <span class="px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">No</span>
-              {% endif %}
-            </td>
-
-            <td class="px-6 py-4 text-right" onclick="event.stopPropagation()">
-              <a href="{% url 'rooms:room_update' room.id %}"
-                 class="inline-flex px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
-                Edit
-              </a>
-            </td>
-
-          </tr>
-        {% empty %}
-          <tr>
-            <td colspan="6" class="px-6 py-12 text-center text-gray-500">
-              No rooms found. Add your first room.
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  <div class="px-6 py-4 border-t border-gray-200">
-    {% include "partials/pagination.html" %}
-  </div>
-</div>
-
+<style>
+  .status-select {
+    padding-left: 1rem;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.25rem center;
+    background-size: 1rem;
+  }
+  
+  .status-select:hover {
+    background-color: #f8fafc;
+  }
+  
+  input[type="checkbox"] {
+    cursor: pointer;
+  }
+</style>
 {% endblock %}

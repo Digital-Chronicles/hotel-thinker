@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Restaurant Menu Items - Hotel Thinker{% endblock %}
+
+{% block breadcrumb %}
+<li class="flex items-center">
+  <span class="mx-2 text-slate-400"><i class="fas fa-chevron-right text-xs"></i></span>
+  <a href="{% url 'restaurant:manage_dashboard' %}" class="text-slate-500 hover:text-blue-600">Restaurant</a>
+</li>
+<li class="flex items-center">
+  <span class="mx-2 text-slate-400"><i class="fas fa-chevron-right text-xs"></i></span>
+  <span class="text-slate-600 font-medium">Menu Items</span>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Menu Items</h1>
+      <p class="text-slate-500 mt-1 text-sm">Manage your restaurant menu and food items</p>
+    </div>
+    <a href="{% url 'restaurant:item_create' %}" 
+       class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5">
+      <i class="fas fa-plus text-sm"></i>
+      <span>Add Menu Item</span>
+    </a>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white rounded-xl border border-slate-200/60 p-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-slate-500 text-sm">Total Items</p>
+          <p class="text-2xl font-bold text-slate-800">{{ total_items }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
+          <i class="fas fa-utensils text-blue-600"></i>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200/60 p-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-slate-500 text-sm">Active Items</p>
+          <p class="text-2xl font-bold text-emerald-600">{{ active_items }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+          <i class="fas fa-check-circle text-emerald-600"></i>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200/60 p-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-slate-500 text-sm">Categories</p>
+          <p class="text-2xl font-bold text-slate-800">{{ total_categories }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center">
+          <i class="fas fa-tags text-purple-600"></i>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200/60 p-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-slate-500 text-sm">Avg. Price</p>
+          <p class="text-2xl font-bold text-slate-800">${{ avg_price|floatformat:2 }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
+          <i class="fas fa-dollar-sign text-amber-600"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-4">
+    <form method="get" class="flex flex-wrap gap-3">
+      <div class="flex-1 min-w-[200px]">
+        <input type="text" name="q" value="{{ current_filters.q }}" 
+               placeholder="Search by name or description..." 
+               class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <select name="category" class="w-44 rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="">All Categories</option>
+        {% for cat in categories %}
+        <option value="{{ cat.id }}" {% if current_filters.category == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+      <select name="hotel" class="w-44 rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="">All Hotels</option>
+        {% for hotel in hotels %}
+        <option value="{{ hotel.id }}" {% if current_filters.hotel == hotel.id|stringformat:"s" %}selected{% endif %}>{{ hotel.name }}</option>
+        {% endfor %}
+      </select>
+      <select name="active" class="w-36 rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="">All Status</option>
+        <option value="true" {% if current_filters.active == "true" %}selected{% endif %}>Active</option>
+        <option value="false" {% if current_filters.active == "false" %}selected{% endif %}>Inactive</option>
+      </select>
+      <button type="submit" class="px-5 py-2.5 rounded-xl bg-slate-800 text-white text-sm font-medium hover:bg-slate-700 transition-colors">
+        <i class="fas fa-search mr-2"></i>Filter
+      </button>
+      {% if current_filters.q or current_filters.category or current_filters.hotel or current_filters.active %}
+      <a href="{% url 'restaurant:item_list' %}" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors">
+        <i class="fas fa-times mr-2"></i>Clear
+      </a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Items Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+    {% for item in items %}
+    <div class="group bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 overflow-hidden">
+      {% if item.image %}
+      <div class="h-40 bg-cover bg-center" style="background-image: url('{{ item.image.url }}')"></div>
+      {% else %}
+      <div class="h-40 bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
+        <i class="fas fa-utensils text-5xl text-blue-300"></i>
+      </div>
+      {% endif %}
+      <div class="p-4">
+        <div class="flex items-start justify-between mb-2">
+          <h3 class="text-lg font-bold text-slate-800">{{ item.name }}</h3>
+          {% if item.is_available %}
+          <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-xs font-semibold">Available</span>
+          {% else %}
+          <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-xs font-semibold">Unavailable</span>
+          {% endif %}
+        </div>
+        <p class="text-sm text-slate-500 mb-2 line-clamp-2">{{ item.description|truncatechars:80 }}</p>
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs text-slate-400">{{ item.category.name|default:"Uncategorized" }}</span>
+          <span class="text-xl font-bold text-blue-600">${{ item.price|floatformat:2 }}</span>
+        </div>
+        <div class="flex items-center gap-2 pt-3 border-t border-slate-100">
+          <a href="{% url 'restaurant:item_update' item.pk %}" 
+             class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm font-medium hover:bg-blue-50 hover:text-blue-600 transition-colors">
+            <i class="fas fa-edit text-xs"></i>Edit
+          </a>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-span-full">
+      <div class="text-center py-16 bg-white rounded-2xl border border-slate-200/60">
+        <div class="h-20 w-20 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-utensils text-blue-600 text-3xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-700 mb-1">No menu items found</h3>
+        <p class="text-slate-500 mb-4">Get started by adding your first menu item</p>
+        <a href="{% url 'restaurant:item_create' %}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors">
+          <i class="fas fa-plus"></i>Add Menu Item
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if is_paginated %}
+  <div class="flex justify-center mt-6">
+    <div class="flex items-center gap-2 bg-white rounded-xl border border-slate-200/60 p-1">
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}" 
+         class="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors">
+        <i class="fas fa-chevron-left"></i>
+      </a>
+      {% endif %}
+      <span class="px-4 py-2 text-sm text-slate-600">
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+      </span>
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}" 
+         class="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors">
+        <i class="fas fa-chevron-right"></i>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<style>
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>
+{% endblock %}

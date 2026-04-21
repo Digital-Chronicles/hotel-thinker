@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Services • Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Services</h1>
+      <p class="text-sm text-slate-500 mt-1">Manage hotel facilities and packages like sauna, gym, pool, garden, catering.</p>
+    </div>
+    <a href="{% url 'services:service_create' %}" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">New Service</a>
+  </div>
+
+  <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50 text-slate-600">
+        <tr>
+          <th class="px-4 py-3 text-left">Name</th>
+          <th class="px-4 py-3 text-left">Category</th>
+          <th class="px-4 py-3 text-left">Type</th>
+          <th class="px-4 py-3 text-left">Pricing</th>
+          <th class="px-4 py-3 text-left">Base Price</th>
+          <th class="px-4 py-3 text-left">Active</th>
+          <th class="px-4 py-3 text-right">Action</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for service in services %}
+        <tr>
+          <td class="px-4 py-3">
+            <div class="font-medium">{{ service.name }}</div>
+            <div class="text-xs text-slate-500">{{ service.code|default:"No code" }}</div>
+          </td>
+          <td class="px-4 py-3">{{ service.category.name }}</td>
+          <td class="px-4 py-3">{{ service.get_service_type_display }}</td>
+          <td class="px-4 py-3">{{ service.get_pricing_mode_display }}</td>
+          <td class="px-4 py-3">{{ service.base_price }}</td>
+          <td class="px-4 py-3">{{ service.is_active|yesno:"Active,Inactive" }}</td>
+          <td class="px-4 py-3 text-right"><a href="{% url 'services:service_update' service.pk %}" class="font-medium text-slate-700">Edit</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">No services found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

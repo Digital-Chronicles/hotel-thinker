@@ -46,6 +46,9 @@ INSTALLED_APPS = [
     "restaurant.apps.RestaurantConfig",
     "rest_framework",
     "django_filters",
+    "bar",
+    "services",
+    "store",
     
 ]
 

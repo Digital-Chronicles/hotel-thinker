@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Liability{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto p-6">
+
+<h1 class="text-xl font-bold">{{ liability.name }}</h1>
+
+<p>Balance: {{ liability.balance }}</p>
+<p>Status: {{ liability.status }}</p>
+<p>Due Date: {{ liability.due_date }}</p>
+
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+<!-- accounts/templates/accounts/member_activity.html -->
+{% extends "base.html" %}
+
+{% block title %}Activity Log - {{ member.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">Activity Log</h1>
+      <p class="text-slate-500 mt-1">{{ member.user.get_full_name|default:member.user.username }}</p>
+    </div>
+    <a href="{% url 'accounts:hotel_member_detail' member.pk %}" class="text-blue-600 hover:text-blue-700">
+      ← Back to Profile
+    </a>
+  </div>
+  
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="divide-y divide-slate-100">
+      {% for activity in activities %}
+      <div class="p-4 hover:bg-slate-50 transition-colors">
+        <div class="flex items-start gap-3">
+          <div class="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-clock text-slate-500"></i>
+          </div>
+          <div class="flex-1">
+            <p class="text-slate-800">{{ activity.description|default:activity.get_action_display }}</p>
+            <div class="flex items-center gap-3 mt-1 text-xs text-slate-500">
+              <span>{{ activity.created_at|date:"M d, Y H:i" }}</span>
+              {% if activity.ip_address %}
+              <span>IP: {{ activity.ip_address }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="p-12 text-center">
+        <i class="fas fa-history text-4xl text-slate-300 mb-3"></i>
+        <p class="text-slate-500">No activity records found</p>
+      </div>
+      {% endfor %}
+    </div>
+    
+    {% if is_paginated %}
+    <div class="px-6 py-4 border-t border-slate-200 bg-slate-50">
+      <div class="flex justify-between items-center">
+        <div class="text-sm text-slate-600">
+          Page {{ page_obj.number }} of {{ paginator.num_pages }}
+        </div>
+        <div class="flex gap-2">
+          {% if page_obj.has_previous %}
+          <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1 bg-white border rounded-lg text-sm hover:bg-slate-50">Previous</a>
+          {% endif %}
+          {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1 bg-white border rounded-lg text-sm hover:bg-slate-50">Next</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

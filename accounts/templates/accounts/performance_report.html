@@ -1,0 +1,355 @@
+<!-- accounts/templates/accounts/performance_report.html -->
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Performance Reports | Hotel Thinker{% endblock %}
+
+{% block breadcrumb %}
+<li class="flex items-center gap-2">
+  <i class="fas fa-chevron-right text-slate-400 text-xs"></i>
+  <span class="text-slate-600 font-medium">Performance Reports</span>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+        Performance Analytics
+      </h1>
+      <p class="text-slate-500 mt-1 text-sm">Track and analyze staff performance metrics</p>
+    </div>
+    <div class="flex gap-3">
+      <button onclick="window.print()" 
+              class="inline-flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-slate-200 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-50 transition-all">
+        <i class="fas fa-print"></i>
+        <span>Print Report</span>
+      </button>
+      <a href="?export=csv" 
+         class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all">
+        <i class="fas fa-download"></i>
+        <span>Export CSV</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Performance Stats Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-slate-500 text-sm font-medium">Average Rating</p>
+          <p class="text-3xl font-bold text-purple-600 mt-1">{{ performance_stats.avg_rating|floatformat:1|default:"0.0" }}/5.0</p>
+        </div>
+        <div class="h-12 w-12 rounded-xl bg-purple-100 flex items-center justify-center">
+          <i class="fas fa-chart-line text-purple-600 text-xl"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-slate-500 text-sm font-medium">Highest Rating</p>
+          <p class="text-3xl font-bold text-emerald-600 mt-1">{{ performance_stats.max_rating|default:"0.0" }}/5.0</p>
+        </div>
+        <div class="h-12 w-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+          <i class="fas fa-trophy text-emerald-600 text-xl"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-slate-500 text-sm font-medium">Lowest Rating</p>
+          <p class="text-3xl font-bold text-amber-600 mt-1">{{ performance_stats.min_rating|default:"0.0" }}/5.0</p>
+        </div>
+        <div class="h-12 w-12 rounded-xl bg-amber-100 flex items-center justify-center">
+          <i class="fas fa-chart-line text-amber-600 text-xl"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-slate-500 text-sm font-medium">Staff Rated</p>
+          <p class="text-3xl font-bold text-blue-600 mt-1">{{ performance_stats.rated_count|default:0 }}</p>
+        </div>
+        <div class="h-12 w-12 rounded-xl bg-blue-100 flex items-center justify-center">
+          <i class="fas fa-users text-blue-600 text-xl"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-slate-500 text-sm font-medium">Completion Rate</p>
+          <p class="text-3xl font-bold text-indigo-600 mt-1">{{ completion_rate|default:"0" }}%</p>
+        </div>
+        <div class="h-12 w-12 rounded-xl bg-indigo-100 flex items-center justify-center">
+          <i class="fas fa-percent text-indigo-600 text-xl"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rating Distribution Chart -->
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="border-b border-slate-200 bg-slate-50 px-6 py-4">
+      <h2 class="font-bold text-slate-800">Rating Distribution</h2>
+      <p class="text-sm text-slate-500 mt-1">Performance rating breakdown across all staff</p>
+    </div>
+    <div class="p-6">
+      <div class="space-y-4">
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-slate-600">5 Stars (Excellent)</span>
+            <span class="text-slate-800 font-semibold">{{ rating_distribution.5|default:0 }}</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-2.5">
+            <div class="bg-emerald-600 h-2.5 rounded-full transition-all duration-500" 
+                 style="width: {% widthratio rating_distribution.5|default:0 performance_stats.rated_count|default:1 100 %}%"></div>
+          </div>
+        </div>
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-slate-600">4 Stars (Good)</span>
+            <span class="text-slate-800 font-semibold">{{ rating_distribution.4|default:0 }}</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-2.5">
+            <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-500" 
+                 style="width: {% widthratio rating_distribution.4|default:0 performance_stats.rated_count|default:1 100 %}%"></div>
+          </div>
+        </div>
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-slate-600">3 Stars (Satisfactory)</span>
+            <span class="text-slate-800 font-semibold">{{ rating_distribution.3|default:0 }}</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-2.5">
+            <div class="bg-amber-600 h-2.5 rounded-full transition-all duration-500" 
+                 style="width: {% widthratio rating_distribution.3|default:0 performance_stats.rated_count|default:1 100 %}%"></div>
+          </div>
+        </div>
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-slate-600">2 Stars (Needs Improvement)</span>
+            <span class="text-slate-800 font-semibold">{{ rating_distribution.2|default:0 }}</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-2.5">
+            <div class="bg-orange-600 h-2.5 rounded-full transition-all duration-500" 
+                 style="width: {% widthratio rating_distribution.2|default:0 performance_stats.rated_count|default:1 100 %}%"></div>
+          </div>
+        </div>
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-slate-600">1 Star (Poor)</span>
+            <span class="text-slate-800 font-semibold">{{ rating_distribution.1|default:0 }}</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-2.5">
+            <div class="bg-red-600 h-2.5 rounded-full transition-all duration-500" 
+                 style="width: {% widthratio rating_distribution.1|default:0 performance_stats.rated_count|default:1 100 %}%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Performers -->
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="border-b border-slate-200 bg-gradient-to-r from-emerald-50 to-green-50 px-6 py-4">
+      <h2 class="font-bold text-slate-800 flex items-center gap-2">
+        <i class="fas fa-trophy text-emerald-600"></i>
+        Top Performers
+      </h2>
+    </div>
+    <div class="divide-y divide-slate-100">
+      {% for performer in top_performers %}
+      <div class="p-4 hover:bg-slate-50 transition-colors">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="h-12 w-12 rounded-full bg-gradient-to-br from-emerald-600 to-green-600 flex items-center justify-center text-white font-bold shadow-sm">
+              {{ performer.user.get_full_name|default:performer.user.email|first|upper }}
+            </div>
+            <div>
+              <p class="font-semibold text-slate-800">{{ performer.user.get_full_name|default:performer.user.username }}</p>
+              <p class="text-sm text-slate-500">{{ performer.get_role_display }}</p>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-xs text-slate-500">Employee ID: {{ performer.employee_code|default:"N/A" }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="flex items-center gap-1">
+              <p class="text-2xl font-bold text-emerald-600">{{ performer.performance_rating }}/5.0</p>
+              <i class="fas fa-star text-emerald-500 text-sm"></i>
+            </div>
+            <p class="text-xs text-slate-500">Last review: {{ performer.last_review_date|date:"M d, Y"|default:"Not reviewed" }}</p>
+            <a href="{% url 'accounts:hotel_member_detail' performer.pk %}" class="text-xs text-blue-600 hover:text-blue-700">
+              View Profile →
+            </a>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="p-12 text-center">
+        <i class="fas fa-trophy text-4xl text-slate-300 mb-3"></i>
+        <p class="text-slate-500">No top performers data available</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Needs Improvement -->
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="border-b border-slate-200 bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-4">
+      <h2 class="font-bold text-slate-800 flex items-center gap-2">
+        <i class="fas fa-chart-line text-amber-600"></i>
+        Needs Improvement
+      </h2>
+    </div>
+    <div class="divide-y divide-slate-100">
+      {% for member in needs_improvement %}
+      <div class="p-4 hover:bg-slate-50 transition-colors">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="h-12 w-12 rounded-full bg-gradient-to-br from-amber-600 to-orange-600 flex items-center justify-center text-white font-bold shadow-sm">
+              {{ member.user.get_full_name|default:member.user.email|first|upper }}
+            </div>
+            <div>
+              <p class="font-semibold text-slate-800">{{ member.user.get_full_name|default:member.user.username }}</p>
+              <p class="text-sm text-slate-500">{{ member.get_role_display }}</p>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-xs text-slate-500">Employee ID: {{ member.employee_code|default:"N/A" }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="flex items-center gap-1">
+              <p class="text-2xl font-bold text-amber-600">{{ member.performance_rating }}/5.0</p>
+              <i class="fas fa-exclamation-triangle text-amber-500 text-sm"></i>
+            </div>
+            <p class="text-xs text-slate-500">Last review: {{ member.last_review_date|date:"M d, Y"|default:"Never" }}</p>
+            <a href="{% url 'accounts:member_performance' member.pk %}" class="text-xs text-blue-600 hover:text-blue-700">
+              Schedule Review →
+            </a>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="p-12 text-center">
+        <i class="fas fa-check-circle text-4xl text-emerald-300 mb-3"></i>
+        <p class="text-slate-500">Great job! No staff members need improvement</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Recent Reviews -->
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="border-b border-slate-200 bg-slate-50 px-6 py-4">
+      <h2 class="font-bold text-slate-800 flex items-center gap-2">
+        <i class="fas fa-history text-blue-600"></i>
+        Recent Performance Reviews
+      </h2>
+    </div>
+    <div class="divide-y divide-slate-100">
+      {% for review in recent_reviews %}
+      <div class="p-4 hover:bg-slate-50 transition-colors">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold">
+              {{ review.user.get_full_name|default:review.user.email|first|upper }}
+            </div>
+            <div>
+              <p class="font-semibold text-slate-800">{{ review.user.get_full_name|default:review.user.username }}</p>
+              <p class="text-sm text-slate-500">{{ review.get_role_display }}</p>
+              <p class="text-xs text-slate-400">Reviewed by: {{ review.last_reviewed_by|default:"Admin" }}</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="flex items-center gap-2">
+              <span class="px-3 py-1 rounded-full text-sm font-medium
+                {% if review.performance_rating >= 4 %}bg-emerald-100 text-emerald-700
+                {% elif review.performance_rating >= 3 %}bg-blue-100 text-blue-700
+                {% else %}bg-amber-100 text-amber-700{% endif %}">
+                Rating: {{ review.performance_rating }}/5.0
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">Reviewed: {{ review.last_review_date|date:"M d, Y" }}</p>
+            {% if review.performance_notes %}
+            <p class="text-xs text-slate-400 mt-1 max-w-md truncate">{{ review.performance_notes|truncatechars:50 }}</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="p-12 text-center">
+        <i class="fas fa-clipboard-list text-4xl text-slate-300 mb-3"></i>
+        <p class="text-slate-500">No recent performance reviews</p>
+        <a href="{% url 'accounts:hotel_members_list' %}" class="text-blue-600 hover:text-blue-700 text-sm mt-2 inline-block">
+          Start reviewing staff →
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Performance by Role -->
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="border-b border-slate-200 bg-slate-50 px-6 py-4">
+      <h2 class="font-bold text-slate-800 flex items-center gap-2">
+        <i class="fas fa-chart-bar text-purple-600"></i>
+        Performance by Role
+      </h2>
+    </div>
+    <div class="p-6">
+      <div class="space-y-4">
+        {% for role in performance_by_role %}
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-slate-600 font-medium">{{ role.role_display }}</span>
+            <span class="text-slate-800 font-semibold">{{ role.avg_rating|floatformat:1 }}/5.0 ({{ role.count }} staff)</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-2.5">
+            <div class="bg-gradient-to-r from-purple-600 to-pink-600 h-2.5 rounded-full transition-all duration-500" 
+                 style="width: {% widthratio role.avg_rating 5 100 %}%"></div>
+          </div>
+        </div>
+        {% empty %}
+        <p class="text-slate-500 text-center py-4">No performance data by role available</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+@media print {
+  .glass-nav, .sidebar, .bg-gradient-to-r, .flex.gap-3, .bg-white.rounded-2xl.shadow-sm form {
+    display: none !important;
+  }
+  body {
+    background: white;
+    padding: 0;
+    margin: 0;
+  }
+  .space-y-6 {
+    margin: 0;
+    padding: 20px;
+  }
+  .rounded-2xl {
+    border: 1px solid #e2e8f0;
+    box-shadow: none;
+  }
+  .bg-gradient-to-r {
+    background: none !important;
+  }
+}
+</style>
+{% endblock %}

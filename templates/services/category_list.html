@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Service Categories • Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-bold text-slate-900">Service Categories</h1>
+    <a href="{% url 'services:category_create' %}" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">New Category</a>
+  </div>
+
+  <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50 text-slate-600">
+        <tr>
+          <th class="px-4 py-3 text-left">Name</th>
+          <th class="px-4 py-3 text-left">Hotel</th>
+          <th class="px-4 py-3 text-left">Sort Order</th>
+          <th class="px-4 py-3 text-left">Status</th>
+          <th class="px-4 py-3 text-right">Action</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for category in categories %}
+        <tr>
+          <td class="px-4 py-3 font-medium">{{ category.name }}</td>
+          <td class="px-4 py-3">{{ category.hotel.name }}</td>
+          <td class="px-4 py-3">{{ category.sort_order }}</td>
+          <td class="px-4 py-3">{{ category.is_active|yesno:"Active,Inactive" }}</td>
+          <td class="px-4 py-3 text-right"><a href="{% url 'services:category_update' category.pk %}" class="font-medium text-slate-700">Edit</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="px-4 py-8 text-center text-slate-500">No service categories found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

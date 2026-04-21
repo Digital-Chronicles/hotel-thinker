@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Suppliers - Hotel Thinker{% endblock %}
+
+{% block breadcrumb %}
+<li class="flex items-center">
+  <span class="mx-2 text-slate-400"><i class="fas fa-chevron-right text-xs"></i></span>
+  <span class="text-slate-600 font-medium">Suppliers</span>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Suppliers</h1>
+      <p class="text-slate-500 mt-1 text-sm">Manage your product suppliers and vendors</p>
+    </div>
+    <a href="{% url 'store:supplier_create' %}" 
+       class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5">
+      <i class="fas fa-plus text-sm"></i>
+      <span>Add Supplier</span>
+    </a>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-4">
+    <form method="get" class="flex flex-wrap gap-3">
+      <div class="flex-1 min-w-[200px]">
+        <input type="text" name="q" value="{{ request.GET.q|default:'' }}" 
+               placeholder="Search by name, contact, phone, email..." 
+               class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <select name="hotel" class="w-44 rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="">All Hotels</option>
+        {% for hotel in request.user.hotels.all %}
+        <option value="{{ hotel.id }}" {% if request.GET.hotel == hotel.id|stringformat:"s" %}selected{% endif %}>{{ hotel.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="px-5 py-2.5 rounded-xl bg-slate-800 text-white text-sm font-medium hover:bg-slate-700 transition-colors">
+        <i class="fas fa-search mr-2"></i>Filter
+      </button>
+      {% if request.GET.q or request.GET.hotel %}
+      <a href="{% url 'store:supplier_list' %}" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors">
+        <i class="fas fa-times mr-2"></i>Clear
+      </a>
+      {% endif %}
+    </form>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    {% for supplier in suppliers %}
+    <div class="bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5">
+      <div class="p-5">
+        <div class="flex items-start justify-between mb-4">
+          <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
+            <i class="fas fa-truck text-blue-600 text-xl"></i>
+          </div>
+          {% if supplier.is_active %}
+          <span class="px-2 py-1 rounded-full bg-emerald-50 text-emerald-600 text-xs font-semibold">Active</span>
+          {% else %}
+          <span class="px-2 py-1 rounded-full bg-slate-100 text-slate-500 text-xs font-semibold">Inactive</span>
+          {% endif %}
+        </div>
+        <h3 class="text-lg font-bold text-slate-800 mb-1">{{ supplier.name }}</h3>
+        <p class="text-sm text-slate-500 mb-3">
+          <i class="fas fa-building mr-1 text-slate-400"></i>{{ supplier.hotel.name }}
+        </p>
+        {% if supplier.contact_person %}
+        <div class="flex items-center gap-2 text-sm text-slate-600 mb-2">
+          <i class="fas fa-user text-slate-400 w-4"></i>
+          <span>{{ supplier.contact_person }}</span>
+        </div>
+        {% endif %}
+        {% if supplier.phone %}
+        <div class="flex items-center gap-2 text-sm text-slate-600 mb-2">
+          <i class="fas fa-phone text-slate-400 w-4"></i>
+          <span>{{ supplier.phone }}</span>
+        </div>
+        {% endif %}
+        {% if supplier.email %}
+        <div class="flex items-center gap-2 text-sm text-slate-600 mb-3">
+          <i class="fas fa-envelope text-slate-400 w-4"></i>
+          <span class="truncate">{{ supplier.email }}</span>
+        </div>
+        {% endif %}
+        <div class="flex items-center gap-2 pt-3 border-t border-slate-100">
+          <a href="{% url 'store:supplier_update' supplier.pk %}" 
+             class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm font-medium hover:bg-slate-200 transition-colors">
+            <i class="fas fa-edit text-xs"></i>Edit
+          </a>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-span-full">
+      <div class="text-center py-16 bg-white rounded-2xl border border-slate-200/60">
+        <div class="h-20 w-20 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-truck text-slate-400 text-3xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-700 mb-1">No suppliers found</h3>
+        <p class="text-slate-500 mb-4">Add your first supplier to start creating purchase orders</p>
+        <a href="{% url 'store:supplier_create' %}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors">
+          <i class="fas fa-plus"></i>Add Supplier
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if is_paginated %}
+  <div class="flex justify-center">
+    <div class="flex items-center gap-2 bg-white rounded-xl border border-slate-200/60 p-1">
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.hotel %}&hotel={{ request.GET.hotel }}{% endif %}" 
+         class="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors">
+        <i class="fas fa-chevron-left"></i>
+      </a>
+      {% endif %}
+      <span class="px-4 py-2 text-sm text-slate-600">
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+      </span>
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.hotel %}&hotel={{ request.GET.hotel }}{% endif %}" 
+         class="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors">
+        <i class="fas fa-chevron-right"></i>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

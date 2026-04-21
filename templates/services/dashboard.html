@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Services Dashboard • Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-900">Services Dashboard</h1>
+    <p class="text-sm text-slate-500 mt-1">Monitor hotel facilities, packages, and service bookings.</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div class="bg-white border border-slate-200 rounded-2xl p-5">
+      <p class="text-sm text-slate-500">Bookings Today</p>
+      <p class="mt-2 text-3xl font-bold text-slate-900">{{ bookings_today }}</p>
+    </div>
+    <div class="bg-white border border-slate-200 rounded-2xl p-5">
+      <p class="text-sm text-slate-500">Active Today</p>
+      <p class="mt-2 text-3xl font-bold text-slate-900">{{ active_today }}</p>
+    </div>
+    <div class="bg-white border border-slate-200 rounded-2xl p-5">
+      <p class="text-sm text-slate-500">Completed Today</p>
+      <p class="mt-2 text-3xl font-bold text-slate-900">{{ completed_today }}</p>
+    </div>
+    <div class="bg-white border border-slate-200 rounded-2xl p-5">
+      <p class="text-sm text-slate-500">Payments Today</p>
+      <p class="mt-2 text-3xl font-bold text-slate-900">{{ payments_today }}</p>
+    </div>
+  </div>
+
+  <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-200">
+      <h2 class="font-semibold text-slate-900">Upcoming Service Bookings</h2>
+    </div>
+    <div class="divide-y divide-slate-100">
+      {% for booking in upcoming_bookings %}
+      <a href="{% url 'services:booking_detail' booking.pk %}" class="block px-6 py-4 hover:bg-slate-50">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <p class="font-medium text-slate-900">{{ booking.reference }} • {{ booking.customer_name }}</p>
+            <p class="text-sm text-slate-500 mt-1">{{ booking.service.name }}{% if booking.resource %} • {{ booking.resource.name }}{% endif %}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm font-medium text-slate-900">{{ booking.scheduled_start|date:"M d, Y H:i" }}</p>
+            <p class="text-xs text-slate-500">{{ booking.get_status_display }}</p>
+          </div>
+        </div>
+      </a>
+      {% empty %}
+      <div class="px-6 py-10 text-center text-slate-500">No upcoming service bookings.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Expenses • Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="space-y-6 p-6">
+  <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Expenses</h1>
+      <p class="mt-1 text-sm text-slate-500">Manage expense requests, approvals, payments, and receipts.</p>
+    </div>
+    <a href="{% url 'finance:expense_create' %}" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">New Expense</a>
+  </div>
+
+  <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <form method="get" class="grid grid-cols-1 gap-4 md:grid-cols-4">
+      <div class="md:col-span-2">
+        <label class="mb-1 block text-sm font-medium text-slate-700">Search</label>
+        <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Expense number, title, vendor, payee"
+               class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400">
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-medium text-slate-700">Status</label>
+        <select name="status" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+          <option value="">All statuses</option>
+          {% for value, label in expenses.model.ApprovalStatus.choices %}
+            <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-medium text-slate-700">Category</label>
+        <select name="category" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+          <option value="">All categories</option>
+          {% for value, label in expenses.model.Category.choices %}
+            <option value="{{ value }}" {% if request.GET.category == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="md:col-span-4 flex gap-2">
+        <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Filter</button>
+        <a href="{% url 'finance:expense_list' %}" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700">Reset</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead class="bg-slate-50 text-slate-600">
+          <tr>
+            <th class="px-4 py-3 text-left font-medium">Expense</th>
+            <th class="px-4 py-3 text-left font-medium">Category</th>
+            <th class="px-4 py-3 text-left font-medium">Payment Date</th>
+            <th class="px-4 py-3 text-left font-medium">Vendor / Payee</th>
+            <th class="px-4 py-3 text-left font-medium">Status</th>
+            <th class="px-4 py-3 text-right font-medium">Total</th>
+            <th class="px-4 py-3 text-right font-medium">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for expense in expenses %}
+          <tr class="hover:bg-slate-50">
+            <td class="px-4 py-3">
+              <div class="font-semibold text-slate-900">{{ expense.expense_number }}</div>
+              <div class="text-sm text-slate-700">{{ expense.title }}</div>
+            </td>
+            <td class="px-4 py-3">{{ expense.get_category_display }}</td>
+            <td class="px-4 py-3">{{ expense.payment_date }}</td>
+            <td class="px-4 py-3">
+              <div>{{ expense.vendor|default:"-" }}</div>
+              <div class="text-xs text-slate-500">{{ expense.payee|default:"-" }}</div>
+            </td>
+            <td class="px-4 py-3">
+              {% if expense.approval_status == 'paid' %}
+                <span class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">Paid</span>
+              {% elif expense.approval_status == 'approved' %}
+                <span class="inline-flex rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">Approved</span>
+              {% elif expense.approval_status == 'pending' %}
+                <span class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">Pending</span>
+              {% elif expense.approval_status == 'rejected' %}
+                <span class="inline-flex rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700">Rejected</span>
+              {% else %}
+                <span class="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-semibold text-slate-700">{{ expense.get_approval_status_display }}</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 text-right font-semibold">UGX {{ expense.total_amount|floatformat:0|intcomma }}</td>
+            <td class="px-4 py-3 text-right">
+              <a href="{% url 'finance:expense_detail' expense.pk %}" class="font-medium text-slate-700 hover:text-slate-900">View</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="px-4 py-10 text-center text-slate-500">No expenses found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if is_paginated %}
+  <div class="flex items-center justify-between text-sm text-slate-600">
+    <div>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</div>
+    <div class="flex gap-2">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}&category={{ request.GET.category }}" class="rounded-lg border border-slate-300 px-3 py-1.5">Previous</a>
+      {% endif %}
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}&category={{ request.GET.category }}" class="rounded-lg border border-slate-300 px-3 py-1.5">Next</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

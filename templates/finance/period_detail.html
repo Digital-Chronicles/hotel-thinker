@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{{ period.name }} • Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="space-y-6 p-6">
+  <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">{{ period.name }}</h1>
+      <p class="mt-1 text-sm text-slate-500">Financial period summary, closure, and profitability.</p>
+    </div>
+
+    {% if period.status != 'closed' %}
+    <form method="post" action="{% url 'finance:period_close' period.pk %}">
+      {% csrf_token %}
+      <button class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Close Period</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+    <div class="xl:col-span-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="mb-4 font-semibold text-slate-900">Period Details</h2>
+
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 text-sm">
+        <div><span class="text-slate-500">Hotel:</span> <span class="font-medium">{{ period.hotel.name }}</span></div>
+        <div><span class="text-slate-500">Status:</span> <span class="font-medium">{{ period.get_status_display }}</span></div>
+        <div><span class="text-slate-500">Start Date:</span> <span class="font-medium">{{ period.start_date }}</span></div>
+        <div><span class="text-slate-500">End Date:</span> <span class="font-medium">{{ period.end_date }}</span></div>
+        <div><span class="text-slate-500">Closed By:</span> <span class="font-medium">{{ period.closed_by|default:"-" }}</span></div>
+        <div><span class="text-slate-500">Closed At:</span> <span class="font-medium">{{ period.closed_at|date:"d M Y H:i"|default:"-" }}</span></div>
+      </div>
+
+      {% if period.notes %}
+      <div class="mt-5 border-t pt-4">
+        <p class="mb-1 text-sm font-medium text-slate-700">Notes</p>
+        <p class="text-sm text-slate-600">{{ period.notes }}</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h2 class="mb-4 font-semibold text-slate-900">Financial Summary</h2>
+      <div class="space-y-3 text-sm">
+        <div class="flex justify-between gap-3"><span class="text-slate-500">Total Revenue</span><span class="text-right font-medium">UGX {{ period.total_revenue|floatformat:0|intcomma }}</span></div>
+        <div class="flex justify-between gap-3"><span class="text-slate-500">Total Expenses</span><span class="text-right font-medium">UGX {{ period.total_expenses|floatformat:0|intcomma }}</span></div>
+        <div class="border-t pt-3 flex justify-between text-base">
+          <span class="font-semibold">Net Profit</span>
+          <span class="font-bold {% if period.net_profit < 0 %}text-rose-600{% else %}text-emerald-600{% endif %}">
+            UGX {{ period.net_profit|floatformat:0|intcomma }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

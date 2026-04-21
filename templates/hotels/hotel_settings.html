@@ -1,208 +1,349 @@
 {% extends "base.html" %}
-{% block title %}Hotel Settings — Hotel Thinker{% endblock %}
+
+{% block title %}{% if form.instance.pk %}Edit Supplier{% else %}Add Supplier{% endif %} - Hotel Thinker{% endblock %}
+
+{% block breadcrumb %}
+<li class="flex items-center">
+  <span class="mx-2 text-slate-400"><i class="fas fa-chevron-right text-xs"></i></span>
+  <a href="{% url 'store:supplier_list' %}" class="text-slate-500 hover:text-blue-600 transition-colors">Suppliers</a>
+</li>
+<li class="flex items-center">
+  <span class="mx-2 text-slate-400"><i class="fas fa-chevron-right text-xs"></i></span>
+  <span class="text-slate-600 font-medium">{% if form.instance.pk %}Edit{% else %}Add{% endif %}</span>
+</li>
+{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl">
-
-  <div class="mb-6 flex items-end justify-between gap-3">
-    <div>
-      <h1 class="text-2xl font-bold text-blue-800">Hotel Settings</h1>
-      <p class="text-sm text-gray-600 mt-1">Configure branding, policies, hours, and integrations for {{ hotel.name }}.</p>
+<div class="max-w-4xl mx-auto">
+  <!-- Header Section -->
+  <div class="mb-6">
+    <div class="flex items-center gap-3 mb-2">
+      <div class="h-11 w-11 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+        <i class="fas fa-truck text-white text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">
+          {% if form.instance.pk %}Edit Supplier{% else %}Add New Supplier{% endif %}
+        </h1>
+        <p class="text-sm text-slate-500 mt-0.5">
+          {% if form.instance.pk %}
+          Update supplier information, contact details, and status
+          {% else %}
+          Register a new vendor to manage purchase orders and inventory
+          {% endif %}
+        </p>
+      </div>
     </div>
-    <a href="{% url 'hotels:detail' %}"
-       class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
-      Back to Hotel
-    </a>
   </div>
 
-  <form method="post" enctype="multipart/form-data" class="space-y-4">
-    {% csrf_token %}
-
-    {% if form.non_field_errors %}
-      <div class="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-4 py-3 text-sm">
-        {{ form.non_field_errors }}
-      </div>
-    {% endif %}
-
-    <!-- ABOUT -->
-    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <div class="text-sm font-semibold text-gray-900">About</div>
-        <div class="text-xs text-gray-500 mt-0.5">Descriptions shown in documents and online booking.</div>
-      </div>
-      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label class="text-sm font-medium text-gray-700">Short Description</label>
-          {{ form.short_description }}
-          {% if form.short_description.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.short_description.errors|striptags }}</p>{% endif %}
+  <!-- Form Card -->
+  <div class="bg-white rounded-2xl border border-slate-200/60 shadow-lg overflow-hidden">
+    <!-- Form Header with Tabs -->
+    <div class="border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white">
+      <div class="flex items-center gap-6 px-6">
+        <div class="py-3 border-b-2 border-blue-500">
+          <span class="text-sm font-semibold text-blue-600 flex items-center gap-2">
+            <i class="fas fa-info-circle text-xs"></i>
+            Basic Information
+          </span>
         </div>
-        <div>
-          <label class="text-sm font-medium text-gray-700">About Description</label>
-          {{ form.about_description }}
-          {% if form.about_description.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.about_description.errors|striptags }}</p>{% endif %}
+        <div class="py-3">
+          <span class="text-sm font-medium text-slate-500 flex items-center gap-2">
+            <i class="fas fa-address-card text-xs"></i>
+            Contact Details
+          </span>
+        </div>
+        <div class="py-3">
+          <span class="text-sm font-medium text-slate-500 flex items-center gap-2">
+            <i class="fas fa-building text-xs"></i>
+            Business Info
+          </span>
         </div>
       </div>
     </div>
-
-    <!-- CONTACT -->
-    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <div class="text-sm font-semibold text-gray-900">Contact</div>
-        <div class="text-xs text-gray-500 mt-0.5">Front desk and guest-facing contact details.</div>
-      </div>
-      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="md:col-span-2">
-          <label class="text-sm font-medium text-gray-700">Address</label>
-          {{ form.address }}
-          {% if form.address.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.address.errors|striptags }}</p>{% endif %}
+    
+    <form method="post" class="p-6">
+      {% csrf_token %}
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {% for field in form %}
+        <div class="{% if field.name == 'address' or field.name == 'note' %}md:col-span-2{% else %}md:col-span-1{% endif %} group">
+          <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-slate-700 mb-1.5">
+            {{ field.label }}
+            {% if field.field.required %}
+            <span class="text-rose-500 ml-0.5">*</span>
+            {% endif %}
+            {% if field.name == 'tin_number' %}
+            <span class="text-xs font-normal text-slate-400 ml-2">(Tax Identification Number)</span>
+            {% elif field.name == 'email' %}
+            <span class="text-xs font-normal text-slate-400 ml-2">(Work email preferred)</span>
+            {% endif %}
+          </label>
+          
+          <div class="relative">
+            {% if field.name == 'name' %}
+            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+              <i class="fas fa-building text-sm"></i>
+            </div>
+            {{ field }}
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                const nameField = document.getElementById('{{ field.id_for_label }}');
+                if (nameField) nameField.classList.add('pl-10');
+              });
+            </script>
+            
+            {% elif field.name == 'contact_person' %}
+            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+              <i class="fas fa-user text-sm"></i>
+            </div>
+            {{ field }}
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                const contactField = document.getElementById('{{ field.id_for_label }}');
+                if (contactField) contactField.classList.add('pl-10');
+              });
+            </script>
+            
+            {% elif field.name == 'phone' %}
+            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+              <i class="fas fa-phone text-sm"></i>
+            </div>
+            {{ field }}
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                const phoneField = document.getElementById('{{ field.id_for_label }}');
+                if (phoneField) phoneField.classList.add('pl-10');
+              });
+            </script>
+            
+            {% elif field.name == 'email' %}
+            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+              <i class="fas fa-envelope text-sm"></i>
+            </div>
+            {{ field }}
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                const emailField = document.getElementById('{{ field.id_for_label }}');
+                if (emailField) emailField.classList.add('pl-10');
+              });
+            </script>
+            
+            {% elif field.name == 'address' %}
+            <div class="absolute left-3 top-3 text-slate-400">
+              <i class="fas fa-map-marker-alt text-sm"></i>
+            </div>
+            {{ field }}
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                const addressField = document.getElementById('{{ field.id_for_label }}');
+                if (addressField) addressField.classList.add('pl-10');
+              });
+            </script>
+            
+            {% elif field.name == 'tin_number' %}
+            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+              <i class="fas fa-id-card text-sm"></i>
+            </div>
+            {{ field }}
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                const tinField = document.getElementById('{{ field.id_for_label }}');
+                if (tinField) tinField.classList.add('pl-10');
+              });
+            </script>
+            
+            {% elif field.name == 'hotel' %}
+            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+              <i class="fas fa-hotel text-sm"></i>
+            </div>
+            {{ field }}
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                const hotelField = document.getElementById('{{ field.id_for_label }}');
+                if (hotelField) hotelField.classList.add('pl-10');
+              });
+            </script>
+            
+            {% elif field.name == 'is_active' %}
+            <div class="relative">
+              {{ field }}
+              <div class="mt-2 p-3 rounded-lg bg-slate-50 border border-slate-200">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-info-circle text-slate-400 text-xs"></i>
+                  <span class="text-xs text-slate-600">
+                    Inactive suppliers won't appear in purchase order dropdowns
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            {% else %}
+            {{ field }}
+            {% endif %}
+          </div>
+          
+          {% if field.help_text and field.name != 'is_active' %}
+          <p class="text-xs text-slate-400 mt-1.5 flex items-center gap-1">
+            <i class="fas fa-info-circle text-[10px]"></i>
+            {{ field.help_text }}
+          </p>
+          {% endif %}
+          
+          {% if field.errors %}
+          <div class="mt-2 p-2 rounded-lg bg-rose-50 border border-rose-200">
+            {% for error in field.errors %}
+            <p class="text-sm text-rose-600 flex items-center gap-2">
+              <i class="fas fa-exclamation-circle text-xs"></i>
+              {{ error }}
+            </p>
+            {% endfor %}
+          </div>
+          {% endif %}
         </div>
-        <div>
-          <label class="text-sm font-medium text-gray-700">Phone Number</label>
-          {{ form.phone_number }}
-        </div>
-        <div>
-          <label class="text-sm font-medium text-gray-700">Email</label>
-          {{ form.email }}
-        </div>
-        <div>
-          <label class="text-sm font-medium text-gray-700">Emergency Contact</label>
-          {{ form.emergency_contact }}
-        </div>
+        {% endfor %}
       </div>
+      
+      <!-- Form Actions -->
+      <div class="flex items-center justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
+        <a href="{% url 'store:supplier_list' %}" 
+           class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-600 font-medium text-sm hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 flex items-center gap-2">
+          <i class="fas fa-times text-sm"></i>
+          Cancel
+        </a>
+        <button type="submit" 
+                class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2">
+          <i class="fas {% if form.instance.pk %}fa-save{% else %}fa-plus-circle{% endif %} text-sm"></i>
+          {% if form.instance.pk %}Update Supplier{% else %}Create Supplier{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Tips Section -->
+  <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="p-4 bg-blue-50/50 rounded-xl border border-blue-100">
+      <div class="flex items-center gap-2 mb-2">
+        <i class="fas fa-file-invoice text-blue-500 text-sm"></i>
+        <h3 class="text-sm font-semibold text-blue-800">Purchase Orders</h3>
+      </div>
+      <p class="text-xs text-blue-700">Suppliers are essential for creating purchase orders and tracking inventory procurement.</p>
     </div>
-
-    <!-- BRANDING -->
-    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <div class="text-sm font-semibold text-gray-900">Branding</div>
-        <div class="text-xs text-gray-500 mt-0.5">Logo and colors.</div>
+    
+    <div class="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
+      <div class="flex items-center gap-2 mb-2">
+        <i class="fas fa-tag text-emerald-500 text-sm"></i>
+        <h3 class="text-sm font-semibold text-emerald-800">TIN Number</h3>
       </div>
-      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label class="text-sm font-medium text-gray-700">Brand Color (Hex)</label>
-          {{ form.brand_color }}
-        </div>
-        <div>
-          <label class="text-sm font-medium text-gray-700">Favicon</label>
-          {{ form.favicon }}
-        </div>
-        <div>
-          <label class="text-sm font-medium text-gray-700">Logo (Dark)</label>
-          {{ form.logo }}
-        </div>
-        <div>
-          <label class="text-sm font-medium text-gray-700">Logo (Light)</label>
-          {{ form.logo_light }}
-        </div>
-      </div>
+      <p class="text-xs text-emerald-700">Tax Identification Number helps with invoicing and compliance tracking.</p>
     </div>
-
-    <!-- HOURS -->
-    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <div class="text-sm font-semibold text-gray-900">Business Hours</div>
-        <div class="text-xs text-gray-500 mt-0.5">Default times for check-in/out and reception.</div>
+    
+    <div class="p-4 bg-amber-50/50 rounded-xl border border-amber-100">
+      <div class="flex items-center gap-2 mb-2">
+        <i class="fas fa-bell text-amber-500 text-sm"></i>
+        <h3 class="text-sm font-semibold text-amber-800">Contact Info</h3>
       </div>
-      <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div><label class="text-sm font-medium text-gray-700">Check-in Time</label>{{ form.check_in_time }}</div>
-        <div><label class="text-sm font-medium text-gray-700">Check-out Time</label>{{ form.check_out_time }}</div>
-        <div><label class="text-sm font-medium text-gray-700">Reception Open</label>{{ form.reception_open_time }}</div>
-        <div><label class="text-sm font-medium text-gray-700">Reception Close</label>{{ form.reception_close_time }}</div>
-      </div>
+      <p class="text-xs text-amber-700">Keep contact details updated for smooth communication and order processing.</p>
     </div>
-
-    <!-- POLICIES -->
-    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <div class="text-sm font-semibold text-gray-900">Policies</div>
-        <div class="text-xs text-gray-500 mt-0.5">Used in bookings and guest communication.</div>
-      </div>
-      <div class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div><label class="text-sm font-medium text-gray-700">Cancellation Policy</label>{{ form.cancellation_policy }}</div>
-        <div><label class="text-sm font-medium text-gray-700">Payment Policy</label>{{ form.payment_policy }}</div>
-        <div><label class="text-sm font-medium text-gray-700">House Rules</label>{{ form.house_rules }}</div>
-      </div>
-    </div>
-
-    <!-- TAX & CURRENCY -->
-    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <div class="text-sm font-semibold text-gray-900">Tax & Currency</div>
-        <div class="text-xs text-gray-500 mt-0.5">Defaults for invoices and totals.</div>
-      </div>
-      <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div><label class="text-sm font-medium text-gray-700">Default Tax Rate (%)</label>{{ form.default_tax_rate }}</div>
-        <div><label class="text-sm font-medium text-gray-700">Tax Number</label>{{ form.tax_number }}</div>
-        <div><label class="text-sm font-medium text-gray-700">Currency</label>{{ form.currency }}</div>
-        <div><label class="text-sm font-medium text-gray-700">Currency Symbol</label>{{ form.currency_symbol }}</div>
-      </div>
-    </div>
-
-    <!-- SOCIAL -->
-    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <div class="text-sm font-semibold text-gray-900">Social Links</div>
-        <div class="text-xs text-gray-500 mt-0.5">Optional social handles or URLs.</div>
-      </div>
-      <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div><label class="text-sm font-medium text-gray-700">Instagram</label>{{ form.instagram }}</div>
-        <div><label class="text-sm font-medium text-gray-700">Twitter/X</label>{{ form.twitter }}</div>
-        <div><label class="text-sm font-medium text-gray-700">Facebook</label>{{ form.facebook }}</div>
-        <div><label class="text-sm font-medium text-gray-700">LinkedIn</label>{{ form.linkedin }}</div>
-        <div><label class="text-sm font-medium text-gray-700">YouTube</label>{{ form.youtube }}</div>
-      </div>
-    </div>
-
-    <!-- ADVANCED / API KEYS -->
-    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <div class="text-sm font-semibold text-gray-900">Integrations (API Keys)</div>
-        <div class="text-xs text-gray-500 mt-0.5">Keep these private. Only admins should access.</div>
-      </div>
-      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div><label class="text-sm font-medium text-gray-700">Google Maps API Key</label>{{ form.google_maps_api_key }}</div>
-        <div><label class="text-sm font-medium text-gray-700">SMS API Key</label>{{ form.sms_api_key }}</div>
-        <div><label class="text-sm font-medium text-gray-700">Payment Gateway Key</label>{{ form.payment_gateway_key }}</div>
-        <div><label class="text-sm font-medium text-gray-700">Payment Gateway Secret</label>{{ form.payment_gateway_secret }}</div>
-        <div class="md:col-span-2"><label class="text-sm font-medium text-gray-700">Email API Key</label>{{ form.email_api_key }}</div>
-      </div>
-    </div>
-
-    <!-- FEATURES -->
-    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <div class="text-sm font-semibold text-gray-900">Features</div>
-        <div class="text-xs text-gray-500 mt-0.5">Enable/disable system modules.</div>
-      </div>
-      <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <label class="flex items-center gap-2">
-          {{ form.enable_online_booking }}
-          <span class="text-sm text-gray-700">Enable online booking</span>
-        </label>
-
-        <label class="flex items-center gap-2">
-          {{ form.enable_restaurant_ordering }}
-          <span class="text-sm text-gray-700">Enable restaurant ordering</span>
-        </label>
-
-        <label class="flex items-center gap-2">
-          {{ form.enable_loyalty_program }}
-          <span class="text-sm text-gray-700">Enable loyalty program</span>
-        </label>
-      </div>
-    </div>
-
-    <!-- ACTIONS -->
-    <div class="flex justify-end gap-2">
-      <a href="{% url 'hotels:detail' %}"
-         class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
-        Cancel
-      </a>
-      <button class="px-5 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold">
-        Save Settings
-      </button>
-    </div>
-
-  </form>
+  </div>
 </div>
+
+<!-- Additional CSS -->
+<style>
+  /* Enhanced form field styling */
+  input, select, textarea {
+    transition: all 0.2s ease;
+    border-color: #e2e8f0;
+  }
+  
+  input:focus, select:focus, textarea:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    outline: none;
+  }
+  
+  /* Input hover effect */
+  input:hover:not(:focus), select:hover:not(:focus), textarea:hover:not(:focus) {
+    border-color: #cbd5e1;
+  }
+  
+  /* Checkbox styling */
+  input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+  }
+  
+  input[type="checkbox"]:checked {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+  }
+  
+  /* Select dropdown styling */
+  select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25rem;
+    padding-right: 2.5rem;
+  }
+  
+  /* Textarea styling */
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+  
+  /* Group hover effect */
+  .group:hover label {
+    color: #1e293b;
+  }
+  
+  /* Smooth transitions */
+  .transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+  }
+</style>
+
+<script>
+  // Add loading state to submit button
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const submitBtn = form?.querySelector('button[type="submit"]');
+    
+    if (form && submitBtn) {
+      form.addEventListener('submit', function() {
+        const originalHtml = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin text-sm"></i> Processing...';
+        submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+        
+        // Store original HTML for potential restoration (though page will reload on success)
+        setTimeout(() => {
+          if (!submitBtn.disabled) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalHtml;
+            submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+          }
+        }, 5000);
+      });
+    }
+    
+    // Phone number formatting hint
+    const phoneField = document.getElementById('id_phone');
+    if (phoneField && !phoneField.value) {
+      phoneField.placeholder = '+1 234 567 8900';
+    }
+    
+    // Email validation hint
+    const emailField = document.getElementById('id_email');
+    if (emailField && !emailField.value) {
+      emailField.placeholder = 'supplier@company.com';
+    }
+  });
+</script>
 {% endblock %}

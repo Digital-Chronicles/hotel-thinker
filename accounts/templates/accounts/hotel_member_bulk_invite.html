@@ -1,0 +1,86 @@
+<!-- accounts/templates/accounts/hotel_member_bulk_invite.html -->
+{% extends "base.html" %}
+
+{% block title %}Bulk Invite Members{% endblock %}
+
+{% block breadcrumb %}
+<li class="flex items-center gap-2">
+  <i class="fas fa-chevron-right text-slate-400 text-xs"></i>
+  <a href="{% url 'accounts:hotel_members_list' %}" class="text-slate-600 hover:text-blue-600">Staff</a>
+</li>
+<li class="flex items-center gap-2">
+  <i class="fas fa-chevron-right text-slate-400 text-xs"></i>
+  <span class="text-slate-800 font-semibold">Bulk Invite</span>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-full mx-auto">
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-8 text-center">
+      <div class="inline-block p-3 bg-white/20 rounded-2xl mb-4">
+        <i class="fas fa-users text-4xl text-white"></i>
+      </div>
+      <h1 class="text-2xl font-bold text-white">Bulk Invite Team Members</h1>
+      <p class="text-blue-100 mt-2">Invite multiple team members at once</p>
+    </div>
+    
+    <form method="post" class="p-6 space-y-6">
+      {% csrf_token %}
+      
+      <!-- Email List -->
+      <div>
+        <label for="{{ form.emails.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Email Addresses *</label>
+        {{ form.emails }}
+        <p class="text-xs text-slate-500 mt-2">Enter one email address per line</p>
+        {% if form.emails.errors %}
+        <p class="text-red-500 text-xs mt-1">{{ form.emails.errors.0 }}</p>
+        {% endif %}
+      </div>
+      
+      <!-- Role Selection -->
+      <div>
+        <label for="{{ form.role.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">Default Role *</label>
+        {{ form.role }}
+        <p class="text-xs text-slate-500 mt-1">This role will be assigned to all invited members</p>
+      </div>
+      
+      <!-- Invitation Options -->
+      <div class="p-4 bg-blue-50 rounded-xl">
+        <div class="flex items-center gap-3">
+          {{ form.send_invitation_email }}
+          <label for="{{ form.send_invitation_email.id_for_label }}" class="text-sm font-medium text-slate-700">
+            Send invitation emails immediately
+          </label>
+        </div>
+      </div>
+      
+      <!-- Info Box -->
+      <div class="p-4 bg-amber-50 rounded-xl border border-amber-200">
+        <div class="flex gap-3">
+          <i class="fas fa-info-circle text-amber-600 text-lg"></i>
+          <div class="text-sm text-amber-800">
+            <p class="font-medium mb-1">Important Notes:</p>
+            <ul class="list-disc list-inside space-y-1">
+              <li>Users who don't have an account will be automatically created</li>
+              <li>Existing members will be skipped automatically</li>
+              <li>All invited members will receive the same role initially</li>
+              <li>You can edit individual permissions after they join</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Actions -->
+      <div class="flex gap-3 pt-4">
+        <button type="submit" class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all">
+          <i class="fas fa-paper-plane mr-2"></i> Send Invitations
+        </button>
+        <a href="{% url 'accounts:hotel_members_list' %}" class="px-6 py-3 bg-slate-100 text-slate-700 rounded-xl font-semibold hover:bg-slate-200 transition-all text-center">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

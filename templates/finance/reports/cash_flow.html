@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Cash Flow{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto p-6">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold">Cash Flow</h1>
+      <p class="text-sm text-gray-600">{{ hotel.name }} | {{ start_date }} to {{ end_date }}</p>
+    </div>
+
+    <form method="get" class="flex gap-2">
+      <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" class="border rounded px-3 py-2">
+      <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" class="border rounded px-3 py-2">
+      <button class="bg-blue-600 text-white px-4 py-2 rounded">Filter</button>
+    </form>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white shadow rounded p-4">
+      <p class="text-sm text-gray-500">Cash Inflows</p>
+      <p class="text-2xl font-bold text-green-600">{{ cash_inflows }}</p>
+    </div>
+    <div class="bg-white shadow rounded p-4">
+      <p class="text-sm text-gray-500">Cash Outflows</p>
+      <p class="text-2xl font-bold text-red-600">{{ cash_outflows }}</p>
+    </div>
+    <div class="bg-white shadow rounded p-4">
+      <p class="text-sm text-gray-500">Net Cash Flow</p>
+      <p class="text-2xl font-bold {% if net_cash_flow >= 0 %}text-blue-600{% else %}text-red-600{% endif %}">
+        {{ net_cash_flow }}
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white shadow rounded">
+    <div class="p-4 border-b">
+      <h2 class="font-semibold">Cash / Bank Accounts</h2>
+    </div>
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="p-3 text-left">Code</th>
+          <th class="p-3 text-left">Account</th>
+          <th class="p-3 text-left">Subtype</th>
+          <th class="p-3 text-right">Balance</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for acc in cash_accounts %}
+        <tr class="border-t">
+          <td class="p-3">{{ acc.account_code }}</td>
+          <td class="p-3">{{ acc.name }}</td>
+          <td class="p-3">{{ acc.account_subtype }}</td>
+          <td class="p-3 text-right">{{ acc.balance }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="p-4 text-gray-500">No cash/bank accounts found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

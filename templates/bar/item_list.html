@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Bar Items | Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-sm">
+          <i class="fas fa-wine-bottle text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-slate-800">Bar Items</h1>
+          <p class="text-sm text-slate-500">Manage drinks, spirits, wines, sodas, and stock levels.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <a href="{% url 'bar:category_list' %}"
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition">
+        <i class="fas fa-tags text-blue-500 text-sm"></i>
+        <span>Categories</span>
+      </a>
+
+      <a href="{% url 'bar:item_create' %}"
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-medium shadow-sm transition">
+        <i class="fas fa-plus-circle text-sm"></i>
+        <span>New Item</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total Items</p>
+          <p class="text-2xl font-bold text-slate-800 mt-2">{{ total_items|default:items.count }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+          <i class="fas fa-wine-bottle text-blue-600"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Active Items</p>
+          <p class="text-2xl font-bold text-emerald-600 mt-2">{{ active_items|default:0 }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+          <i class="fas fa-check-circle text-emerald-600"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Low Stock</p>
+          <p class="text-2xl font-bold text-amber-600 mt-2">{{ low_stock_items|default:0 }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+          <i class="fas fa-exclamation-triangle text-amber-600"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Out of Stock</p>
+          <p class="text-2xl font-bold text-rose-600 mt-2">{{ out_of_stock|default:0 }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center">
+          <i class="fas fa-times-circle text-rose-600"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/70 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div>
+        <div class="flex items-center gap-2">
+          <i class="fas fa-filter text-slate-400 text-sm"></i>
+          <span class="text-sm font-semibold text-slate-700">Filters</span>
+        </div>
+        <p class="text-xs text-slate-500 mt-1">Search by item name, SKU, category, or filter by stock status.</p>
+      </div>
+
+      {% if request.GET.q or request.GET.hotel or request.GET.category or request.GET.low_stock or request.GET.active %}
+        <a href="{% url 'bar:item_list' %}"
+           class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-600 transition">
+          <i class="fas fa-times text-xs"></i>
+          <span>Clear Filters</span>
+        </a>
+      {% endif %}
+    </div>
+
+    <form method="get" class="p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+      <div class="xl:col-span-2">
+        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Search</label>
+        <div class="relative">
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input type="text"
+                 name="q"
+                 value="{{ request.GET.q|default:'' }}"
+                 placeholder="Item name, SKU, or category..."
+                 class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-300">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Hotel</label>
+        <select name="hotel"
+                class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-300 bg-white">
+          <option value="">All Hotels</option>
+          {% for hotel in hotels %}
+            <option value="{{ hotel.id }}" {% if request.GET.hotel == hotel.id|stringformat:"s" %}selected{% endif %}>
+              {{ hotel.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Category</label>
+        <select name="category"
+                class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-300 bg-white">
+          <option value="">All Categories</option>
+          {% for category in categories %}
+            <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
+              {{ category.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Status</label>
+        <select name="active"
+                class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-300 bg-white">
+          <option value="">All Status</option>
+          <option value="true" {% if request.GET.active == 'true' %}selected{% endif %}>Active Only</option>
+          <option value="false" {% if request.GET.active == 'false' %}selected{% endif %}>Inactive Only</option>
+        </select>
+      </div>
+
+      <div class="flex items-end gap-2">
+        <button type="submit"
+                class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white text-sm font-semibold transition">
+          <i class="fas fa-search text-xs"></i>
+          <span>Apply Filters</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Items Table -->
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i class="fas fa-list text-slate-400 text-sm"></i>
+        <span class="text-sm text-slate-600">
+          Showing <span class="font-semibold text-slate-800">{{ page_obj.paginator.count }}</span> item(s)
+        </span>
+      </div>
+      <div class="text-xs text-slate-400">
+        <i class="fas fa-mouse-pointer mr-1"></i> Click row to edit
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 border-b border-slate-200">
+          <tr class="text-left text-slate-600">
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Item</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Category</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Hotel</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider text-right">Price</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider text-right">Stock</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Status</th>
+            <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider text-right">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-slate-100">
+          {% for item in items %}
+            <tr class="hover:bg-slate-50 transition cursor-pointer"
+                onclick="window.location='{% url 'bar:item_update' item.pk %}'">
+              <td class="px-5 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl 
+                    {% if item.category.name|lower == 'wine' %}bg-purple-50
+                    {% elif item.category.name|lower == 'spirits' %}bg-amber-50
+                    {% elif item.category.name|lower == 'beer' %}bg-yellow-50
+                    {% elif item.category.name|lower == 'soft drinks' %}bg-blue-50
+                    {% else %}bg-slate-100{% endif %}
+                    flex items-center justify-center">
+                    <i class="fas fa-wine-bottle 
+                      {% if item.category.name|lower == 'wine' %}text-purple-600
+                      {% elif item.category.name|lower == 'spirits' %}text-amber-600
+                      {% elif item.category.name|lower == 'beer' %}text-yellow-600
+                      {% elif item.category.name|lower == 'soft drinks' %}text-blue-600
+                      {% else %}text-slate-500{% endif %}
+                      text-sm"></i>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-slate-800">{{ item.name }}</p>
+                    {% if item.sku %}
+                      <p class="text-xs text-slate-400">SKU: {{ item.sku }}</p>
+                    {% endif %}
+                    <p class="text-xs text-slate-400">{{ item.unit }}</p>
+                  </div>
+                </div>
+              </td>
+
+              <td class="px-5 py-4">
+                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium">
+                  <i class="fas fa-tag text-[10px]"></i>
+                  {{ item.category.name }}
+                </span>
+              </td>
+
+              <td class="px-5 py-4">
+                <div class="text-slate-700">{{ item.hotel.name }}</div>
+              </td>
+
+              <td class="px-5 py-4 text-right">
+                <div>
+                  <p class="font-bold text-emerald-600">UGX {{ item.selling_price|floatformat:0|intcomma }}</p>
+                  <p class="text-xs text-slate-400">Cost: UGX {{ item.cost_price|floatformat:0|intcomma }}</p>
+                </div>
+              </td>
+
+              <td class="px-5 py-4 text-right">
+                <div>
+                  <p class="font-semibold 
+                    {% if item.track_stock %}
+                      {% if item.stock_qty <= 0 %}text-rose-600
+                      {% elif item.is_low_stock %}text-amber-600
+                      {% else %}text-emerald-600{% endif %}
+                    {% else %}
+                      text-slate-600
+                    {% endif %}">
+                    {% if item.track_stock %}
+                      {{ item.stock_qty|floatformat:0 }}
+                    {% else %}
+                      <span class="text-slate-400">Not tracked</span>
+                    {% endif %}
+                  </p>
+                  {% if item.track_stock and item.is_low_stock and item.stock_qty > 0 %}
+                    <span class="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700">
+                      <i class="fas fa-exclamation-triangle text-[8px]"></i>
+                      Reorder at {{ item.reorder_level|floatformat:0 }}
+                    </span>
+                  {% elif item.track_stock and item.stock_qty <= 0 %}
+                    <span class="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-rose-100 text-rose-700">
+                      <i class="fas fa-times-circle text-[8px]"></i>
+                      Out of stock
+                    </span>
+                  {% endif %}
+                </div>
+              </td>
+
+              <td class="px-5 py-4">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
+                  {% if item.is_active %}bg-emerald-50 text-emerald-700 border border-emerald-200
+                  {% else %}bg-rose-50 text-rose-700 border border-rose-200{% endif %}">
+                  <span class="w-1.5 h-1.5 rounded-full
+                    {% if item.is_active %}bg-emerald-500{% else %}bg-rose-500{% endif %}"></span>
+                  {% if item.is_active %}Active{% else %}Inactive{% endif %}
+                </span>
+              </td>
+
+              <td class="px-5 py-4 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <a href="{% url 'bar:item_update' item.pk %}"
+                     onclick="event.stopPropagation()"
+                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition shadow-sm">
+                    <i class="fas fa-edit text-[10px]"></i>
+                    <span>Edit</span>
+                  </a>
+                  {% if item.track_stock %}
+                    <button onclick="event.stopPropagation(); showStockHistory('{{ item.id }}')"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition">
+                      <i class="fas fa-chart-line text-[10px]"></i>
+                      <span>History</span>
+                    </button>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="7" class="px-6 py-14 text-center">
+                <div class="flex flex-col items-center justify-center text-slate-400">
+                  <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+                    <i class="fas fa-wine-bottle text-slate-400 text-2xl"></i>
+                  </div>
+                  <p class="font-medium text-slate-500">No bar items found</p>
+                  <p class="text-xs mt-1">
+                    {% if request.GET.q or request.GET.hotel or request.GET.category %}
+                      Try adjusting your filters.
+                    {% else %}
+                      Create your first bar item to get started.
+                    {% endif %}
+                  </p>
+                  <a href="{% url 'bar:item_create' %}"
+                     class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium hover:from-blue-700 hover:to-indigo-700 transition">
+                    <i class="fas fa-plus-circle text-xs"></i>
+                    <span>New Item</span>
+                  </a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+      <div class="px-5 py-4 border-t border-slate-200 bg-slate-50/30">
+        {% include "partials/pagination.html" %}
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <a href="{% url 'bar:item_create' %}"
+       class="bg-white border border-slate-200 rounded-xl px-4 py-3 flex items-center justify-between hover:border-blue-300 hover:shadow-sm transition group">
+      <div class="flex items-center gap-3">
+        <i class="fas fa-plus-circle text-blue-500"></i>
+        <span class="text-sm font-medium text-slate-700">Add New Item</span>
+      </div>
+      <i class="fas fa-chevron-right text-slate-300 group-hover:text-blue-400 transition text-xs"></i>
+    </a>
+
+    <a href="{% url 'bar:category_list' %}"
+       class="bg-white border border-slate-200 rounded-xl px-4 py-3 flex items-center justify-between hover:border-blue-300 hover:shadow-sm transition group">
+      <div class="flex items-center gap-3">
+        <i class="fas fa-tags text-blue-500"></i>
+        <span class="text-sm font-medium text-slate-700">Manage Categories</span>
+      </div>
+      <i class="fas fa-chevron-right text-slate-300 group-hover:text-blue-400 transition text-xs"></i>
+    </a>
+
+    <a href="{% url 'bar:order_list' %}"
+       class="bg-white border border-slate-200 rounded-xl px-4 py-3 flex items-center justify-between hover:border-blue-300 hover:shadow-sm transition group">
+      <div class="flex items-center gap-3">
+        <i class="fas fa-wine-glass-alt text-blue-500"></i>
+        <span class="text-sm font-medium text-slate-700">View Orders</span>
+      </div>
+      <i class="fas fa-chevron-right text-slate-300 group-hover:text-blue-400 transition text-xs"></i>
+    </a>
+  </div>
+</div>
+
+<script>
+function showStockHistory(itemId) {
+  // You can implement a modal to show stock movement history
+  // For now, redirect to a stock history page or show alert
+  alert('Stock history feature coming soon. Item ID: ' + itemId);
+  // window.location.href = '/bar/items/' + itemId + '/stock-history/';
+}
+</script>
+{% endblock %}

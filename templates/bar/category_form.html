@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | Bar{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+  <!-- Header -->
+  <div class="flex items-center gap-3">
+    <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-sm">
+      <i class="fas fa-tag text-white text-lg"></i>
+    </div>
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">{{ title }}</h1>
+      <p class="text-sm text-slate-500">Configure bar category details.</p>
+    </div>
+  </div>
+
+  <!-- Form Card -->
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/50">
+      <div class="flex items-center gap-2">
+        <i class="fas fa-info-circle text-blue-600 text-sm"></i>
+        <h2 class="text-sm font-semibold text-slate-800">Category Information</h2>
+      </div>
+    </div>
+
+    <form method="post" class="p-5">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="mb-5 rounded-xl bg-rose-50 border border-rose-200 px-4 py-3">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-exclamation-triangle text-rose-600 text-sm"></i>
+            <p class="text-sm text-rose-800">{{ form.non_field_errors.0 }}</p>
+          </div>
+        </div>
+      {% endif %}
+
+      <div class="space-y-5">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+            <i class="fas fa-building text-xs mr-1"></i>Hotel
+          </label>
+          {{ form.hotel }}
+          {% if form.hotel.errors %}
+            <p class="text-sm text-rose-600 mt-1">{{ form.hotel.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+            <i class="fas fa-tag text-xs mr-1"></i>Category Name
+          </label>
+          {{ form.name }}
+          {% if form.name.errors %}
+            <p class="text-sm text-rose-600 mt-1">{{ form.name.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+            <i class="fas fa-sort-amount-down text-xs mr-1"></i>Sort Order
+          </label>
+          {{ form.sort_order }}
+          <p class="text-xs text-slate-500 mt-1">Lower numbers appear first in lists.</p>
+          {% if form.sort_order.errors %}
+            <p class="text-sm text-rose-600 mt-1">{{ form.sort_order.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label class="flex items-center gap-3 cursor-pointer">
+            {{ form.is_active }}
+            <span class="text-sm font-medium text-slate-700">Active</span>
+          </label>
+          <p class="text-xs text-slate-500 mt-1">Inactive categories won't appear in dropdown menus.</p>
+          {% if form.is_active.errors %}
+            <p class="text-sm text-rose-600 mt-1">{{ form.is_active.errors.0 }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="mt-8 pt-5 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="text-xs text-slate-500">
+          <i class="fas fa-lock text-[10px] mr-1"></i>
+          Category can be assigned to multiple bar items.
+        </div>
+        
+        <div class="flex items-center gap-3">
+          <a href="{% url 'bar:category_list' %}"
+             class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition">
+            <i class="fas fa-times text-xs"></i>
+            <span>Cancel</span>
+          </a>
+          
+          <button type="submit"
+                  class="inline-flex items-center justify-center gap-2 px-6 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold shadow-sm transition">
+            <i class="fas fa-save text-xs"></i>
+            <span>{{ submit_text }}</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

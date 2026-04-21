@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Service Bookings • Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Service Bookings</h1>
+      <p class="text-sm text-slate-500 mt-1">Track all service reservations, usage, and event bookings.</p>
+    </div>
+    <a href="{% url 'services:booking_create' %}" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">New Booking</a>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+    {% for booking in bookings %}
+    <a href="{% url 'services:booking_detail' booking.pk %}" class="block bg-white border border-slate-200 rounded-2xl p-5 hover:border-slate-300 hover:shadow-sm">
+      <div class="flex items-start justify-between">
+        <div>
+          <h2 class="font-semibold">{{ booking.reference }}</h2>
+          <p class="text-sm text-slate-500 mt-1">{{ booking.customer_name }} • {{ booking.service.name }}</p>
+        </div>
+        <span class="rounded-full px-3 py-1 text-xs font-medium
+          {% if booking.status == 'completed' %}bg-emerald-100 text-emerald-700
+          {% elif booking.status == 'cancelled' %}bg-rose-100 text-rose-700
+          {% elif booking.status == 'in_progress' %}bg-blue-100 text-blue-700
+          {% else %}bg-amber-100 text-amber-700{% endif %}">
+          {{ booking.get_status_display }}
+        </span>
+      </div>
+
+      <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <p class="text-slate-500">Start</p>
+          <p class="font-medium">{{ booking.scheduled_start|date:"M d, Y H:i" }}</p>
+        </div>
+        <div>
+          <p class="text-slate-500">Balance</p>
+          <p class="font-medium">{{ booking.balance_due }}</p>
+        </div>
+      </div>
+    </a>
+    {% empty %}
+    <div class="col-span-full bg-white border border-slate-200 rounded-2xl p-10 text-center text-slate-500">
+      No service bookings found.
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

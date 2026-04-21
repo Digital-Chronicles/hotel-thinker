@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Asset{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto p-6">
+
+<h1 class="text-xl font-bold">{{ asset.name }}</h1>
+
+<p>Value: {{ asset.current_value }}</p>
+<p>Status: {{ asset.status }}</p>
+<p>Purchase Date: {{ asset.purchase_date }}</p>
+
+</div>
+{% endblock %}

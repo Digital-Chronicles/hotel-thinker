@@ -2,94 +2,155 @@
 {% block title %}Hotel — Hotel Thinker{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl">
+<div class="max-w-full space-y-6">
 
-  <div class="mb-6 flex items-end justify-between gap-3">
-    <div>
-      <h1 class="text-2xl font-bold text-blue-800">{{ hotel.name }}</h1>
-      <p class="text-sm text-gray-600 mt-1">Hotel overview and quick settings.</p>
-    </div>
-
-    <a href="{% url 'hotels:settings' %}"
-       class="px-4 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold">
-      Open Settings
-    </a>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-    <!-- Left card -->
-    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden lg:col-span-2">
-      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <div class="text-sm font-semibold text-gray-900">Profile</div>
-        <div class="text-xs text-gray-500 mt-0.5">Basic hotel information.</div>
+  <!-- Header -->
+  <div class="rounded-3xl bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-800 px-6 py-8 text-white shadow-sm">
+    <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <div class="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide text-blue-100">
+          Hotel Overview
+        </div>
+        <h1 class="mt-3 text-3xl font-bold tracking-tight">{{ hotel.name }}</h1>
+        <p class="mt-2 max-w-2xl text-sm text-blue-100">
+          Manage your hotel profile, operating settings, and enabled service modules from one place.
+        </p>
       </div>
 
-      <div class="p-6">
-        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-          <div class="rounded-xl border border-gray-200 bg-white p-4">
-            <dt class="text-gray-500">Email</dt>
-            <dd class="font-semibold text-gray-900 mt-1">{{ hotel.email|default:"—" }}</dd>
+      <div class="flex flex-wrap gap-3">
+        <a href="{% url 'hotels:settings' %}"
+           class="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-blue-900 shadow-sm transition hover:bg-blue-50">
+          Open Settings
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+      <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Email</div>
+      <div class="mt-2 text-sm font-semibold text-gray-900 break-words">
+        {{ hotel.email|default:"—" }}
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+      <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Phone</div>
+      <div class="mt-2 text-sm font-semibold text-gray-900">
+        {{ hotel.phone|default:"—" }}
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+      <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Check-in Time</div>
+      <div class="mt-2 text-lg font-bold text-gray-900">
+        {{ settings.check_in_time|default:"—" }}
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+      <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Check-out Time</div>
+      <div class="mt-2 text-lg font-bold text-gray-900">
+        {{ settings.check_out_time|default:"—" }}
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+
+    <!-- Main info -->
+    <div class="xl:col-span-2 rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
+        <h2 class="text-sm font-semibold text-gray-900">Hotel Profile</h2>
+        <p class="mt-1 text-xs text-gray-500">Basic details and operating information.</p>
+      </div>
+
+      <div class="p-6 space-y-6">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div class="rounded-2xl border border-gray-200 bg-white p-4">
+            <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Hotel Name</div>
+            <div class="mt-2 text-base font-bold text-gray-900">{{ hotel.name }}</div>
           </div>
-          <div class="rounded-xl border border-gray-200 bg-white p-4">
-            <dt class="text-gray-500">Phone</dt>
-            <dd class="font-semibold text-gray-900 mt-1">{{ hotel.phone|default:"—" }}</dd>
+
+          <div class="rounded-2xl border border-gray-200 bg-white p-4">
+            <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Contact Email</div>
+            <div class="mt-2 text-sm font-semibold text-gray-900 break-words">{{ hotel.email|default:"—" }}</div>
           </div>
-          <div class="rounded-xl border border-gray-200 bg-white p-4 sm:col-span-2">
-            <dt class="text-gray-500">Address</dt>
-            <dd class="font-semibold text-gray-900 mt-1">{{ settings.address|default:"—" }}</dd>
+
+          <div class="rounded-2xl border border-gray-200 bg-white p-4">
+            <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Phone Number</div>
+            <div class="mt-2 text-sm font-semibold text-gray-900">{{ hotel.phone|default:"—" }}</div>
           </div>
-          <div class="rounded-xl border border-gray-200 bg-white p-4">
-            <dt class="text-gray-500">Check-in</dt>
-            <dd class="font-semibold text-gray-900 mt-1">{{ settings.check_in_time }}</dd>
+
+          <div class="rounded-2xl border border-gray-200 bg-white p-4">
+            <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Check-in / Check-out</div>
+            <div class="mt-2 text-sm font-semibold text-gray-900">
+              {{ settings.check_in_time|default:"—" }} / {{ settings.check_out_time|default:"—" }}
+            </div>
           </div>
-          <div class="rounded-xl border border-gray-200 bg-white p-4">
-            <dt class="text-gray-500">Check-out</dt>
-            <dd class="font-semibold text-gray-900 mt-1">{{ settings.check_out_time }}</dd>
+
+          <div class="rounded-2xl border border-gray-200 bg-white p-4 sm:col-span-2">
+            <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Address</div>
+            <div class="mt-2 text-sm font-semibold text-gray-900">
+              {{ settings.address|default:"—" }}
+            </div>
           </div>
-        </dl>
+        </div>
 
         {% if settings.short_description %}
-          <div class="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-4">
-            <div class="text-xs font-semibold text-gray-700">Short Description</div>
-            <div class="text-sm text-gray-700 mt-1 whitespace-pre-line">{{ settings.short_description }}</div>
-          </div>
+        <div class="rounded-2xl border border-blue-100 bg-blue-50/60 p-5">
+          <div class="text-xs font-semibold uppercase tracking-wide text-blue-700">Short Description</div>
+          <p class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-700">
+            {{ settings.short_description }}
+          </p>
+        </div>
         {% endif %}
       </div>
     </div>
 
-    <!-- Right card -->
-    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <div class="text-sm font-semibold text-gray-900">Features</div>
-        <div class="text-xs text-gray-500 mt-0.5">Enabled modules.</div>
+    <!-- Features -->
+    <div class="rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
+        <h2 class="text-sm font-semibold text-gray-900">Enabled Features</h2>
+        <p class="mt-1 text-xs text-gray-500">Modules and services active in the hotel setup.</p>
       </div>
 
-      <div class="p-6 space-y-3 text-sm">
-        <div class="flex items-center justify-between">
-          <span class="text-gray-700">Online Booking</span>
-          <span class="px-2.5 py-1 rounded-full text-xs font-semibold {% if settings.enable_online_booking %}bg-emerald-100 text-emerald-800{% else %}bg-gray-100 text-gray-700{% endif %}">
+      <div class="p-6 space-y-4">
+
+        <div class="flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3">
+          <div>
+            <div class="text-sm font-semibold text-gray-900">Online Booking</div>
+            <div class="text-xs text-gray-500 mt-0.5">Allow guests to book online</div>
+          </div>
+          <span class="px-3 py-1 rounded-full text-xs font-semibold {% if settings.enable_online_booking %}bg-emerald-100 text-emerald-800{% else %}bg-gray-100 text-gray-700{% endif %}">
             {% if settings.enable_online_booking %}Enabled{% else %}Disabled{% endif %}
           </span>
         </div>
 
-        <div class="flex items-center justify-between">
-          <span class="text-gray-700">Restaurant Ordering</span>
-          <span class="px-2.5 py-1 rounded-full text-xs font-semibold {% if settings.enable_restaurant_ordering %}bg-emerald-100 text-emerald-800{% else %}bg-gray-100 text-gray-700{% endif %}">
+        <div class="flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3">
+          <div>
+            <div class="text-sm font-semibold text-gray-900">Restaurant Ordering</div>
+            <div class="text-xs text-gray-500 mt-0.5">Accept restaurant orders in-system</div>
+          </div>
+          <span class="px-3 py-1 rounded-full text-xs font-semibold {% if settings.enable_restaurant_ordering %}bg-emerald-100 text-emerald-800{% else %}bg-gray-100 text-gray-700{% endif %}">
             {% if settings.enable_restaurant_ordering %}Enabled{% else %}Disabled{% endif %}
           </span>
         </div>
 
-        <div class="flex items-center justify-between">
-          <span class="text-gray-700">Loyalty Program</span>
-          <span class="px-2.5 py-1 rounded-full text-xs font-semibold {% if settings.enable_loyalty_program %}bg-emerald-100 text-emerald-800{% else %}bg-gray-100 text-gray-700{% endif %}">
+        <div class="flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3">
+          <div>
+            <div class="text-sm font-semibold text-gray-900">Loyalty Program</div>
+            <div class="text-xs text-gray-500 mt-0.5">Track returning guests and rewards</div>
+          </div>
+          <span class="px-3 py-1 rounded-full text-xs font-semibold {% if settings.enable_loyalty_program %}bg-emerald-100 text-emerald-800{% else %}bg-gray-100 text-gray-700{% endif %}">
             {% if settings.enable_loyalty_program %}Enabled{% else %}Disabled{% endif %}
           </span>
         </div>
 
         <div class="pt-4 border-t border-gray-200">
           <a href="{% url 'hotels:settings' %}"
-             class="w-full inline-flex justify-center px-4 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold">
+             class="inline-flex w-full items-center justify-center rounded-xl bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-900">
             Manage Settings
           </a>
         </div>

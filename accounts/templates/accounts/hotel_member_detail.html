@@ -1,0 +1,250 @@
+<!-- accounts/templates/accounts/hotel_member_detail.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ member.user.get_full_name }} | Staff Details{% endblock %}
+
+{% block breadcrumb %}
+<li class="flex items-center gap-2">
+  <i class="fas fa-chevron-right text-slate-400 text-xs"></i>
+  <a href="{% url 'accounts:hotel_members_list' %}" class="text-slate-600 hover:text-blue-600">Staff</a>
+</li>
+<li class="flex items-center gap-2">
+  <i class="fas fa-chevron-right text-slate-400 text-xs"></i>
+  <span class="text-slate-800 font-semibold">{{ member.user.get_full_name|default:member.user.username }}</span>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header with actions -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+        Staff Profile
+      </h1>
+      <p class="text-slate-500 mt-1">Complete staff information and management</p>
+    </div>
+    <div class="flex gap-3">
+      <a href="{% url 'accounts:hotel_member_update' member.pk %}" 
+         class="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all">
+        <i class="fas fa-edit"></i>
+        Edit Profile
+      </a>
+      <a href="{% url 'accounts:member_performance' member.pk %}" 
+         class="inline-flex items-center gap-2 px-5 py-2.5 bg-purple-600 text-white rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all">
+        <i class="fas fa-chart-line"></i>
+        Performance Review
+      </a>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Left Column - Profile Info -->
+    <div class="lg:col-span-1 space-y-6">
+      <!-- Profile Card -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-8 text-center">
+          <div class="inline-block">
+            <div class="h-24 w-24 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mx-auto border-4 border-white shadow-lg">
+              <span class="text-4xl font-bold text-white">
+                {{ member.user.get_full_name|default:member.user.username|first|upper }}
+              </span>
+            </div>
+          </div>
+          <h2 class="text-xl font-bold text-white mt-4">{{ member.user.get_full_name|default:member.user.username }}</h2>
+          <p class="text-blue-100 mt-1">{{ member.get_role_display }}</p>
+        </div>
+        <div class="p-6 space-y-4">
+          <div class="flex items-center justify-between py-2 border-b border-slate-100">
+            <span class="text-slate-600">Employee ID</span>
+            <code class="font-mono text-sm font-semibold text-slate-800">{{ member.employee_code|default:"Not assigned" }}</code>
+          </div>
+          <div class="flex items-center justify-between py-2 border-b border-slate-100">
+            <span class="text-slate-600">Email</span>
+            <a href="mailto:{{ member.user.email }}" class="text-blue-600 hover:text-blue-700">{{ member.user.email }}</a>
+          </div>
+          <div class="flex items-center justify-between py-2 border-b border-slate-100">
+            <span class="text-slate-600">Work Phone</span>
+            <span class="text-slate-800">{{ member.work_phone|default:"—" }}</span>
+          </div>
+          <div class="flex items-center justify-between py-2 border-b border-slate-100">
+            <span class="text-slate-600">Employment Type</span>
+            <span class="px-2 py-1 bg-slate-100 rounded-lg text-sm">{{ member.get_employment_type_display }}</span>
+          </div>
+          <div class="flex items-center justify-between py-2 border-b border-slate-100">
+            <span class="text-slate-600">Hire Date</span>
+            <span class="text-slate-800">{{ member.hire_date|date:"M d, Y"|default:"—" }}</span>
+          </div>
+          <div class="flex items-center justify-between py-2">
+            <span class="text-slate-600">Years of Service</span>
+            <span class="font-semibold text-blue-600">{{ member.years_of_service }} years</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shift & Schedule -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <i class="fas fa-clock text-blue-600"></i>
+          Shift Schedule
+        </h3>
+        <div class="space-y-3">
+          <div class="flex justify-between">
+            <span class="text-slate-600">Shift Preference</span>
+            <span class="font-medium">{{ member.get_shift_preference_display }}</span>
+          </div>
+          {% if member.default_shift_start and member.default_shift_end %}
+          <div class="flex justify-between">
+            <span class="text-slate-600">Default Hours</span>
+            <span class="font-medium">{{ member.default_shift_start|time:"g:i A" }} - {{ member.default_shift_end|time:"g:i A" }}</span>
+          </div>
+          {% endif %}
+          <div class="flex justify-between">
+            <span class="text-slate-600">Weekly Hours</span>
+            <span class="font-medium">{{ member.max_weekly_hours|default:"40" }} hours</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Emergency Contact -->
+      {% if member.emergency_contact_name %}
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <i class="fas fa-ambulance text-red-500"></i>
+          Emergency Contact
+        </h3>
+        <div class="space-y-2">
+          <p><span class="text-slate-600">Name:</span> {{ member.emergency_contact_name }}</p>
+          <p><span class="text-slate-600">Phone:</span> {{ member.emergency_contact_phone }}</p>
+          <p><span class="text-slate-600">Relationship:</span> {{ member.emergency_contact_relationship }}</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Right Column - Detailed Info -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- Status Badges -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <div class="flex flex-wrap gap-3">
+          {% if member.is_active %}
+            <span class="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium">
+              <i class="fas fa-check-circle"></i> Active
+            </span>
+          {% else %}
+            <span class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-full text-sm font-medium">
+              <i class="fas fa-ban"></i> Inactive
+            </span>
+          {% endif %}
+          
+          {% if member.is_on_leave %}
+            <span class="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-full text-sm font-medium">
+              <i class="fas fa-umbrella-beach"></i> On Leave
+            </span>
+          {% endif %}
+          
+          {% if member.is_management %}
+            <span class="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
+              <i class="fas fa-crown"></i> Management
+            </span>
+          {% endif %}
+          
+          {% if member.is_primary_contact %}
+            <span class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+              <i class="fas fa-star"></i> Primary Contact
+            </span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Performance -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <i class="fas fa-chart-line text-purple-600"></i>
+          Performance Overview
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-slate-50 rounded-xl p-4">
+            <p class="text-slate-600 text-sm">Performance Rating</p>
+            <p class="text-3xl font-bold text-purple-600">{{ member.performance_rating|default:"—" }}/5.0</p>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-4">
+            <p class="text-slate-600 text-sm">Last Review</p>
+            <p class="text-lg font-semibold">{{ member.last_review_date|date:"M d, Y"|default:"Not reviewed" }}</p>
+          </div>
+        </div>
+        {% if member.performance_notes %}
+        <div class="mt-4 p-4 bg-amber-50 rounded-xl">
+          <p class="text-sm text-amber-800">{{ member.performance_notes }}</p>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Skills & Languages -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <i class="fas fa-code-branch text-emerald-600"></i>
+          Skills & Qualifications
+        </h3>
+        {% if member.special_skills %}
+        <div class="mb-4">
+          <p class="text-slate-600 text-sm mb-2">Special Skills</p>
+          <p class="text-slate-800">{{ member.special_skills }}</p>
+        </div>
+        {% endif %}
+        
+        {% if member.languages_spoken %}
+        <div>
+          <p class="text-slate-600 text-sm mb-2">Languages Spoken</p>
+          <div class="flex flex-wrap gap-2">
+            {% for lang_code in member.languages_spoken %}
+            <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+              {{ member.get_languages_spoken_display }}
+            </span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <i class="fas fa-history text-slate-600"></i>
+          Recent Activity
+        </h3>
+        <div class="space-y-3">
+          {% for activity in recent_activity %}
+          <div class="flex items-start gap-3 py-3 border-b border-slate-100 last:border-0">
+            <div class="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-clock text-slate-500 text-sm"></i>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm text-slate-800">{{ activity.description|default:activity.get_action_display }}</p>
+              <p class="text-xs text-slate-500">{{ activity.created_at|timesince }} ago</p>
+            </div>
+          </div>
+          {% empty %}
+          <p class="text-slate-500 text-center py-4">No recent activity recorded</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <h3 class="font-bold text-slate-800 mb-4">Quick Actions</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <a href="{% url 'accounts:member_start_leave' member.pk %}" 
+             class="text-center px-4 py-3 bg-amber-50 text-amber-700 rounded-xl font-medium hover:bg-amber-100 transition-colors">
+            <i class="fas fa-umbrella-beach"></i> Start Leave
+          </a>
+          <a href="{% url 'accounts:member_activity' member.pk %}" 
+             class="text-center px-4 py-3 bg-blue-50 text-blue-700 rounded-xl font-medium hover:bg-blue-100 transition-colors">
+            <i class="fas fa-history"></i> View All Activity
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

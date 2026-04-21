@@ -1,45 +1,38 @@
 {% if messages %}
-  <div class="mb-6 space-y-3">
-    {% for message in messages %}
-      <div class="group relative rounded-xl border px-4 py-3 text-sm shadow-sm flex gap-3 items-start
-        {% if 'success' in message.tags %}
-          bg-emerald-50 border-emerald-200 text-emerald-900
-        {% elif 'error' in message.tags %}
-          bg-rose-50 border-rose-200 text-rose-900
-        {% elif 'warning' in message.tags %}
-          bg-amber-50 border-amber-200 text-amber-900
-        {% else %}
-          bg-gray-50 border-gray-200 text-gray-800
-        {% endif %}
-      ">
-
-        <!-- Icon -->
-        <div class="mt-0.5">
-          {% if 'success' in message.tags %}
-            ✅
-          {% elif 'error' in message.tags %}
-            ❌
-          {% elif 'warning' in message.tags %}
-            ⚠️
-          {% else %}
-            ℹ️
-          {% endif %}
-        </div>
-
-        <!-- Text -->
-        <div class="flex-1">
-          {{ message }}
-        </div>
-
-        <!-- Dismiss -->
-        <button type="button"
-                class="opacity-70 hover:opacity-100 transition text-base leading-none"
-                onclick="this.closest('.group').remove()"
-                aria-label="Dismiss">
-          ✕
-        </button>
-
-      </div>
-    {% endfor %}
+<div class="fixed top-20 right-4 z-50 space-y-2 max-w-sm">
+  {% for message in messages %}
+  <div class="rounded-xl shadow-lg p-4 animate-slide-in-right {% if message.tags == 'success' %}bg-emerald-50 border border-emerald-200 text-emerald-800{% elif message.tags == 'error' %}bg-rose-50 border border-rose-200 text-rose-800{% elif message.tags == 'warning' %}bg-amber-50 border border-amber-200 text-amber-800{% else %}bg-blue-50 border border-blue-200 text-blue-800{% endif %}">
+    <div class="flex items-center gap-3">
+      <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i>
+      <p class="text-sm font-medium">{{ message }}</p>
+    </div>
   </div>
+  {% endfor %}
+</div>
+
+<style>
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out;
+}
+</style>
+
+<script>
+setTimeout(() => {
+  document.querySelectorAll('.fixed.top-20.right-4 > div').forEach(el => {
+    el.style.transition = 'opacity 0.3s ease-out';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 300);
+  });
+}, 5000);
+</script>
 {% endif %}

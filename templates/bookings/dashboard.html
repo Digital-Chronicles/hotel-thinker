@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Bookings Dashboard | Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div class="flex items-start gap-3">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-sm">
+        <i class="fas fa-chart-pie text-white text-lg"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-slate-800">Bookings Dashboard</h1>
+        <p class="text-sm text-slate-500 mt-1">Overview of arrivals, departures, revenue, and room occupancy.</p>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-3">
+      <a href="{% url 'bookings:booking_create' %}"
+         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-medium shadow-sm transition">
+        <i class="fas fa-plus-circle text-sm"></i>
+        <span>New Booking</span>
+      </a>
+      <a href="{% url 'bookings:booking_list' %}"
+         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition">
+        <i class="fas fa-calendar-check text-sm"></i>
+        <span>All Bookings</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Bookings</p>
+      <p class="text-2xl font-bold text-slate-800 mt-2">{{ total_bookings|default:0 }}</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Confirmed</p>
+      <p class="text-2xl font-bold text-amber-600 mt-2">{{ confirmed_bookings|default:0 }}</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Checked In</p>
+      <p class="text-2xl font-bold text-blue-600 mt-2">{{ checked_in_bookings|default:0 }}</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Today Arrivals</p>
+      <p class="text-2xl font-bold text-purple-600 mt-2">{{ today_arrivals|default:0 }}</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Today Departures</p>
+      <p class="text-2xl font-bold text-rose-600 mt-2">{{ today_departures|default:0 }}</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Occupancy</p>
+      <p class="text-2xl font-bold text-emerald-600 mt-2">{{ occupancy_rate|default:0 }}%</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <div class="xl:col-span-2 space-y-6">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-200 bg-slate-50">
+          <h2 class="text-lg font-semibold text-slate-800">Recent Bookings</h2>
+        </div>
+        <div class="divide-y divide-slate-100">
+          {% for b in recent_bookings %}
+            <a href="{% url 'bookings:booking_detail' b.id %}" class="block px-5 py-4 hover:bg-slate-50 transition">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                <div>
+                  <p class="font-semibold text-blue-700">{{ b.booking_number }}</p>
+                  <p class="text-sm text-slate-700">{{ b.guest.full_name }} • Room {{ b.room.number }}</p>
+                  <p class="text-xs text-slate-500">{{ b.check_in|date:"d M Y" }} → {{ b.check_out|date:"d M Y" }}</p>
+                </div>
+                <div class="text-sm">
+                  <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold
+                    {% if b.status == 'reserved' or b.status == 'confirmed' %}bg-amber-100 text-amber-700
+                    {% elif b.status == 'checked_in' %}bg-blue-100 text-blue-700
+                    {% elif b.status == 'checked_out' %}bg-emerald-100 text-emerald-700
+                    {% else %}bg-slate-100 text-slate-700{% endif %}">
+                    {{ b.get_status_display }}
+                  </span>
+                </div>
+              </div>
+            </a>
+          {% empty %}
+            <div class="px-5 py-10 text-center text-slate-500">No recent bookings found.</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-200 bg-slate-50">
+          <h2 class="text-lg font-semibold text-slate-800">Recent Guests</h2>
+        </div>
+        <div class="divide-y divide-slate-100">
+          {% for guest in recent_guests %}
+            <a href="{% url 'bookings:guest_detail' guest.id %}" class="block px-5 py-4 hover:bg-slate-50 transition">
+              <p class="font-medium text-slate-800">{{ guest.full_name }}</p>
+              <p class="text-sm text-slate-500">{{ guest.phone|default:"No phone" }}{% if guest.email %} • {{ guest.email }}{% endif %}</p>
+            </a>
+          {% empty %}
+            <div class="px-5 py-10 text-center text-slate-500">No recent guests found.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-6">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <h3 class="text-lg font-semibold text-slate-800">Revenue Snapshot</h3>
+        <div class="mt-4 space-y-4">
+          <div class="rounded-xl bg-emerald-50 border border-emerald-100 p-4">
+            <p class="text-xs text-slate-500">Today Revenue</p>
+            <p class="text-2xl font-bold text-emerald-600 mt-1">UGX {{ today_revenue|default:0|intcomma }}</p>
+          </div>
+          <div class="rounded-xl bg-blue-50 border border-blue-100 p-4">
+            <p class="text-xs text-slate-500">This Month</p>
+            <p class="text-2xl font-bold text-blue-600 mt-1">UGX {{ monthly_revenue|default:0|intcomma }}</p>
+          </div>
+          <div class="rounded-xl bg-purple-50 border border-purple-100 p-4">
+            <p class="text-xs text-slate-500">Upcoming Arrivals (7 days)</p>
+            <p class="text-2xl font-bold text-purple-600 mt-1">{{ upcoming_arrivals|default:0 }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-blue-50 border border-blue-100 rounded-2xl p-5">
+        <p class="text-sm font-semibold text-blue-800">Quick Tip</p>
+        <p class="text-xs text-blue-700 mt-1">Use the booking list to filter reservations by status, payment, and dates.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

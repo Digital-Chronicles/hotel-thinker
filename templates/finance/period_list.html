@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Financial Periods • Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="space-y-6 p-6">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-900">Financial Periods</h1>
+    <p class="mt-1 text-sm text-slate-500">Review financial cycles, closing status, and performance by period.</p>
+  </div>
+
+  <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead class="bg-slate-50 text-slate-600">
+          <tr>
+            <th class="px-4 py-3 text-left font-medium">Period</th>
+            <th class="px-4 py-3 text-left font-medium">Start</th>
+            <th class="px-4 py-3 text-left font-medium">End</th>
+            <th class="px-4 py-3 text-left font-medium">Status</th>
+            <th class="px-4 py-3 text-right font-medium">Revenue</th>
+            <th class="px-4 py-3 text-right font-medium">Expenses</th>
+            <th class="px-4 py-3 text-right font-medium">Net Profit</th>
+            <th class="px-4 py-3 text-right font-medium">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for period in periods %}
+          <tr class="hover:bg-slate-50">
+            <td class="px-4 py-3">
+              <div class="font-semibold text-slate-900">{{ period.name }}</div>
+              <div class="text-xs text-slate-500">{{ period.hotel.name }}</div>
+            </td>
+            <td class="px-4 py-3">{{ period.start_date }}</td>
+            <td class="px-4 py-3">{{ period.end_date }}</td>
+            <td class="px-4 py-3">
+              {% if period.status == 'closed' %}
+                <span class="inline-flex rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">Closed</span>
+              {% elif period.status == 'open' %}
+                <span class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">Open</span>
+              {% elif period.status == 'closing' %}
+                <span class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">Closing</span>
+              {% else %}
+                <span class="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-semibold text-slate-700">{{ period.get_status_display }}</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 text-right">UGX {{ period.total_revenue|floatformat:0|intcomma }}</td>
+            <td class="px-4 py-3 text-right">UGX {{ period.total_expenses|floatformat:0|intcomma }}</td>
+            <td class="px-4 py-3 text-right font-semibold {% if period.net_profit < 0 %}text-rose-600{% else %}text-emerald-600{% endif %}">
+              UGX {{ period.net_profit|floatformat:0|intcomma }}
+            </td>
+            <td class="px-4 py-3 text-right">
+              <a href="{% url 'finance:period_detail' period.pk %}" class="font-medium text-slate-700">View</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="px-4 py-10 text-center text-slate-500">No financial periods found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if is_paginated %}
+  <div class="flex items-center justify-between text-sm text-slate-600">
+    <div>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</div>
+    <div class="flex gap-2">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" class="rounded-lg border border-slate-300 px-3 py-1.5">Previous</a>
+      {% endif %}
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="rounded-lg border border-slate-300 px-3 py-1.5">Next</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

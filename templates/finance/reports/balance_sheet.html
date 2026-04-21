@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Balance Sheet{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto p-6">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold">Balance Sheet</h1>
+    <p class="text-sm text-gray-600">{{ hotel.name }} | As at {{ as_of_date }}</p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="bg-white shadow rounded">
+      <div class="p-4 border-b">
+        <h2 class="font-semibold text-green-700">Assets</h2>
+      </div>
+      <table class="w-full text-sm">
+        <tbody>
+          {% for acc in assets %}
+          <tr class="border-t">
+            <td class="p-3">{{ acc.name }}</td>
+            <td class="p-3 text-right">{{ acc.balance }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="2" class="p-4 text-gray-500">No assets found.</td></tr>
+          {% endfor %}
+          <tr class="border-t font-bold bg-gray-50">
+            <td class="p-3">Total Assets</td>
+            <td class="p-3 text-right">{{ total_assets }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="bg-white shadow rounded">
+      <div class="p-4 border-b">
+        <h2 class="font-semibold text-red-700">Liabilities</h2>
+      </div>
+      <table class="w-full text-sm">
+        <tbody>
+          {% for acc in liabilities %}
+          <tr class="border-t">
+            <td class="p-3">{{ acc.name }}</td>
+            <td class="p-3 text-right">{{ acc.balance }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="2" class="p-4 text-gray-500">No liabilities found.</td></tr>
+          {% endfor %}
+          <tr class="border-t font-bold bg-gray-50">
+            <td class="p-3">Total Liabilities</td>
+            <td class="p-3 text-right">{{ total_liabilities }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="bg-white shadow rounded">
+      <div class="p-4 border-b">
+        <h2 class="font-semibold text-blue-700">Equity</h2>
+      </div>
+      <table class="w-full text-sm">
+        <tbody>
+          {% for acc in equity %}
+          <tr class="border-t">
+            <td class="p-3">{{ acc.name }}</td>
+            <td class="p-3 text-right">{{ acc.balance }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="2" class="p-4 text-gray-500">No equity accounts found.</td></tr>
+          {% endfor %}
+          <tr class="border-t font-bold bg-gray-50">
+            <td class="p-3">Total Equity</td>
+            <td class="p-3 text-right">{{ total_equity }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="mt-6 bg-white shadow rounded p-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+      <div>
+        <p class="text-sm text-gray-500">Assets</p>
+        <p class="text-xl font-bold text-green-700">{{ total_assets }}</p>
+      </div>
+      <div>
+        <p class="text-sm text-gray-500">Liabilities</p>
+        <p class="text-xl font-bold text-red-700">{{ total_liabilities }}</p>
+      </div>
+      <div>
+        <p class="text-sm text-gray-500">Equity</p>
+        <p class="text-xl font-bold text-blue-700">{{ total_equity }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

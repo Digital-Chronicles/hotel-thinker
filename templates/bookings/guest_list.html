@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Guests | Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div class="flex items-start gap-3">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-600 flex items-center justify-center shadow-sm">
+        <i class="fas fa-users text-white text-lg"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-slate-800">Guest Directory</h1>
+        <p class="text-sm text-slate-500 mt-1">Manage guest records, VIPs, and blacklisted profiles.</p>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-3">
+      <a href="{% url 'bookings:guest_create' %}"
+         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium shadow-sm hover:from-blue-700 hover:to-indigo-700 transition">
+        <i class="fas fa-user-plus text-sm"></i>
+        <span>New Guest</span>
+      </a>
+      <a href="{% url 'bookings:booking_list' %}"
+         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+        <i class="fas fa-calendar-check text-sm"></i>
+        <span>Bookings</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <p class="text-xs uppercase tracking-wide text-slate-500">Total Guests</p>
+      <p class="text-2xl font-bold text-slate-800 mt-2">{{ total_guests|default:0 }}</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <p class="text-xs uppercase tracking-wide text-slate-500">VIP Guests</p>
+      <p class="text-2xl font-bold text-amber-600 mt-2">{{ vip_guests|default:0 }}</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <p class="text-xs uppercase tracking-wide text-slate-500">Blacklisted</p>
+      <p class="text-2xl font-bold text-rose-600 mt-2">{{ blacklisted_guests|default:0 }}</p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-200 bg-slate-50">
+      <h2 class="text-lg font-semibold text-slate-800">Filters</h2>
+    </div>
+
+    <form method="get" class="p-5 grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="md:col-span-2">
+        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Search</label>
+        <input type="text" name="q" value="{{ request.GET.q|default:'' }}"
+               placeholder="Name, phone, email, ID..."
+               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-300">
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Guest Type</label>
+        <select name="guest_type" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-300 focus:border-blue-300">
+          <option value="">All Types</option>
+          {% for value, label in guest_types %}
+            <option value="{{ value }}" {% if request.GET.guest_type == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex items-end gap-2">
+        <button type="submit"
+                class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-medium hover:bg-black transition">
+          <i class="fas fa-search text-xs"></i>
+          <span>Apply</span>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-5 md:col-span-4">
+        <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" name="vip" value="1" {% if request.GET.vip == "1" %}checked{% endif %}
+                 class="rounded border-slate-300 text-blue-600 focus:ring-blue-300">
+          VIP only
+        </label>
+
+        <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" name="blacklisted" value="1" {% if request.GET.blacklisted == "1" %}checked{% endif %}
+                 class="rounded border-slate-300 text-blue-600 focus:ring-blue-300">
+          Blacklisted only
+        </label>
+      </div>
+    </form>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="hidden lg:block overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 border-b border-slate-200">
+          <tr class="text-left text-slate-600">
+            <th class="px-5 py-3 text-xs uppercase tracking-wider font-semibold">Guest</th>
+            <th class="px-5 py-3 text-xs uppercase tracking-wider font-semibold">Contact</th>
+            <th class="px-5 py-3 text-xs uppercase tracking-wider font-semibold">Type</th>
+            <th class="px-5 py-3 text-xs uppercase tracking-wider font-semibold">Status</th>
+            <th class="px-5 py-3 text-xs uppercase tracking-wider font-semibold">Recent Bookings</th>
+            <th class="px-5 py-3 text-xs uppercase tracking-wider font-semibold text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for guest in guests %}
+            <tr class="hover:bg-slate-50 transition">
+              <td class="px-5 py-4">
+                <p class="font-semibold text-slate-800">{{ guest.full_name }}</p>
+                <p class="text-xs text-slate-500">{{ guest.guest_id }}</p>
+              </td>
+              <td class="px-5 py-4">
+                <p class="text-slate-700">{{ guest.phone|default:"No phone" }}</p>
+                <p class="text-xs text-slate-500">{{ guest.email|default:"No email" }}</p>
+              </td>
+              <td class="px-5 py-4">
+                <span class="inline-flex px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-medium">
+                  {{ guest.get_guest_type_display }}
+                </span>
+              </td>
+              <td class="px-5 py-4">
+                <div class="flex flex-wrap gap-2">
+                  {% if guest.is_vip %}
+                    <span class="inline-flex px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">VIP</span>
+                  {% endif %}
+                  {% if guest.is_blacklisted %}
+                    <span class="inline-flex px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 text-xs font-medium">Blacklisted</span>
+                  {% else %}
+                    <span class="inline-flex px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium">Active</span>
+                  {% endif %}
+                </div>
+              </td>
+              <td class="px-5 py-4">
+                {% with recent=guest.bookings.all %}
+                  {% if recent %}
+                    <div class="space-y-1">
+                      {% for b in recent %}
+                        <p class="text-xs text-slate-600">{{ b.booking_number }} • {{ b.check_in|date:"d M Y" }}</p>
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    <span class="text-xs text-slate-400">No recent bookings</span>
+                  {% endif %}
+                {% endwith %}
+              </td>
+              <td class="px-5 py-4 text-right">
+                <a href="{% url 'bookings:guest_detail' guest.id %}"
+                   class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition">
+                  <i class="fas fa-arrow-right text-xs"></i>
+                  <span>View</span>
+                </a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" class="px-5 py-12 text-center text-slate-500">No guests found.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="lg:hidden p-4 space-y-4">
+      {% for guest in guests %}
+        <a href="{% url 'bookings:guest_detail' guest.id %}" class="block rounded-2xl border border-slate-200 p-4 hover:bg-slate-50 transition">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="font-semibold text-slate-800">{{ guest.full_name }}</p>
+              <p class="text-sm text-slate-500">{{ guest.phone|default:"No phone" }}</p>
+            </div>
+            <div class="flex flex-col gap-1 items-end">
+              {% if guest.is_vip %}
+                <span class="inline-flex px-2 py-1 rounded-full bg-amber-100 text-amber-700 text-[11px] font-medium">VIP</span>
+              {% endif %}
+              {% if guest.is_blacklisted %}
+                <span class="inline-flex px-2 py-1 rounded-full bg-rose-100 text-rose-700 text-[11px] font-medium">Blacklisted</span>
+              {% endif %}
+            </div>
+          </div>
+        </a>
+      {% empty %}
+        <div class="text-center text-slate-500 py-10">No guests found.</div>
+      {% endfor %}
+    </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+      <div class="px-5 py-4 border-t border-slate-200 bg-slate-50/30">
+        {% include "partials/pagination.html" %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

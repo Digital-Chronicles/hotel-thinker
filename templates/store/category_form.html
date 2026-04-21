@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}{% if form.instance.pk %}Edit Category{% else %}Add Category{% endif %} - Hotel Thinker{% endblock %}
+
+{% block breadcrumb %}
+<li class="flex items-center">
+  <span class="mx-2 text-slate-400"><i class="fas fa-chevron-right text-xs"></i></span>
+  <a href="{% url 'store:category_list' %}" class="text-slate-500 hover:text-blue-600 transition-colors">Categories</a>
+</li>
+<li class="flex items-center">
+  <span class="mx-2 text-slate-400"><i class="fas fa-chevron-right text-xs"></i></span>
+  <span class="text-slate-600 font-medium">{% if form.instance.pk %}Edit{% else %}Add{% endif %}</span>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  <!-- Header Section -->
+  <div class="mb-6">
+    <div class="flex items-center gap-3 mb-2">
+      <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+        <i class="fas fa-folder-open text-white text-lg"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">
+          {% if form.instance.pk %}Edit Category{% else %}Create New Category{% endif %}
+        </h1>
+        <p class="text-sm text-slate-500 mt-0.5">
+          {% if form.instance.pk %}
+          Update category information and status
+          {% else %}
+          Add a new category to organize your store inventory
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Card -->
+  <div class="bg-white rounded-2xl border border-slate-200/60 shadow-lg overflow-hidden">
+    <!-- Form Header -->
+    <div class="px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white">
+      <div class="flex items-center gap-2">
+        <i class="fas fa-info-circle text-blue-500 text-sm"></i>
+        <span class="text-sm font-medium text-slate-600">Category Information</span>
+      </div>
+    </div>
+    
+    <form method="post" class="p-6">
+      {% csrf_token %}
+      
+      <div class="space-y-5">
+        {% for field in form %}
+        <div class="group">
+          <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-slate-700 mb-1.5">
+            {{ field.label }}
+            {% if field.field.required %}
+            <span class="text-rose-500 ml-0.5">*</span>
+            {% endif %}
+            {% if field.name == 'name' %}
+            <span class="text-xs font-normal text-slate-400 ml-2">(e.g., Electronics, Groceries, Furniture)</span>
+            {% elif field.name == 'hotel' %}
+            <span class="text-xs font-normal text-slate-400 ml-2">(Select the hotel this category belongs to)</span>
+            {% endif %}
+          </label>
+          
+          <div class="relative">
+            {% if field.name == 'name' %}
+            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+              <i class="fas fa-tag text-sm"></i>
+            </div>
+            {{ field }}
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                const nameField = document.getElementById('{{ field.id_for_label }}');
+                if (nameField) {
+                  nameField.classList.add('pl-10');
+                }
+              });
+            </script>
+            {% elif field.name == 'hotel' %}
+            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+              <i class="fas fa-building text-sm"></i>
+            </div>
+            {{ field }}
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                const hotelField = document.getElementById('{{ field.id_for_label }}');
+                if (hotelField) {
+                  hotelField.classList.add('pl-10');
+                }
+              });
+            </script>
+            {% elif field.name == 'is_active' %}
+            <div class="relative">
+              {{ field }}
+              <div class="mt-1 text-xs text-slate-500">
+                <i class="fas fa-info-circle mr-1 text-slate-400"></i>
+                Inactive categories won't appear in item selection dropdowns
+              </div>
+            </div>
+            {% else %}
+            {{ field }}
+            {% endif %}
+          </div>
+          
+          {% if field.help_text and field.name != 'is_active' %}
+          <p class="text-xs text-slate-400 mt-1.5 flex items-center gap-1">
+            <i class="fas fa-lightbulb text-xs"></i>
+            {{ field.help_text }}
+          </p>
+          {% endif %}
+          
+          {% if field.errors %}
+          <div class="mt-2 p-2 rounded-lg bg-rose-50 border border-rose-200">
+            {% for error in field.errors %}
+            <p class="text-sm text-rose-600 flex items-center gap-2">
+              <i class="fas fa-exclamation-circle text-xs"></i>
+              {{ error }}
+            </p>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      
+      <!-- Form Actions -->
+      <div class="flex items-center justify-end gap-3 pt-6 mt-4 border-t border-slate-100">
+        <a href="{% url 'store:category_list' %}" 
+           class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-600 font-medium text-sm hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 flex items-center gap-2">
+          <i class="fas fa-times text-sm"></i>
+          Cancel
+        </a>
+        <button type="submit" 
+                class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2">
+          <i class="fas {% if form.instance.pk %}fa-pen{% else %}fa-plus{% endif %} text-sm"></i>
+          {% if form.instance.pk %}Update Category{% else %}Create Category{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Help Section (only for create) -->
+  {% if not form.instance.pk %}
+  <div class="mt-6 p-4 bg-blue-50/50 rounded-xl border border-blue-100">
+    <div class="flex items-start gap-3">
+      <div class="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+        <i class="fas fa-question text-blue-600 text-sm"></i>
+      </div>
+      <div>
+        <h3 class="text-sm font-semibold text-blue-800 mb-1">About Categories</h3>
+        <p class="text-xs text-blue-700">
+          Categories help you organize your store items efficiently. Once created, you can assign items to categories 
+          and filter inventory by category. Categories can be deactivated without deleting associated items.
+        </p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Additional CSS for form field styling -->
+<style>
+  /* Enhanced form field styling */
+  input, select, textarea {
+    transition: all 0.2s ease;
+  }
+  
+  input:focus, select:focus, textarea:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  /* Checkbox styling */
+  input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+  }
+  
+  input[type="checkbox"]:checked {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+  }
+  
+  /* Select dropdown styling */
+  select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25rem;
+    padding-right: 2.5rem;
+  }
+  
+  /* Smooth animations */
+  .group:hover label {
+    color: #1e293b;
+  }
+</style>
+
+<script>
+  // Add loading state to submit button
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const submitBtn = form?.querySelector('button[type="submit"]');
+    
+    if (form && submitBtn) {
+      form.addEventListener('submit', function() {
+        const originalHtml = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin text-sm"></i> Processing...';
+        submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+        
+        // Store original HTML in case of error (will need to restore if form fails)
+        // Note: Django will reload the page on success, so this is mainly for UX
+        setTimeout(() => {
+          if (!submitBtn.disabled) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalHtml;
+            submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+          }
+        }, 5000);
+      });
+    }
+  });
+</script>
+{% endblock %}

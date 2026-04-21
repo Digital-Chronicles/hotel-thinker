@@ -1,325 +1,541 @@
 {% extends "base.html" %}
-{% block title %}{% if form.instance.pk %}Edit Booking{% else %}New Booking{% endif %} — Hotel Thinker{% endblock %}
+{% load humanize %}
+
+{% block title %}{% if form.instance.pk %}Edit Booking{% else %}New Booking{% endif %} | Hotel Thinker{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl">
+<div class="max-w-7xl mx-auto space-y-6">
 
   <!-- Header -->
-  <div class="mb-6 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3">
-    <div>
-      <div class="text-xs text-gray-500">
-        <a href="{% url 'bookings:booking_list' %}" class="hover:underline">Bookings</a>
-        <span class="mx-1">/</span>
-        {% if form.instance.pk %}Edit{% else %}New{% endif %}
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div class="flex items-start gap-3">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-sm">
+        <i class="fas fa-calendar-plus text-white text-lg"></i>
       </div>
-      <h1 class="text-2xl font-bold text-blue-800 mt-1">
-        {% if form.instance.pk %}Edit Booking{% else %}Create Booking{% endif %}
-      </h1>
-      <p class="text-sm text-gray-600 mt-1">
-        Create a booking and add a new guest without leaving this page.
-      </p>
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-slate-800">
+          {% if form.instance.pk %}Edit Booking{% else %}Create New Booking{% endif %}
+        </h1>
+        <p class="text-sm text-slate-500 mt-1">
+          {% if form.instance.pk %}
+            Update reservation details and guest stay information.
+          {% else %}
+            Add a new reservation, assign a room, and estimate the total stay cost.
+          {% endif %}
+        </p>
+      </div>
     </div>
 
-    <div class="flex gap-2">
+    <div class="flex flex-wrap items-center gap-3">
       <button type="button"
               data-modal-open="guestModal"
-              class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
-        + Add Guest
+              class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition">
+        <i class="fas fa-user-plus text-blue-500 text-sm"></i>
+        <span>Quick Add Guest</span>
       </button>
 
       <a href="{% url 'bookings:booking_list' %}"
-         class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
-        Back
+         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition">
+        <i class="fas fa-arrow-left text-xs"></i>
+        <span>Back to Bookings</span>
       </a>
     </div>
   </div>
 
-  <!-- Page grid -->
-  <form method="post" class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+  <form method="post" class="grid grid-cols-1 xl:grid-cols-3 gap-6">
     {% csrf_token %}
-    {{ form.use_room_rate }} {# hidden, defaults True if you kept it #}
+    {{ form.use_room_rate }}
 
-    <!-- Left / Main -->
-    <div class="xl:col-span-2 rounded-2xl border border-gray-200 bg-white overflow-hidden">
-      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-        <div>
-          <div class="text-sm font-semibold text-gray-900">Booking Details</div>
-          <div class="text-xs text-gray-500 mt-0.5">Room price is fetched automatically from Room Type.</div>
-        </div>
-        <span class="text-xs px-2.5 py-1 rounded-full bg-orange-100 text-orange-800 font-semibold">
-          Front Desk
-        </span>
-      </div>
+    <!-- Main Form Area -->
+    <div class="xl:col-span-2 space-y-6">
 
-      <div class="p-6 space-y-5">
-        {% if form.non_field_errors %}
-          <div class="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-4 py-3 text-sm">
-            {{ form.non_field_errors }}
-          </div>
-        {% endif %}
-
-        <!-- Guest + Room -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <div class="flex items-center justify-between">
-              <label class="text-sm font-medium text-gray-700">Guest</label>
-              <button type="button" data-modal-open="guestModal"
-                      class="text-xs font-semibold text-blue-800 hover:underline">
-                + Quick Add
-              </button>
-            </div>
-            {{ form.guest }}
-            {% if form.guest.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.guest.errors|striptags }}</p>{% endif %}
-          </div>
-
-          <div>
-            <label class="text-sm font-medium text-gray-700">Room</label>
-
-            {# Render room select manually so we can attach data-price from room_type.base_price #}
-            <select name="room" id="id_room"
-                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
-                    required>
-              <option value="">Select a room</option>
-              {% for room in form.fields.room.queryset %}
-                <option value="{{ room.pk }}"
-                        data-price="{{ room.room_type.base_price|default:0 }}"
-                        {% if form.room.value|stringformat:"s" == room.pk|stringformat:"s" %}selected{% endif %}>
-                  Room {{ room.number }} — {{ room.room_type.name }} ({{ room.room_type.base_price|floatformat:2 }})
-                </option>
-              {% endfor %}
-            </select>
-
-            {% if form.room.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.room.errors|striptags }}</p>{% endif %}
-
-            <p class="text-xs text-gray-500 mt-1">
-              Nightly Rate (Auto): <span class="font-semibold text-gray-900" id="roomRateLabel">0.00</span>
-            </p>
-          </div>
-        </div>
-
-        <!-- Dates -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="text-sm font-medium text-gray-700">Check-in</label>
-            {{ form.check_in }}
-            {% if form.check_in.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.check_in.errors|striptags }}</p>{% endif %}
-          </div>
-
-          <div>
-            <label class="text-sm font-medium text-gray-700">Check-out</label>
-            {{ form.check_out }}
-            {% if form.check_out.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.check_out.errors|striptags }}</p>{% endif %}
-          </div>
-        </div>
-
-        <!-- Pax -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label class="text-sm font-medium text-gray-700">Adults</label>
-            {{ form.adults }}
-            {% if form.adults.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.adults.errors|striptags }}</p>{% endif %}
-          </div>
-          <div>
-            <label class="text-sm font-medium text-gray-700">Children</label>
-            {{ form.children }}
-            {% if form.children.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.children.errors|striptags }}</p>{% endif %}
-          </div>
-          <div>
-            <label class="text-sm font-medium text-gray-700">Infants</label>
-            {{ form.infants }}
-            {% if form.infants.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.infants.errors|striptags }}</p>{% endif %}
-          </div>
-        </div>
-
-        <!-- Source + Status -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="text-sm font-medium text-gray-700">Source</label>
-            {{ form.source }}
-            {% if form.source.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.source.errors|striptags }}</p>{% endif %}
-          </div>
-          <div>
-            <label class="text-sm font-medium text-gray-700">Status</label>
-            {{ form.status }}
-            {% if form.status.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.status.errors|striptags }}</p>{% endif %}
-          </div>
-        </div>
-
-        <div>
-          <label class="text-sm font-medium text-gray-700">Special Requests</label>
-          {{ form.special_requests }}
-          {% if form.special_requests.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.special_requests.errors|striptags }}</p>{% endif %}
-        </div>
-
-        <div>
-          <label class="text-sm font-medium text-gray-700">Internal Notes</label>
-          {{ form.internal_notes }}
-          {% if form.internal_notes.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.internal_notes.errors|striptags }}</p>{% endif %}
-        </div>
-
-        {% if form.payment_status %}
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Booking Details -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <label class="text-sm font-medium text-gray-700">Payment Status</label>
-              {{ form.payment_status }}
-              {% if form.payment_status.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.payment_status.errors|striptags }}</p>{% endif %}
+              <div class="flex items-center gap-2">
+                <i class="fas fa-receipt text-blue-500 text-sm"></i>
+                <h2 class="text-lg font-semibold text-slate-800">Booking Details</h2>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">Fill in the reservation information below.</p>
             </div>
+
+            <span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 font-medium w-fit">
+              <i class="fas fa-hotel text-[10px]"></i>
+              Front Desk
+            </span>
+          </div>
+        </div>
+
+        <div class="p-6 space-y-6">
+          {% if form.non_field_errors %}
+            <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+              <div class="flex items-start gap-2">
+                <i class="fas fa-exclamation-triangle text-rose-500 text-sm mt-0.5"></i>
+                <div class="text-sm text-rose-700">{{ form.non_field_errors }}</div>
+              </div>
+            </div>
+          {% endif %}
+
+          <!-- Guest + Room -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <label class="text-sm font-medium text-gray-700">Amount Paid</label>
-              {{ form.amount_paid }}
-              {% if form.amount_paid.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.amount_paid.errors|striptags }}</p>{% endif %}
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="text-sm font-semibold text-slate-700">
+                  Guest <span class="text-rose-500">*</span>
+                </label>
+                <button type="button"
+                        data-modal-open="guestModal"
+                        class="text-xs font-medium text-blue-600 hover:text-blue-700 transition">
+                  <i class="fas fa-plus-circle mr-1"></i>Quick Add
+                </button>
+              </div>
+
+              <div class="relative">
+                <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                {{ form.guest }}
+              </div>
+              {% if form.guest.errors %}
+                <p class="text-xs text-rose-600 mt-1">{{ form.guest.errors|striptags }}</p>
+              {% endif %}
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                Room <span class="text-rose-500">*</span>
+              </label>
+
+              <div class="relative">
+                <i class="fas fa-door-open absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                <select name="room" id="id_room"
+                        class="w-full rounded-xl border border-slate-200 pl-9 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-300 bg-white appearance-none"
+                        required>
+                  <option value="">Select a room</option>
+                  {% for room in form.fields.room.queryset %}
+                    <option value="{{ room.pk }}"
+                            data-price="{{ room.room_type.base_price|default:0 }}"
+                            {% if form.room.value|stringformat:"s" == room.pk|stringformat:"s" %}selected{% endif %}>
+                      Room {{ room.number }} — {{ room.room_type.name }} (UGX {{ room.room_type.base_price|floatformat:0|intcomma }})
+                    </option>
+                  {% endfor %}
+                </select>
+                <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+              </div>
+
+              {% if form.room.errors %}
+                <p class="text-xs text-rose-600 mt-1">{{ form.room.errors|striptags }}</p>
+              {% endif %}
+
+              <p class="text-xs text-slate-500 mt-1.5">
+                <i class="fas fa-info-circle mr-1"></i>
+                Nightly Rate: <span class="font-semibold text-slate-700" id="roomRateLabel">0</span> UGX
+              </p>
             </div>
           </div>
-        {% endif %}
-      </div>
 
-      <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-2">
-        <a href="{% url 'bookings:booking_list' %}"
-           class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
-          Cancel
-        </a>
-        <button class="px-5 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold">
-          Save Booking
-        </button>
+          <!-- Dates -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                Check-in Date <span class="text-rose-500">*</span>
+              </label>
+              <div class="relative">
+                <i class="fas fa-calendar-alt absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                {{ form.check_in }}
+              </div>
+              {% if form.check_in.errors %}
+                <p class="text-xs text-rose-600 mt-1">{{ form.check_in.errors|striptags }}</p>
+              {% endif %}
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                Check-out Date <span class="text-rose-500">*</span>
+              </label>
+              <div class="relative">
+                <i class="fas fa-calendar-alt absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                {{ form.check_out }}
+              </div>
+              {% if form.check_out.errors %}
+                <p class="text-xs text-rose-600 mt-1">{{ form.check_out.errors|striptags }}</p>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Guests -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                Adults <span class="text-rose-500">*</span>
+              </label>
+              <div class="relative">
+                <i class="fas fa-user-friends absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                {{ form.adults }}
+              </div>
+              {% if form.adults.errors %}
+                <p class="text-xs text-rose-600 mt-1">{{ form.adults.errors|striptags }}</p>
+              {% endif %}
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Children</label>
+              <div class="relative">
+                <i class="fas fa-child absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                {{ form.children }}
+              </div>
+              {% if form.children.errors %}
+                <p class="text-xs text-rose-600 mt-1">{{ form.children.errors|striptags }}</p>
+              {% endif %}
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Infants</label>
+              <div class="relative">
+                <i class="fas fa-baby-carriage absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                {{ form.infants }}
+              </div>
+              {% if form.infants.errors %}
+                <p class="text-xs text-rose-600 mt-1">{{ form.infants.errors|striptags }}</p>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Source + Status -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Booking Source</label>
+              <div class="relative">
+                <i class="fas fa-globe absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                {{ form.source }}
+              </div>
+              {% if form.source.errors %}
+                <p class="text-xs text-rose-600 mt-1">{{ form.source.errors|striptags }}</p>
+              {% endif %}
+            </div>
+
+            {% if form.status %}
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Status</label>
+              <div class="relative">
+                <i class="fas fa-flag-checkered absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                {{ form.status }}
+              </div>
+              {% if form.status.errors %}
+                <p class="text-xs text-rose-600 mt-1">{{ form.status.errors|striptags }}</p>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+
+          {% if form.source_reference %}
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Source Reference</label>
+            <div class="relative">
+              <i class="fas fa-hashtag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+              {{ form.source_reference }}
+            </div>
+            {% if form.source_reference.errors %}
+              <p class="text-xs text-rose-600 mt-1">{{ form.source_reference.errors|striptags }}</p>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          <!-- Notes -->
+          <div class="grid grid-cols-1 gap-5">
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Special Requests</label>
+              <div class="relative">
+                <i class="fas fa-star absolute left-3 top-3 text-slate-400 text-sm pointer-events-none"></i>
+                {{ form.special_requests }}
+              </div>
+              {% if form.special_requests.errors %}
+                <p class="text-xs text-rose-600 mt-1">{{ form.special_requests.errors|striptags }}</p>
+              {% endif %}
+            </div>
+
+            {% if form.guest_notes %}
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Guest Notes</label>
+              <div class="relative">
+                <i class="fas fa-note-sticky absolute left-3 top-3 text-slate-400 text-sm pointer-events-none"></i>
+                {{ form.guest_notes }}
+              </div>
+              {% if form.guest_notes.errors %}
+                <p class="text-xs text-rose-600 mt-1">{{ form.guest_notes.errors|striptags }}</p>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            {% if form.internal_notes %}
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Internal Notes</label>
+              <div class="relative">
+                <i class="fas fa-lock absolute left-3 top-3 text-slate-400 text-sm pointer-events-none"></i>
+                {{ form.internal_notes }}
+              </div>
+              <p class="text-xs text-slate-400 mt-1">Visible to staff only.</p>
+              {% if form.internal_notes.errors %}
+                <p class="text-xs text-rose-600 mt-1">{{ form.internal_notes.errors|striptags }}</p>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Edit-only fields -->
+          {% if form.payment_status or form.amount_paid %}
+            <div class="pt-2 border-t border-slate-100">
+              <h3 class="text-sm font-semibold text-slate-800 mb-4">Payment Snapshot</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {% if form.payment_status %}
+                <div>
+                  <label class="block text-sm font-semibold text-slate-700 mb-1.5">Payment Status</label>
+                  {{ form.payment_status }}
+                </div>
+                {% endif %}
+
+                {% if form.amount_paid %}
+                <div>
+                  <label class="block text-sm font-semibold text-slate-700 mb-1.5">Amount Paid</label>
+                  <div class="relative">
+                    <i class="fas fa-money-bill-wave absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                    {{ form.amount_paid }}
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Footer Buttons -->
+        <div class="px-6 py-4 border-t border-slate-200 bg-slate-50/60 flex flex-col sm:flex-row sm:justify-end gap-3">
+          <a href="{% url 'bookings:booking_list' %}"
+             class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-600 transition">
+            <i class="fas fa-times text-xs"></i>
+            <span>Cancel</span>
+          </a>
+
+          <button type="submit"
+                  class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold shadow-sm transition">
+            <i class="fas fa-save text-xs"></i>
+            <span>{% if form.instance.pk %}Update Booking{% else %}Create Booking{% endif %}</span>
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Right / Summary -->
-    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden h-fit">
-      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <div class="text-sm font-semibold text-gray-900">Estimate Summary</div>
-        <div class="text-xs text-gray-500 mt-0.5">Based on Room Type base price × nights.</div>
-      </div>
-
-      <div class="p-6 space-y-3 text-sm">
-        <div class="flex justify-between"><span class="text-gray-600">Nights</span><span class="font-semibold" id="sumNights">0</span></div>
-        <div class="flex justify-between"><span class="text-gray-600">Nightly Rate</span><span class="font-semibold" id="sumRate">0.00</span></div>
-        <div class="pt-3 border-t border-gray-200 flex justify-between text-base">
-          <span class="font-semibold text-gray-900">Estimated Total</span>
-          <span class="font-bold text-blue-800" id="sumTotal">0.00</span>
+    <!-- Sidebar -->
+    <div class="space-y-6">
+      <!-- Estimate -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden xl:sticky xl:top-6">
+        <div class="px-5 py-4 bg-gradient-to-r from-blue-50 to-white border-b border-slate-200">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-calculator text-blue-500 text-sm"></i>
+            <h3 class="font-semibold text-slate-800">Estimate Summary</h3>
+          </div>
+          <p class="text-xs text-slate-500 mt-1">Calculated from room rate × number of nights.</p>
         </div>
 
-        <div class="rounded-xl border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-xs mt-4">
-          Tip: Price is automatic from Room Type. Use “Add Guest” to create guest instantly.
+        <div class="p-5 space-y-4">
+          <div class="flex justify-between items-center py-2">
+            <span class="text-sm text-slate-600">Nights of Stay</span>
+            <span class="text-lg font-bold text-slate-800" id="sumNights">0</span>
+          </div>
+
+          <div class="flex justify-between items-center py-2 border-t border-slate-100">
+            <span class="text-sm text-slate-600">Nightly Rate</span>
+            <span class="text-lg font-bold text-blue-600" id="sumRate">0</span>
+          </div>
+
+          <div class="rounded-xl bg-slate-50 px-4 py-4 border border-slate-100">
+            <div class="flex justify-between items-center">
+              <span class="text-base font-semibold text-slate-800">Estimated Total</span>
+              <span class="text-xl font-bold text-emerald-600" id="sumTotal">0</span>
+            </div>
+          </div>
+
+          <div class="rounded-xl bg-blue-50 border border-blue-100 p-4">
+            <div class="flex items-start gap-2">
+              <i class="fas fa-info-circle text-blue-500 text-sm mt-0.5"></i>
+              <div class="text-xs text-blue-700">
+                <p class="font-semibold mb-1">Quick Tip</p>
+                <p>The room base price is picked automatically from the selected room type.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Help -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-3 bg-slate-50 border-b border-slate-200">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-lightbulb text-amber-500 text-sm"></i>
+            <span class="text-sm font-semibold text-slate-700">Need Help?</span>
+          </div>
+        </div>
+
+        <div class="p-4 space-y-3 text-xs text-slate-500">
+          <p><i class="fas fa-check-circle text-emerald-500 mr-2"></i>Use “Quick Add Guest” to create a new guest without leaving this page</p>
+          <p><i class="fas fa-check-circle text-emerald-500 mr-2"></i>Room rates are pulled from room type configuration</p>
+          <p><i class="fas fa-check-circle text-emerald-500 mr-2"></i>Special requests can help housekeeping and reception prepare ahead</p>
+          <p><i class="fas fa-check-circle text-emerald-500 mr-2"></i>Internal notes are visible to staff only</p>
         </div>
       </div>
     </div>
   </form>
 </div>
 
-<!-- Quick Add Guest Modal (unchanged) -->
+<!-- Quick Add Guest Modal -->
 <div id="guestModal" class="hidden fixed inset-0 z-50">
-  <div class="absolute inset-0 bg-black/50" data-modal-close="guestModal"></div>
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" data-modal-close="guestModal"></div>
 
-  <div class="relative mx-auto mt-10 w-full max-w-3xl px-4">
-    <div class="rounded-2xl bg-white border border-gray-200 shadow-lg overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-        <div>
-          <div class="font-semibold text-gray-900">Add Guest</div>
-          <div class="text-xs text-gray-500 mt-0.5">Create guest and select them automatically.</div>
+  <div class="relative mx-auto mt-10 md:mt-16 w-full max-w-2xl px-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in">
+      <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-white border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
+            <i class="fas fa-user-plus text-white text-sm"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold text-slate-800">Add New Guest</h3>
+            <p class="text-xs text-slate-500">Create a guest and select them automatically.</p>
+          </div>
         </div>
-        <button type="button" class="text-gray-500 hover:text-gray-900" data-modal-close="guestModal">✕</button>
+
+        <button type="button"
+                class="text-slate-400 hover:text-slate-600 transition text-xl"
+                data-modal-close="guestModal">×</button>
       </div>
 
-      <form id="guestQuickForm" class="p-6 space-y-4">
+      <form id="guestQuickForm" class="p-6 space-y-5">
         {% csrf_token %}
 
-        <div id="guestQuickError"
-             class="hidden rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-4 py-3 text-sm"></div>
+        <div id="guestQuickError" class="hidden rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"></div>
 
-        <!-- BASIC -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="text-sm font-medium text-gray-700">Full Name *</label>
-            <input name="full_name" required
-                   class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                   placeholder="Guest full name">
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+              Full Name <span class="text-rose-500">*</span>
+            </label>
+            <div class="relative">
+              <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+              <input type="text" name="full_name" required
+                     class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+                     placeholder="John Doe">
+            </div>
           </div>
 
           <div>
-            <label class="text-sm font-medium text-gray-700">Phone *</label>
-            <input name="phone" required
-                   class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                   placeholder="2567XXXXXXXX">
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+              Phone Number <span class="text-rose-500">*</span>
+            </label>
+            <div class="relative">
+              <i class="fas fa-phone absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+              <input type="text" name="phone" required
+                     class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+                     placeholder="+256 XXX XXX XXX">
+            </div>
           </div>
 
           <div>
-            <label class="text-sm font-medium text-gray-700">Email</label>
-            <input name="email" type="email"
-                   class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                   placeholder="Optional">
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Email Address</label>
+            <div class="relative">
+              <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+              <input type="email" name="email"
+                     class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+                     placeholder="guest@example.com">
+            </div>
           </div>
 
           <div>
-            <label class="text-sm font-medium text-gray-700">Guest Type</label>
-            <select name="guest_type"
-                    class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600">
-              <option value="individual">Individual</option>
-              <option value="corporate">Corporate</option>
-              <option value="travel_agency">Travel Agency</option>
-              <option value="tour_operator">Tour Operator</option>
-              <option value="vip">VIP</option>
-            </select>
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Guest Type</label>
+            <div class="relative">
+              <i class="fas fa-tag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+              <select name="guest_type"
+                      class="w-full rounded-xl border border-slate-200 pl-9 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-300 bg-white appearance-none">
+                <option value="individual">Individual</option>
+                <option value="corporate">Corporate</option>
+                <option value="travel_agency">Travel Agency</option>
+                <option value="tour_operator">Tour Operator</option>
+                <option value="vip">VIP</option>
+              </select>
+              <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+            </div>
           </div>
         </div>
 
-        <!-- Toggle -->
         <button type="button" id="toggleMoreGuest"
-                class="text-sm font-semibold text-blue-800 hover:underline">
-          + More details
+                class="text-sm font-semibold text-blue-600 hover:text-blue-700 transition">
+          <i class="fas fa-chevron-down mr-1"></i> More details
         </button>
 
-        <!-- MORE DETAILS -->
-        <div id="moreGuestFields" class="hidden space-y-4">
+        <div id="moreGuestFields" class="hidden space-y-4 pt-2">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="text-sm font-medium text-gray-700">Nationality</label>
-              <input name="nationality"
-                     class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-600"
-                     placeholder="Optional">
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Nationality</label>
+              <div class="relative">
+                <i class="fas fa-flag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                <input type="text" name="nationality"
+                       class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300"
+                       placeholder="Ugandan">
+              </div>
             </div>
+
             <div>
-              <label class="text-sm font-medium text-gray-700">Country</label>
-              <input name="country"
-                     class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-600"
-                     placeholder="Optional">
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Country</label>
+              <div class="relative">
+                <i class="fas fa-map-marker-alt absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                <input type="text" name="country"
+                       class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300"
+                       placeholder="Uganda">
+              </div>
             </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="text-sm font-medium text-gray-700">ID Type</label>
-              <select name="id_type"
-                      class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-600">
-                <option value="">—</option>
-                <option value="passport">Passport</option>
-                <option value="national_id">National ID</option>
-                <option value="drivers_license">Driver's License</option>
-                <option value="other">Other</option>
-              </select>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">ID Type</label>
+              <div class="relative">
+                <i class="fas fa-id-card absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                <select name="id_type"
+                        class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 bg-white">
+                  <option value="">Select ID Type</option>
+                  <option value="passport">Passport</option>
+                  <option value="national_id">National ID</option>
+                  <option value="drivers_license">Driver's License</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
             </div>
+
             <div>
-              <label class="text-sm font-medium text-gray-700">ID Number</label>
-              <input name="id_number"
-                     class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-600"
-                     placeholder="Optional">
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">ID Number</label>
+              <div class="relative">
+                <i class="fas fa-hashtag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                <input type="text" name="id_number"
+                       class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300"
+                       placeholder="ID/Passport Number">
+              </div>
             </div>
           </div>
 
-          <div class="flex items-center gap-2">
-            <input type="checkbox" name="is_vip"
-                   class="h-4 w-4 rounded border-gray-300 text-blue-800 focus:ring-2 focus:ring-blue-600">
-            <span class="text-sm text-gray-700">Mark as VIP</span>
+          <div class="flex items-center gap-3">
+            <input type="checkbox" name="is_vip" id="is_vip"
+                   class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-300">
+            <label for="is_vip" class="text-sm font-medium text-slate-700">Mark as VIP Guest</label>
           </div>
         </div>
 
-        <div class="flex justify-end gap-2 pt-2">
+        <div class="flex flex-col sm:flex-row justify-end gap-3 pt-2">
           <button type="button" data-modal-close="guestModal"
-                  class="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700">
+                  class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-600 transition">
             Cancel
           </button>
-          <button id="guestQuickSubmit"
-                  class="px-4 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold">
+          <button type="submit" id="guestQuickSubmit"
+                  class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold shadow-sm transition">
+            <i class="fas fa-save text-xs mr-1"></i>
             Save Guest
           </button>
         </div>
@@ -327,82 +543,196 @@
     </div>
   </div>
 </div>
+
+<style>
+  @keyframes fade-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes zoom-in {
+    from { opacity: 0; transform: scale(0.92); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .animate-in {
+    animation: fade-in 0.2s ease-out;
+  }
+
+  .zoom-in {
+    animation: zoom-in 0.2s ease-out;
+  }
+
+  #id_guest,
+  #id_check_in,
+  #id_check_out,
+  #id_adults,
+  #id_children,
+  #id_infants,
+  #id_source,
+  #id_status,
+  #id_payment_status,
+  #id_amount_paid,
+  #id_source_reference,
+  #id_special_requests,
+  #id_guest_notes,
+  #id_internal_notes {
+    width: 100%;
+    border: 1px solid rgb(226 232 240);
+    border-radius: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    background: white;
+  }
+
+  #id_guest,
+  #id_check_in,
+  #id_check_out,
+  #id_adults,
+  #id_children,
+  #id_infants,
+  #id_source,
+  #id_status,
+  #id_payment_status,
+  #id_amount_paid,
+  #id_source_reference {
+    padding-left: 2.25rem;
+  }
+
+  #id_special_requests,
+  #id_guest_notes,
+  #id_internal_notes {
+    min-height: 110px;
+    padding-left: 2.25rem;
+    padding-top: 0.75rem;
+  }
+
+  #id_guest:focus,
+  #id_check_in:focus,
+  #id_check_out:focus,
+  #id_adults:focus,
+  #id_children:focus,
+  #id_infants:focus,
+  #id_source:focus,
+  #id_status:focus,
+  #id_payment_status:focus,
+  #id_amount_paid:focus,
+  #id_source_reference:focus,
+  #id_special_requests:focus,
+  #id_guest_notes:focus,
+  #id_internal_notes:focus {
+    outline: none;
+    border-color: rgb(147 197 253);
+    box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.35);
+  }
+</style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  // ---- Estimate summary (RoomType.base_price × nights) ----
-  function parseNum(v){ const n = parseFloat((v||"").toString().replace(/,/g,'')); return isNaN(n) ? 0 : n; }
-  function daysBetween(a,b){
-    const da = new Date(a), db = new Date(b);
+  function parseNum(v) {
+    const n = parseFloat((v || "").toString().replace(/,/g, ""));
+    return isNaN(n) ? 0 : n;
+  }
+
+  function formatCurrency(amount) {
+    return new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  }
+
+  function daysBetween(a, b) {
+    const da = new Date(a);
+    const db = new Date(b);
     if (isNaN(da) || isNaN(db)) return 0;
-    const diff = (db - da) / (1000*60*60*24);
+    const diff = (db - da) / (1000 * 60 * 60 * 24);
     return diff > 0 ? Math.floor(diff) : 0;
   }
-  function currentRoomRate(){
+
+  function currentRoomRate() {
     const sel = document.getElementById("id_room");
-    if(!sel) return 0;
+    if (!sel) return 0;
     const opt = sel.options[sel.selectedIndex];
-    if(!opt) return 0;
-    return parseNum(opt.dataset.price);
+    return opt ? parseNum(opt.dataset.price) : 0;
   }
-  function recalc(){
+
+  function recalc() {
     const checkIn = document.getElementById("id_check_in")?.value;
     const checkOut = document.getElementById("id_check_out")?.value;
     const nights = daysBetween(checkIn, checkOut);
     const rate = currentRoomRate();
     const total = rate * nights;
 
-    document.getElementById("roomRateLabel").textContent = rate.toFixed(2);
-    document.getElementById("sumNights").textContent = nights;
-    document.getElementById("sumRate").textContent = rate.toFixed(2);
-    document.getElementById("sumTotal").textContent = total.toFixed(2);
+    const roomRateLabel = document.getElementById("roomRateLabel");
+    const sumNights = document.getElementById("sumNights");
+    const sumRate = document.getElementById("sumRate");
+    const sumTotal = document.getElementById("sumTotal");
+
+    if (roomRateLabel) roomRateLabel.textContent = formatCurrency(rate);
+    if (sumNights) sumNights.textContent = nights;
+    if (sumRate) sumRate.textContent = "UGX " + formatCurrency(rate);
+    if (sumTotal) sumTotal.textContent = "UGX " + formatCurrency(total);
   }
 
-  ["id_check_in","id_check_out","id_room"].forEach(id => {
-    document.getElementById(id)?.addEventListener("input", recalc);
-    document.getElementById(id)?.addEventListener("change", recalc);
+  ["id_check_in", "id_check_out", "id_room"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener("input", recalc);
+      el.addEventListener("change", recalc);
+    }
   });
   recalc();
 
-  // ---- Modal helpers ----
-  function openModal(id){ document.getElementById(id)?.classList.remove("hidden"); }
-  function closeModal(id){ document.getElementById(id)?.classList.add("hidden"); }
+  function openModal(id) {
+    document.getElementById(id)?.classList.remove("hidden");
+  }
+
+  function closeModal(id) {
+    document.getElementById(id)?.classList.add("hidden");
+  }
 
   document.querySelectorAll("[data-modal-open]").forEach(btn => {
     btn.addEventListener("click", () => openModal(btn.dataset.modalOpen));
   });
+
   document.querySelectorAll("[data-modal-close]").forEach(el => {
     el.addEventListener("click", () => closeModal(el.dataset.modalClose));
   });
+
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeModal("guestModal");
   });
 
-  // Expand more guest fields
-  const t = document.getElementById("toggleMoreGuest");
-  const more = document.getElementById("moreGuestFields");
-  if (t && more) {
-    t.addEventListener("click", () => {
-      more.classList.toggle("hidden");
-      t.textContent = more.classList.contains("hidden") ? "+ More details" : "− Less details";
+  const toggleBtn = document.getElementById("toggleMoreGuest");
+  const moreFields = document.getElementById("moreGuestFields");
+
+  if (toggleBtn && moreFields) {
+    toggleBtn.addEventListener("click", () => {
+      moreFields.classList.toggle("hidden");
+      toggleBtn.innerHTML = moreFields.classList.contains("hidden")
+        ? '<i class="fas fa-chevron-down mr-1"></i> More details'
+        : '<i class="fas fa-chevron-up mr-1"></i> Less details';
     });
   }
 
-  // ---- Quick Add Guest AJAX ----
-  (function(){
+  (function () {
     const form = document.getElementById("guestQuickForm");
-    if(!form) return;
+    if (!form) return;
 
     const errBox = document.getElementById("guestQuickError");
     const submitBtn = document.getElementById("guestQuickSubmit");
     const guestSelect = document.getElementById("id_guest");
 
-    function showError(msg){
+    function showError(msg) {
+      if (!errBox) return;
       errBox.textContent = msg;
       errBox.classList.remove("hidden");
     }
-    function clearError(){
+
+    function clearError() {
+      if (!errBox) return;
       errBox.textContent = "";
       errBox.classList.add("hidden");
     }
@@ -414,7 +744,7 @@
       submitBtn.disabled = true;
       submitBtn.classList.add("opacity-70", "cursor-not-allowed");
 
-      try{
+      try {
         const csrf = form.querySelector('input[name="csrfmiddlewaretoken"]').value;
         const fd = new FormData(form);
 
@@ -426,18 +756,18 @@
 
         const data = await res.json();
 
-        if(!res.ok || !data.ok){
-          if(data && data.errors){
+        if (!res.ok || !data.ok) {
+          if (data?.errors) {
             const firstField = Object.keys(data.errors)[0];
             const firstMsg = data.errors[firstField][0];
             showError(firstMsg);
-          }else{
-            showError("Failed to create guest. Please check fields.");
+          } else {
+            showError("Failed to create guest. Please check the fields.");
           }
           return;
         }
 
-        if(guestSelect){
+        if (guestSelect) {
           const opt = document.createElement("option");
           opt.value = data.id;
           opt.textContent = data.label || "New Guest";
@@ -446,13 +776,13 @@
         }
 
         form.reset();
-        more?.classList.add("hidden");
-        if (t) t.textContent = "+ More details";
+        if (moreFields) moreFields.classList.add("hidden");
+        if (toggleBtn) toggleBtn.innerHTML = '<i class="fas fa-chevron-down mr-1"></i> More details';
         closeModal("guestModal");
 
-      }catch(err){
+      } catch (err) {
         showError("Network error. Please try again.");
-      }finally{
+      } finally {
         submitBtn.disabled = false;
         submitBtn.classList.remove("opacity-70", "cursor-not-allowed");
       }

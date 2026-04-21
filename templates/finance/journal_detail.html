@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Journal{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto p-6">
+
+<h1 class="text-xl font-bold mb-4">{{ journal.entry_number }}</h1>
+
+<p>Status: {{ journal.status }}</p>
+
+<form method="post" action="{% url 'finance:journal_post' journal.pk %}">
+  {% csrf_token %}
+  <button class="bg-green-600 text-white px-4 py-2 rounded mt-4">
+    Post Journal
+  </button>
+</form>
+
+<h2 class="mt-6 font-semibold">Lines</h2>
+
+<table class="w-full bg-white shadow mt-2">
+<thead class="bg-gray-100">
+<tr>
+<th>Account</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+
+<tbody>
+{% for line in journal.lines.all %}
+<tr class="border-t">
+<td class="p-2">{{ line.account.name }}</td>
+<td>{{ line.debit }}</td>
+<td>{{ line.credit }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+</div>
+{% endblock %}
