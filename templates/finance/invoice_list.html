@@ -4,124 +4,299 @@
 {% block title %}Invoices • Hotel Thinker{% endblock %}
 
 {% block content %}
-<div class="space-y-6 p-6">
-  <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+<div class="space-y-6 p-4 md:p-6 lg:p-8">
+  <!-- Header Section -->
+  <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-slate-900">Invoices</h1>
-      <p class="mt-1 text-sm text-slate-500">Track invoices, balances, due dates, and payment status.</p>
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md shadow-blue-200">
+          <i class="fas fa-file-invoice-dollar text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Invoices</h1>
+          <p class="mt-1 text-sm text-slate-500">Track invoices, balances, due dates, and payment status.</p>
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-3">
+      <!-- Create Invoice button removed - feature coming soon -->
+      <button disabled class="inline-flex items-center gap-2 rounded-xl bg-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-500 cursor-not-allowed shadow-sm" title="Feature coming soon">
+        <i class="fas fa-plus-circle text-sm"></i>
+        <span>Create Invoice</span>
+      </button>
+      <button class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:shadow-md transition-all duration-200">
+        <i class="fas fa-download text-sm"></i>
+        <span class="hidden sm:inline">Export</span>
+      </button>
     </div>
   </div>
 
-  <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-    <form method="get" class="grid grid-cols-1 gap-4 md:grid-cols-4">
-      <div class="md:col-span-2">
-        <label class="mb-1 block text-sm font-medium text-slate-700">Search</label>
-        <input
-          type="text"
-          name="q"
-          value="{{ request.GET.q }}"
-          placeholder="Invoice number, customer, email, order"
-          class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
-        >
+  <!-- Stats Cards - Fixed paginator issue -->
+  <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+    <div class="rounded-2xl bg-white p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Total Invoices</p>
+          <p class="text-2xl font-bold text-slate-800 mt-1">{{ page_obj.paginator.count|default:invoices.count|default:0 }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
+          <i class="fas fa-receipt text-blue-600 text-lg"></i>
+        </div>
       </div>
-
-      <div>
-        <label class="mb-1 block text-sm font-medium text-slate-700">Status</label>
-        <select
-          name="status"
-          class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
-        >
-          <option value="">All statuses</option>
-          {% for value, label in invoices.model.Status.choices %}
-            <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
+    </div>
+    <div class="rounded-2xl bg-white p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Outstanding</p>
+          <p class="text-2xl font-bold text-amber-600 mt-1">UGX {{ total_outstanding|default:"0"|intcomma }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center">
+          <i class="fas fa-clock text-amber-600 text-lg"></i>
+        </div>
       </div>
+    </div>
+    <div class="rounded-2xl bg-white p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Overdue</p>
+          <p class="text-2xl font-bold text-rose-600 mt-1">UGX {{ total_overdue|default:"0"|intcomma }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-rose-50 flex items-center justify-center">
+          <i class="fas fa-exclamation-triangle text-rose-600 text-lg"></i>
+        </div>
+      </div>
+    </div>
+    <div class="rounded-2xl bg-white p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Paid This Month</p>
+          <p class="text-2xl font-bold text-emerald-600 mt-1">UGX {{ paid_this_month|default:"0"|intcomma }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+          <i class="fas fa-check-circle text-emerald-600 text-lg"></i>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      <div class="flex items-end gap-2">
-        <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Filter</button>
-        <a href="{% url 'finance:invoice_list' %}" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700">Reset</a>
+  <!-- Filter Section -->
+  <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <form method="get" class="space-y-4">
+      <div class="flex items-center gap-2 mb-3">
+        <i class="fas fa-filter text-slate-400 text-sm"></i>
+        <h3 class="text-sm font-semibold text-slate-700">Filter Invoices</h3>
+      </div>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div class="md:col-span-2">
+          <label class="mb-1.5 block text-xs font-semibold text-slate-600 uppercase tracking-wide">Search</label>
+          <div class="relative">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            <input
+              type="text"
+              name="q"
+              value="{{ request.GET.q }}"
+              placeholder="Invoice number, customer, email, order..."
+              class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+            >
+          </div>
+        </div>
+
+        <div>
+          <label class="mb-1.5 block text-xs font-semibold text-slate-600 uppercase tracking-wide">Status</label>
+          <select
+            name="status"
+            class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all bg-white"
+          >
+            <option value="">All statuses</option>
+            {% for value, label in status_choices %}
+              <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="flex items-end gap-2">
+          <button type="submit" class="flex-1 rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 transition-all duration-200">
+            <i class="fas fa-search mr-2 text-xs"></i>Apply
+          </button>
+          <a href="{% url 'finance:invoice_list' %}" class="flex items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all duration-200">
+            <i class="fas fa-undo-alt text-xs"></i>
+            <span class="hidden sm:inline">Reset</span>
+          </a>
+        </div>
       </div>
     </form>
   </div>
 
+  <!-- Invoices Table -->
   <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
     <div class="overflow-x-auto">
       <table class="min-w-full text-sm">
-        <thead class="bg-slate-50 text-slate-600">
-          <tr>
-            <th class="px-4 py-3 text-left font-medium">Invoice</th>
-            <th class="px-4 py-3 text-left font-medium">Customer</th>
-            <th class="px-4 py-3 text-left font-medium">Date</th>
-            <th class="px-4 py-3 text-left font-medium">Due Date</th>
-            <th class="px-4 py-3 text-left font-medium">Status</th>
-            <th class="px-4 py-3 text-right font-medium">Total</th>
-            <th class="px-4 py-3 text-right font-medium">Paid</th>
-            <th class="px-4 py-3 text-right font-medium">Balance</th>
-            <th class="px-4 py-3 text-right font-medium">Action</th>
-          </tr>
+        <thead>
+          <tr class="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Invoice</th>
+            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Customer</th>
+            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Date</th>
+            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Due Date</th>
+            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
+            <th class="px-4 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Total</th>
+            <th class="px-4 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Paid</th>
+            <th class="px-4 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Balance</th>
+            <th class="px-4 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Action</th>
+           </>
         </thead>
         <tbody class="divide-y divide-slate-100">
           {% for invoice in invoices %}
-          <tr class="hover:bg-slate-50">
-            <td class="px-4 py-3">
-              <div class="font-semibold text-slate-900">{{ invoice.invoice_number }}</div>
-              <div class="text-xs text-slate-500">{{ invoice.hotel.name }}</div>
-            </td>
-            <td class="px-4 py-3">
-              <div class="font-medium text-slate-800">{{ invoice.customer_name }}</div>
-              <div class="text-xs text-slate-500">{{ invoice.customer_email|default:"No email" }}</div>
-            </td>
-            <td class="px-4 py-3">{{ invoice.invoice_date }}</td>
-            <td class="px-4 py-3">
-              <span class="{% if invoice.is_overdue %}text-rose-600 font-semibold{% else %}text-slate-700{% endif %}">
-                {{ invoice.due_date|default:"-" }}
+          <tr class="hover:bg-slate-50/80 transition-colors duration-150 group">
+            <td class="px-4 py-3.5">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-file-pdf text-red-400 text-sm"></i>
+                <div>
+                  <div class="font-bold text-slate-800">{{ invoice.invoice_number }}</div>
+                  <div class="text-xs text-slate-400">{{ invoice.hotel.name|truncatechars:20 }}</div>
+                </div>
+              </div>
+             </>
+            <td class="px-4 py-3.5">
+              <div class="font-semibold text-slate-800">{{ invoice.customer_name }}</div>
+              <div class="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                <i class="fas fa-envelope text-[10px]"></i>
+                {{ invoice.customer_email|default:"No email"|truncatechars:20 }}
+              </div>
+             </>
+            <td class="px-4 py-3.5 text-slate-600">
+              <span class="whitespace-nowrap">{{ invoice.invoice_date|date:"d M Y" }}</span>
+             </>
+            <td class="px-4 py-3.5">
+              <span class="whitespace-nowrap {% if invoice.is_overdue %}text-rose-600 font-bold{% else %}text-slate-600{% endif %}">
+                {% if invoice.due_date %}
+                  <i class="fas {% if invoice.is_overdue %}fa-exclamation-circle{% else %}fa-calendar-alt{% endif %} text-xs mr-1"></i>
+                  {{ invoice.due_date|date:"d M Y" }}
+                {% else %}
+                  —
+                {% endif %}
               </span>
-            </td>
-            <td class="px-4 py-3">
+             </>
+            <td class="px-4 py-3.5">
               {% if invoice.status == 'paid' %}
-                <span class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">Paid</span>
+                <span class="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 shadow-sm">
+                  <i class="fas fa-check-circle text-[10px]"></i>
+                  Paid
+                </span>
               {% elif invoice.status == 'partially_paid' %}
-                <span class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">Partially Paid</span>
+                <span class="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 shadow-sm">
+                  <i class="fas fa-chart-simple text-[10px]"></i>
+                  Partially Paid
+                </span>
               {% elif invoice.status == 'overdue' %}
-                <span class="inline-flex rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700">Overdue</span>
+                <span class="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 shadow-sm">
+                  <i class="fas fa-exclamation-triangle text-[10px]"></i>
+                  Overdue
+                </span>
               {% elif invoice.status == 'issued' or invoice.status == 'sent' %}
-                <span class="inline-flex rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">{{ invoice.get_status_display }}</span>
+                <span class="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 shadow-sm">
+                  <i class="fas fa-paper-plane text-[10px]"></i>
+                  {{ invoice.get_status_display }}
+                </span>
               {% else %}
-                <span class="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-semibold text-slate-700">{{ invoice.get_status_display }}</span>
+                <span class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600 shadow-sm">
+                  <i class="fas fa-hourglass-half text-[10px]"></i>
+                  {{ invoice.get_status_display }}
+                </span>
               {% endif %}
-            </td>
-            <td class="px-4 py-3 text-right font-medium">UGX {{ invoice.total_amount|floatformat:0|intcomma }}</td>
-            <td class="px-4 py-3 text-right">UGX {{ invoice.amount_paid|floatformat:0|intcomma }}</td>
-            <td class="px-4 py-3 text-right font-semibold {% if invoice.balance_due > 0 %}text-rose-600{% else %}text-emerald-600{% endif %}">
+             </>
+            <td class="px-4 py-3.5 text-right font-bold text-slate-800">
+              UGX {{ invoice.total_amount|floatformat:0|intcomma }}
+             </>
+            <td class="px-4 py-3.5 text-right text-emerald-600 font-semibold">
+              UGX {{ invoice.amount_paid|floatformat:0|intcomma }}
+             </>
+            <td class="px-4 py-3.5 text-right font-bold {% if invoice.balance_due > 0 %}text-rose-600{% else %}text-emerald-600{% endif %}">
               UGX {{ invoice.balance_due|floatformat:0|intcomma }}
-            </td>
-            <td class="px-4 py-3 text-right">
-              <a href="{% url 'finance:invoice_detail' invoice.pk %}" class="font-medium text-slate-700 hover:text-slate-900">View</a>
-            </td>
-          </tr>
+             </>
+            <td class="px-4 py-3.5 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <a href="{% url 'finance:invoice_detail' invoice.pk %}" class="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-blue-100 hover:text-blue-700 transition-all duration-200 group-hover:shadow-sm">
+                  <i class="fas fa-eye text-xs"></i>
+                  <span>View</span>
+                </a>
+                <!-- Pay button - uses invoice_record_payment URL -->
+                {% if invoice.status != 'paid' and invoice.status != 'void' %}
+                <a href="{% url 'finance:invoice_record_payment' invoice.pk %}" class="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition-all duration-200">
+                  <i class="fas fa-money-bill-wave text-xs"></i>
+                  <span>Pay</span>
+                </a>
+                {% endif %}
+              </div>
+             </>
+           </tr>
           {% empty %}
           <tr>
-            <td colspan="9" class="px-4 py-10 text-center text-slate-500">No invoices found.</td>
-          </tr>
+            <td colspan="9" class="px-4 py-16 text-center">
+              <div class="flex flex-col items-center gap-3">
+                <div class="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center">
+                  <i class="fas fa-receipt text-slate-400 text-2xl"></i>
+                </div>
+                <p class="text-slate-500 font-medium">No invoices found</p>
+                <p class="text-sm text-slate-400">Try adjusting your filters to see more results.</p>
+              </div>
+             </td>
+           </tr>
           {% endfor %}
         </tbody>
-      </table>
+       </table>
     </div>
   </div>
 
+  <!-- Pagination -->
   {% if is_paginated %}
-  <div class="flex items-center justify-between text-sm text-slate-600">
-    <div>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</div>
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div class="text-sm text-slate-500 bg-white px-4 py-2 rounded-xl border border-slate-200 inline-flex items-center gap-2 w-fit">
+      <i class="fas fa-chart-simple text-xs text-slate-400"></i>
+      <span>Page <strong class="text-slate-700">{{ page_obj.number }}</strong> of <strong class="text-slate-700">{{ page_obj.paginator.num_pages }}</strong></span>
+    </div>
     <div class="flex gap-2">
       {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}" class="rounded-lg border border-slate-300 px-3 py-1.5">Previous</a>
+        <a href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:shadow-sm transition-all duration-200">
+          <i class="fas fa-chevron-left text-xs"></i>
+          <span>Previous</span>
+        </a>
+      {% else %}
+        <button disabled class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-400 cursor-not-allowed">
+          <i class="fas fa-chevron-left text-xs"></i>
+          <span>Previous</span>
+        </button>
       {% endif %}
+      
       {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}" class="rounded-lg border border-slate-300 px-3 py-1.5">Next</a>
+        <a href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:shadow-sm transition-all duration-200">
+          <span>Next</span>
+          <i class="fas fa-chevron-right text-xs"></i>
+        </a>
+      {% else %}
+        <button disabled class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-400 cursor-not-allowed">
+          <span>Next</span>
+          <i class="fas fa-chevron-right text-xs"></i>
+        </button>
       {% endif %}
     </div>
   </div>
   {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Add smooth hover effects to table rows
+    const tableRows = document.querySelectorAll('tbody tr');
+    tableRows.forEach(row => {
+      row.addEventListener('mouseenter', function() {
+        this.style.backgroundColor = '#f8fafc';
+      });
+      row.addEventListener('mouseleave', function() {
+        this.style.backgroundColor = '';
+      });
+    });
+  });
+</script>
 {% endblock %}

@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="description" content="Hotel Management System - Professional hotel operations dashboard" />
+  <meta name="theme-color" content="#1e3a8a" />
   <title>{% block title %}Hotel Thinker | Professional Hotel Management{% endblock %}</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -15,94 +16,139 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
-      background: linear-gradient(135deg, #f8fafc 0%, #eff3f8 100%);
+      background: linear-gradient(145deg, #f1f5f9 0%, #eef2f6 100%);
       -webkit-tap-highlight-color: transparent;
     }
 
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: #eef2f6; border-radius: 10px; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    /* Modern scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #5b6e8c; }
 
+    /* Glass morphism effects */
     .glass-nav {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }
     .glass-sidebar {
       background: linear-gradient(180deg, #ffffff 0%, #fefefe 100%);
+      backdrop-filter: blur(0);
     }
 
+    /* Smooth transitions */
     .transition-smooth { transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1); }
-    .hover-lift:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.12); }
+    .hover-lift:hover { transform: translateY(-2px); box-shadow: 0 20px 30px -12px rgba(0, 0, 0, 0.12); }
 
+    /* Active navigation state */
     .active-nav {
-      background: linear-gradient(135deg, #155dfc 0%, #1652d2 100%) !important;
+      background: linear-gradient(115deg, #2563eb 0%, #1d4ed8 100%) !important;
       color: white !important;
-      box-shadow: 0 4px 12px rgba(21, 93, 252, 0.25);
+      box-shadow: 0 6px 14px rgba(37, 99, 235, 0.25);
     }
     .active-nav i {
       color: white !important;
     }
+    .active-nav-sub {
+      background: #eff6ff !important;
+      color: #1e40af !important;
+    }
+    .active-nav-sub i {
+      color: #2563eb !important;
+    }
 
+    /* Status pulse animation */
     .status-pulse {
-      animation: pulse 1.8s ease-in-out infinite;
+      animation: pulse 2s ease-in-out infinite;
     }
     @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); background-color: #22c55e; }
-      50% { opacity: 0.7; transform: scale(1.15); background-color: #4ade80; }
+      0%, 100% { opacity: 1; transform: scale(1); background-color: #ef4444; }
+      50% { opacity: 0.75; transform: scale(1.2); background-color: #f87171; }
     }
 
+    /* Animation keyframes */
     @keyframes slideInLeft {
       from { transform: translateX(-100%); opacity: 0; }
       to { transform: translateX(0); opacity: 1; }
     }
-    @keyframes fadeIn {
-      from { opacity: 0; backdrop-filter: blur(0); }
-      to { opacity: 1; backdrop-filter: blur(4px); }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
     }
 
     .sidebar-drawer { animation: slideInLeft 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1); }
-    .overlay-fade { animation: fadeIn 0.2s ease-out; }
+    .overlay-fade { animation: fadeInUp 0.2s ease-out; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
 
+    /* Enhanced submenu styling */
     .submenu {
-      margin-left: 2.1rem;
+      margin-left: 2rem;
       padding-left: 0.5rem;
-      border-left: 1px dashed #cbd5e1;
+      border-left: 1.5px solid #e2e8f0;
+      transition: all 0.2s;
     }
 
     .submenu a {
       display: flex;
       align-items: center;
-      gap: 0.65rem;
-      padding: 0.5rem 0.75rem;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
       border-radius: 0.75rem;
       color: #475569;
-      font-size: 0.875rem;
+      font-size: 0.85rem;
       font-weight: 500;
       transition: all 0.2s ease;
     }
 
     .submenu a:hover {
-      background: #eff6ff;
+      background: #f0f9ff;
       color: #1d4ed8;
+      transform: translateX(4px);
     }
 
     .submenu a i {
-      width: 1rem;
+      width: 1.2rem;
       color: #94a3b8;
-      font-size: 0.75rem;
+      font-size: 0.8rem;
+      transition: all 0.2s;
     }
 
+    .submenu a:hover i {
+      color: #2563eb;
+    }
+
+    /* Card hover effects */
+    .stat-card {
+      transition: all 0.25s ease;
+    }
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 20px 25px -12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Mobile optimizations */
     @media (max-width: 768px) {
       button, a, [role="button"] { min-height: 44px; min-width: 44px; }
     }
 
+    /* Safe area support */
     @supports (padding: max(0px)) {
       .safe-top { padding-top: max(1rem, env(safe-area-inset-top)); }
       .safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+    }
+
+    /* Loading skeleton */
+    .skeleton {
+      background: linear-gradient(90deg, #f0f2f5 25%, #e6e9ef 50%, #f0f2f5 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
     }
   </style>
   {% block extra_head %}{% endblock %}
@@ -110,67 +156,71 @@
 
 <body class="h-screen overflow-hidden antialiased">
 
-  <!-- MOBILE BOTTOM NAVIGATION -->
-  <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white/98 backdrop-blur-xl border-t border-white/40 shadow-[0_-8px_30px_rgba(0,0,0,0.05)] z-50 safe-bottom">
-    <div class="flex items-center justify-around px-2 py-2.5">
-      <a href="{% url 'accounts:dashboard' %}" class="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-slate-500 hover:text-blue-600 transition-all duration-200 group">
-        <i class="fas fa-chart-pie text-xl group-hover:scale-110 transition-transform"></i>
-        <span class="text-[11px] font-medium">Home</span>
+  <!-- MOBILE BOTTOM NAVIGATION - Enhanced -->
+  <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white/98 backdrop-blur-xl border-t border-white/50 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] z-50 safe-bottom">
+    <div class="flex items-center justify-around px-2 py-2">
+      <a href="{% url 'accounts:dashboard' %}" class="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-slate-500 hover:text-blue-600 transition-all duration-200 group active:scale-95">
+        <i class="fas fa-chart-pie text-xl group-hover:scale-110 transition-transform duration-200"></i>
+        <span class="text-[10px] font-semibold tracking-tight">Home</span>
       </a>
-      <a href="{% url 'bookings:booking_list' %}" class="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-slate-500 hover:text-blue-600 transition-all duration-200 group">
-        <i class="fas fa-calendar-check text-xl group-hover:scale-110 transition-transform"></i>
-        <span class="text-[11px] font-medium">Bookings</span>
+      <a href="{% url 'bookings:booking_list' %}" class="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-slate-500 hover:text-blue-600 transition-all duration-200 group active:scale-95">
+        <i class="fas fa-calendar-check text-xl group-hover:scale-110 transition-transform duration-200"></i>
+        <span class="text-[10px] font-semibold tracking-tight">Bookings</span>
       </a>
-      <a href="{% url 'restaurant:order_list' %}" class="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-slate-500 hover:text-blue-600 transition-all duration-200 group">
-        <i class="fas fa-utensils text-xl group-hover:scale-110 transition-transform"></i>
-        <span class="text-[11px] font-medium">Dining</span>
+      <a href="{% url 'restaurant:order_list' %}" class="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-slate-500 hover:text-blue-600 transition-all duration-200 group active:scale-95">
+        <i class="fas fa-utensils text-xl group-hover:scale-110 transition-transform duration-200"></i>
+        <span class="text-[10px] font-semibold tracking-tight">Dining</span>
       </a>
-      <a href="{% url 'finance:dashboard' %}" class="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-slate-500 hover:text-blue-600 transition-all duration-200 group">
-        <i class="fas fa-chart-line text-xl group-hover:scale-110 transition-transform"></i>
-        <span class="text-[11px] font-medium">Finance</span>
+      <a href="{% url 'finance:dashboard' %}" class="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-slate-500 hover:text-blue-600 transition-all duration-200 group active:scale-95">
+        <i class="fas fa-chart-line text-xl group-hover:scale-110 transition-transform duration-200"></i>
+        <span class="text-[10px] font-semibold tracking-tight">Finance</span>
       </a>
-      <button id="mobileMenuButton" class="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-slate-500 hover:text-blue-600 transition-all duration-200 group">
-        <i class="fas fa-bars text-xl group-hover:scale-110 transition-transform"></i>
-        <span class="text-[11px] font-medium">Menu</span>
+      <button id="mobileMenuButton" class="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-slate-500 hover:text-blue-600 transition-all duration-200 group active:scale-95">
+        <i class="fas fa-bars text-xl group-hover:scale-110 transition-transform duration-200"></i>
+        <span class="text-[10px] font-semibold tracking-tight">Menu</span>
       </button>
     </div>
   </div>
 
   <div class="flex h-screen pb-[70px] lg:pb-0">
 
-    <!-- SIDEBAR -->
+    <!-- SIDEBAR - Enhanced with better visuals -->
     <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] h-screen glass-sidebar shadow-2xl border-r border-slate-200/60 transform -translate-x-full transition-all duration-300 ease-out lg:relative lg:translate-x-0 lg:block lg:w-72 lg:shadow-xl">
       <div class="h-full overflow-y-auto flex flex-col">
-        <div class="lg:hidden flex items-center justify-between p-5 border-b border-slate-200/70 bg-white sticky top-0 z-10">
+        <div class="lg:hidden flex items-center justify-between p-5 border-b border-slate-200/80 bg-white sticky top-0 z-10">
           <div class="flex items-center gap-3">
-            <div class="h-8 w-8 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-md">
+            <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shadow-md">
               <i class="fas fa-hotel text-white text-sm"></i>
             </div>
             <span class="font-bold text-xl bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Hotel Thinker</span>
           </div>
-          <button id="closeSidebarBtn" class="p-2.5 rounded-full text-slate-500 hover:bg-slate-100 transition-all">
+          <button id="closeSidebarBtn" class="p-2.5 rounded-full text-slate-500 hover:bg-slate-100 transition-all active:scale-90">
             <i class="fas fa-times text-lg"></i>
           </button>
         </div>
 
-        <div class="flex-1 py-6 px-4 space-y-6">
-          <div class="hidden lg:block text-center pb-4 border-b border-slate-100">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center mx-auto shadow-lg">
-              <i class="fas fa-hotel text-white text-xl"></i>
+        <div class="flex-1 py-6 px-4 space-y-7">
+          <!-- Brand area desktop -->
+          <div class="hidden lg:block text-center pb-5 border-b border-slate-100">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center mx-auto shadow-lg shadow-blue-200/50">
+              <i class="fas fa-hotel text-white text-2xl"></i>
             </div>
-            <h2 class="mt-3 text-xl font-extrabold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Hotel Thinker</h2>
-            <p class="text-[11px] text-slate-400 font-medium mt-0.5">Enterprise Suite v3.0</p>
+            <h2 class="mt-3 text-xl font-extrabold bg-gradient-to-r from-slate-800 to-slate-700 bg-clip-text text-transparent">Hotel Thinker</h2>
+            <p class="text-[11px] text-slate-400 font-semibold mt-1 tracking-wide">Enterprise Suite v3.0</p>
           </div>
 
-          <!-- Navigation -->
-          <nav class="space-y-1">
+          <!-- Navigation - Enhanced spacing and icons -->
+          <nav class="space-y-1.5">
             <a href="{% url 'accounts:dashboard' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
               <i class="fas fa-chart-pie w-5 text-slate-400 group-hover:text-blue-500 transition-colors"></i>
-              <span class="text-sm font-medium">Dashboard</span>
+              <span class="text-sm font-semibold">Dashboard</span>
             </a>
 
             <div class="pt-4 pb-1">
-              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Hotel Operations</p>
+              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <i class="fas fa-hotel text-[9px]"></i>
+                <span>Hotel Operations</span>
+              </p>
             </div>
             <a href="{% url 'hotels:detail' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
               <i class="fas fa-building w-5 text-slate-400 group-hover:text-blue-500"></i>
@@ -182,7 +232,10 @@
             </a>
 
             <div class="pt-4 pb-1">
-              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Team Management</p>
+              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <i class="fas fa-users text-[9px]"></i>
+                <span>Team Management</span>
+              </p>
             </div>
             <a href="{% url 'accounts:hotel_members_list' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
               <i class="fas fa-users w-5 text-slate-400 group-hover:text-blue-500"></i>
@@ -194,14 +247,17 @@
             </a>
 
             <div class="pt-4 pb-1">
-              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Accommodation</p>
+              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <i class="fas fa-bed text-[9px]"></i>
+                <span>Accommodation</span>
+              </p>
             </div>
             <a href="{% url 'rooms:room_list' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
               <i class="fas fa-door-open w-5 text-slate-400 group-hover:text-blue-500"></i>
               <span class="text-sm font-medium">Rooms</span>
             </a>
             <a href="{% url 'rooms:manage_dashboard' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
-              <i class="fas fa-chalkboard-teacher w-5 text-slate-400 group-hover:text-blue-500"></i>
+              <i class="fas fa-chalkboard-user w-5 text-slate-400 group-hover:text-blue-500"></i>
               <span class="text-sm font-medium">Rooms Manager</span>
             </a>
             <a href="{% url 'rooms:roomtype_list' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
@@ -210,7 +266,10 @@
             </a>
 
             <div class="pt-4 pb-1">
-              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Reservations</p>
+              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <i class="fas fa-calendar-alt text-[9px]"></i>
+                <span>Reservations</span>
+              </p>
             </div>
             <a href="{% url 'bookings:booking_list' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
               <i class="fas fa-calendar-alt w-5 text-slate-400 group-hover:text-blue-500"></i>
@@ -218,7 +277,10 @@
             </a>
 
             <div class="pt-4 pb-1">
-              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Food & Beverage</p>
+              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <i class="fas fa-utensils text-[9px]"></i>
+                <span>Food & Beverage</span>
+              </p>
             </div>
             <a href="{% url 'restaurant:order_list' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
               <i class="fas fa-utensils w-5 text-slate-400 group-hover:text-blue-500"></i>
@@ -234,7 +296,10 @@
             </a>
 
             <div class="pt-4 pb-1">
-              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Inventory</p>
+              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <i class="fas fa-boxes text-[9px]"></i>
+                <span>Inventory</span>
+              </p>
             </div>
             <a href="{% url 'store:category_list' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
               <i class="fas fa-folder w-5 text-slate-400 group-hover:text-blue-500"></i>
@@ -257,9 +322,12 @@
               <span class="text-sm font-medium">Goods Receipts</span>
             </a>
 
-            <!-- FINANCE -->
+            <!-- FINANCE Section Enhanced -->
             <div class="pt-4 pb-1">
-              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Finance & Accounting</p>
+              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <i class="fas fa-chart-line text-[9px]"></i>
+                <span>Finance & Accounting</span>
+              </p>
             </div>
 
             <a href="{% url 'finance:dashboard' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
@@ -299,7 +367,10 @@
             </div>
 
             <div class="pt-3 pb-1">
-              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Financial Reports</p>
+              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <i class="fas fa-chart-simple text-[9px]"></i>
+                <span>Financial Reports</span>
+              </p>
             </div>
 
             <div class="submenu space-y-1">
@@ -319,20 +390,24 @@
           </nav>
         </div>
 
-        <div class="p-4 border-t border-slate-100 bg-slate-50/50">
+        <!-- User profile section - Enhanced -->
+        <div class="p-4 border-t border-slate-200 bg-gradient-to-br from-slate-50 to-white">
           <div class="flex items-center gap-3">
-            <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md">
+            <div class="h-11 w-11 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white font-bold text-base shadow-md ring-2 ring-white">
               {{ request.user.get_full_name|default:request.user.username|first|upper }}
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-bold text-slate-700 truncate">{{ request.user.get_full_name|default:request.user.username }}</p>
-              <p class="text-[11px] text-slate-400 truncate">{{ request.user.email|default:"admin@hotelthinker.com" }}</p>
+              <p class="text-sm font-bold text-slate-800 truncate">{{ request.user.get_full_name|default:request.user.username }}</p>
+              <p class="text-[10px] text-slate-500 truncate flex items-center gap-1 mt-0.5">
+                <i class="fas fa-envelope text-[8px]"></i>
+                {{ request.user.email|default:"admin@hotelthinker.com" }}
+              </p>
             </div>
           </div>
           <form method="post" action="{% url 'logout' %}" class="mt-3">
             {% csrf_token %}
-            <button type="submit" class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200 text-sm font-medium">
-              <i class="fas fa-sign-out-alt text-sm"></i>
+            <button type="submit" class="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-gradient-to-r hover:from-rose-50 hover:to-red-50 hover:text-rose-600 hover:border-rose-200 transition-all duration-200 text-sm font-semibold group">
+              <i class="fas fa-sign-out-alt text-sm group-hover:translate-x-0.5 transition-transform"></i>
               <span>Logout</span>
             </button>
           </form>
@@ -340,33 +415,33 @@
       </div>
     </aside>
 
-    <div id="sidebarOverlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 hidden transition-all duration-300 lg:hidden"></div>
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 hidden transition-all duration-300 lg:hidden"></div>
 
-    <!-- MAIN CONTENT -->
+    <!-- MAIN CONTENT - Enhanced -->
     <div class="flex min-w-0 flex-1 flex-col h-full">
-      <header class="shrink-0 glass-nav border-b border-slate-200/50 shadow-sm sticky top-0 z-20 safe-top">
+      <header class="shrink-0 glass-nav border-b border-slate-200/60 shadow-sm sticky top-0 z-20 safe-top">
         <div class="px-4 py-3 md:px-6 lg:px-7">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <button id="sidebarToggle" class="lg:hidden p-2.5 rounded-xl text-slate-600 hover:bg-slate-100 transition-all">
+              <button id="sidebarToggle" class="lg:hidden p-2.5 rounded-xl text-slate-600 hover:bg-white/60 transition-all active:scale-95">
                 <i class="fas fa-bars text-xl"></i>
               </button>
-              <button id="desktopSidebarToggle" class="hidden lg:flex items-center justify-center w-9 h-9 rounded-xl text-slate-500 hover:bg-slate-100 transition-all">
+              <button id="desktopSidebarToggle" class="hidden lg:flex items-center justify-center w-9 h-9 rounded-xl text-slate-500 hover:bg-white/60 transition-all">
                 <i class="fas fa-chevron-left text-sm" id="toggleIcon"></i>
               </button>
               <div class="hidden sm:block">
-                <h1 class="text-xl font-extrabold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Hotel Thinker</h1>
-                <p class="text-[11px] font-medium text-slate-500">Professional Hotel Management Suite</p>
+                <h1 class="text-2xl font-extrabold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent tracking-tight">Hotel Thinker</h1>
+                <p class="text-[11px] font-semibold text-slate-500 tracking-wide">Professional Hotel Management Suite</p>
               </div>
               <div class="sm:hidden">
-                <div class="h-8 w-8 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-sm">
+                <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shadow-sm">
                   <i class="fas fa-hotel text-white text-sm"></i>
                 </div>
               </div>
             </div>
 
             <div class="flex items-center gap-2 md:gap-4">
-              <button class="relative p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 transition-all">
+              <button class="relative p-2.5 rounded-xl text-slate-500 hover:bg-white/60 transition-all active:scale-95">
                 <i class="far fa-bell text-xl"></i>
                 <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-white status-pulse"></span>
               </button>
@@ -375,33 +450,33 @@
               <div class="relative" id="userMenu">
                 <button id="userMenuButton" class="flex items-center gap-2 md:gap-3 rounded-full border border-slate-200/80 bg-white/70 backdrop-blur-sm px-2.5 py-1.5 md:px-4 md:py-2 hover:bg-white hover:shadow-md transition-all group">
                   <div class="hidden sm:block text-right">
-                    <p class="text-sm font-semibold text-slate-800 truncate max-w-[120px]">{{ request.user.get_full_name|default:request.user.username }}</p>
+                    <p class="text-sm font-bold text-slate-800 truncate max-w-[120px]">{{ request.user.get_full_name|default:request.user.username }}</p>
                     <div class="flex items-center gap-1.5">
                       <span class="relative flex h-2 w-2">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                       </span>
-                      <span class="text-[11px] font-medium text-slate-500">Executive</span>
+                      <span class="text-[10px] font-semibold text-slate-500">Executive</span>
                     </div>
                   </div>
-                  <div class="h-8 w-8 md:h-9 md:w-9 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+                  <div class="h-8 w-8 md:h-9 md:w-9 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white font-bold text-sm shadow-md ring-2 ring-white/50">
                     {{ request.user.get_full_name|default:request.user.username|first|upper }}
                   </div>
                   <i class="fas fa-chevron-down text-[11px] text-slate-400 group-hover:text-slate-600 transition-colors hidden sm:inline"></i>
                 </button>
 
-                <div id="userDropdown" class="hidden absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50">
-                  <div class="px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+                <div id="userDropdown" class="hidden absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 animate-fadeInUp">
+                  <div class="px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white rounded-t-2xl">
                     <p class="text-sm font-bold text-slate-800 truncate">{{ request.user.get_full_name|default:request.user.username }}</p>
                     <p class="text-xs text-slate-500 mt-0.5 truncate">{{ request.user.email|default:"admin@hotelthinker.com" }}</p>
                   </div>
                   <div class="py-2">
                     <a href="{% url 'accounts:my_profile' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 transition-colors">
-                      <i class="fas fa-user-circle w-5 text-blue-400"></i>
+                      <i class="fas fa-user-circle w-5 text-blue-500"></i>
                       <span class="font-medium">My Profile</span>
                     </a>
                     <a href="{% url 'accounts:hotel_members_list' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 transition-colors">
-                      <i class="fas fa-users w-5 text-blue-400"></i>
+                      <i class="fas fa-users w-5 text-blue-500"></i>
                       <span class="font-medium">Team Members</span>
                     </a>
                   </div>
@@ -417,7 +492,7 @@
                 </div>
               </div>
               {% else %}
-              <a href="{% url 'login' %}" class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all">
+              <a href="{% url 'login' %}" class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 px-5 py-2.5 text-sm font-bold text-white shadow-md hover:shadow-lg hover:scale-105 transition-all">
                 <i class="fas fa-key text-xs"></i>
                 <span>Sign In</span>
               </a>
@@ -425,55 +500,44 @@
             </div>
           </div>
 
-          <!-- Quick Access -->
+          <!-- Quick Access Bar - Enhanced -->
           <div class="mt-3 pt-2 border-t border-slate-200/40">
             <div class="flex items-center gap-2 overflow-x-auto pb-1.5 hide-scrollbar">
-              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1 hidden md:flex items-center gap-1.5">
-                <i class="fas fa-bolt text-[10px]"></i>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-1 hidden md:flex items-center gap-1.5">
+                <i class="fas fa-bolt text-[10px] text-blue-500"></i>
                 <span>Quick Launch</span>
               </span>
-              <a href="{% url 'rooms:room_list' %}" class="flex items-center gap-1.5 shrink-0 rounded-full bg-white border border-slate-200/70 px-3.5 py-1.5 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/50 transition-all shadow-sm">
+              <a href="{% url 'rooms:room_list' %}" class="flex items-center gap-1.5 shrink-0 rounded-full bg-white border border-slate-200/70 px-3.5 py-1.5 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/80 hover:shadow-sm transition-all active:scale-95">
                 <i class="fas fa-door-open text-blue-500 text-xs"></i>
                 <span>Rooms</span>
               </a>
-              <a href="{% url 'bookings:booking_list' %}" class="flex items-center gap-1.5 shrink-0 rounded-full bg-white border border-slate-200/70 px-3.5 py-1.5 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/50 transition-all shadow-sm">
+              <a href="{% url 'bookings:booking_list' %}" class="flex items-center gap-1.5 shrink-0 rounded-full bg-white border border-slate-200/70 px-3.5 py-1.5 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/80 hover:shadow-sm transition-all active:scale-95">
                 <i class="fas fa-calendar-alt text-blue-500 text-xs"></i>
                 <span>Bookings</span>
               </a>
-              <a href="{% url 'restaurant:order_list' %}" class="flex items-center gap-1.5 shrink-0 rounded-full bg-white border border-slate-200/70 px-3.5 py-1.5 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/50 transition-all shadow-sm">
+              <a href="{% url 'restaurant:order_list' %}" class="flex items-center gap-1.5 shrink-0 rounded-full bg-white border border-slate-200/70 px-3.5 py-1.5 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/80 hover:shadow-sm transition-all active:scale-95">
                 <i class="fas fa-utensils text-blue-500 text-xs"></i>
                 <span>Restaurant</span>
               </a>
-              <a href="{% url 'store:item_list' %}" class="flex items-center gap-1.5 shrink-0 rounded-full bg-white border border-slate-200/70 px-3.5 py-1.5 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/50 transition-all shadow-sm">
+              <a href="{% url 'store:item_list' %}" class="flex items-center gap-1.5 shrink-0 rounded-full bg-white border border-slate-200/70 px-3.5 py-1.5 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/80 hover:shadow-sm transition-all active:scale-95">
                 <i class="fas fa-boxes text-blue-500 text-xs"></i>
                 <span>Inventory</span>
               </a>
-              <a href="{% url 'finance:dashboard' %}" class="flex items-center gap-1.5 shrink-0 rounded-full bg-white border border-slate-200/70 px-3.5 py-1.5 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/50 transition-all shadow-sm">
+              <a href="{% url 'finance:dashboard' %}" class="flex items-center gap-1.5 shrink-0 rounded-full bg-white border border-slate-200/70 px-3.5 py-1.5 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/80 hover:shadow-sm transition-all active:scale-95">
                 <i class="fas fa-chart-line text-blue-500 text-xs"></i>
                 <span>Finance</span>
-              </a>
-              <a href="{% url 'finance:profit_loss' %}" class="hidden md:flex items-center gap-1.5 shrink-0 rounded-full bg-white border border-slate-200/70 px-3.5 py-1.5 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/50 transition-all shadow-sm">
-                <i class="fas fa-arrow-trend-up text-blue-500 text-xs"></i>
-                <span>P&amp;L</span>
-              </a>
-              <a href="{% url 'finance:cash_flow' %}" class="hidden md:flex items-center gap-1.5 shrink-0 rounded-full bg-white border border-slate-200/70 px-3.5 py-1.5 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/50 transition-all shadow-sm">
-                <i class="fas fa-money-bill-transfer text-blue-500 text-xs"></i>
-                <span>Cash Flow</span>
-              </a>
-              <a href="{% url 'finance:balance_sheet' %}" class="hidden md:flex items-center gap-1.5 shrink-0 rounded-full bg-white border border-slate-200/70 px-3.5 py-1.5 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/50 transition-all shadow-sm">
-                <i class="fas fa-scale-balanced text-blue-500 text-xs"></i>
-                <span>Balance Sheet</span>
               </a>
             </div>
           </div>
         </div>
       </header>
 
+      <!-- Breadcrumb - Enhanced -->
       {% block breadcrumb_wrapper %}
       <nav class="bg-transparent px-4 md:px-6 py-3 text-sm border-b border-slate-200/40" aria-label="Breadcrumb">
         <ol class="flex items-center gap-2 flex-wrap">
           <li class="flex items-center">
-            <a href="{% url 'accounts:dashboard' %}" class="text-slate-500 hover:text-blue-600 transition-colors font-medium">
+            <a href="{% url 'accounts:dashboard' %}" class="text-slate-500 hover:text-blue-600 transition-colors font-medium flex items-center gap-1">
               <i class="fas fa-home text-sm"></i>
               <span class="sr-only">Dashboard</span>
             </a>
@@ -483,6 +547,7 @@
       </nav>
       {% endblock %}
 
+      <!-- Main Content Area -->
       <main class="flex-1 min-h-0 overflow-y-auto">
         <div class="p-4 md:p-6 lg:p-8">
           {% include "partials/messages.html" %}
@@ -490,21 +555,29 @@
         </div>
       </main>
 
+      <!-- Footer - Enhanced -->
       <footer class="hidden lg:block shrink-0 border-t border-slate-200/50 bg-white/60 backdrop-blur-sm px-6 py-3">
         <div class="flex items-center justify-between text-xs text-slate-500">
           <div class="flex items-center gap-4">
             <span class="font-semibold text-slate-600">© {% now "Y" %} Hotel Thinker</span>
             <span class="w-px h-4 bg-slate-300/60"></span>
-            <span class="text-slate-400">Enterprise Edition v3.0</span>
+            <span class="text-slate-400 flex items-center gap-1">
+              <i class="fas fa-code-branch text-[10px]"></i>
+              Enterprise v3.0
+            </span>
           </div>
-          <div class="flex items-center gap-5">
-            <a href="#" class="hover:text-blue-600 transition-colors flex items-center gap-1.5">
-              <i class="fas fa-headset text-xs"></i>
+          <div class="flex items-center gap-6">
+            <a href="#" class="hover:text-blue-600 transition-colors flex items-center gap-1.5 group">
+              <i class="fas fa-headset text-xs group-hover:scale-105 transition-transform"></i>
               <span>Support</span>
             </a>
-            <a href="#" class="hover:text-blue-600 transition-colors flex items-center gap-1.5">
-              <i class="fas fa-shield-alt text-xs"></i>
+            <a href="#" class="hover:text-blue-600 transition-colors flex items-center gap-1.5 group">
+              <i class="fas fa-shield-alt text-xs group-hover:scale-105 transition-transform"></i>
               <span>Security</span>
+            </a>
+            <a href="#" class="hover:text-blue-600 transition-colors flex items-center gap-1.5 group">
+              <i class="fas fa-file-alt text-xs group-hover:scale-105 transition-transform"></i>
+              <span>Documentation</span>
             </a>
           </div>
         </div>
@@ -512,8 +585,10 @@
     </div>
   </div>
 
+  <!-- JavaScript - Enhanced -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      // Sidebar controls
       const sidebar = document.getElementById('sidebar');
       const sidebarToggle = document.getElementById('sidebarToggle');
       const closeSidebarBtn = document.getElementById('closeSidebarBtn');
@@ -551,6 +626,7 @@
         }
       });
 
+      // Desktop sidebar collapse
       if (desktopToggle && sidebar && window.innerWidth >= 1024) {
         const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
         if (isCollapsed) {
@@ -560,6 +636,14 @@
             toggleIcon.classList.remove('fa-chevron-left');
             toggleIcon.classList.add('fa-chevron-right');
           }
+          // Hide text in collapsed mode
+          document.querySelectorAll('.nav-item span, .submenu a span, .submenu a i:first-child').forEach(el => {
+            if (isCollapsed && window.innerWidth >= 1024) {
+              el.style.opacity = '0';
+              el.style.width = '0';
+              el.style.overflow = 'hidden';
+            }
+          });
         }
 
         desktopToggle.addEventListener('click', () => {
@@ -572,6 +656,11 @@
               toggleIcon.classList.add('fa-chevron-left');
             }
             localStorage.setItem('sidebarCollapsed', 'false');
+            document.querySelectorAll('.nav-item span, .submenu a span, .submenu a i:first-child').forEach(el => {
+              el.style.opacity = '';
+              el.style.width = '';
+              el.style.overflow = '';
+            });
           } else {
             sidebar.classList.add('w-20');
             sidebar.classList.remove('w-72');
@@ -580,10 +669,16 @@
               toggleIcon.classList.add('fa-chevron-right');
             }
             localStorage.setItem('sidebarCollapsed', 'true');
+            document.querySelectorAll('.nav-item span, .submenu a span, .submenu a i:first-child').forEach(el => {
+              el.style.opacity = '0';
+              el.style.width = '0';
+              el.style.overflow = 'hidden';
+            });
           }
         });
       }
 
+      // User dropdown
       const userMenuButton = document.getElementById('userMenuButton');
       const userDropdown = document.getElementById('userDropdown');
       if (userMenuButton && userDropdown) {
@@ -601,11 +696,16 @@
         });
       }
 
+      // Active navigation highlighting
       const currentPath = window.location.pathname;
       document.querySelectorAll('.nav-item, .nav-item-sub').forEach(link => {
         const href = link.getAttribute('href');
-        if (href && href !== '#' && currentPath.startsWith(href)) {
-          link.classList.add('active-nav');
+        if (href && href !== '#' && currentPath.startsWith(href) && href !== '/') {
+          if (link.classList.contains('nav-item')) {
+            link.classList.add('active-nav');
+          } else {
+            link.classList.add('active-nav-sub');
+          }
         }
       });
     });

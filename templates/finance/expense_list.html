@@ -4,117 +4,377 @@
 {% block title %}Expenses • Hotel Thinker{% endblock %}
 
 {% block content %}
-<div class="space-y-6 p-6">
-  <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+<div class="space-y-6 p-4 md:p-6 lg:p-8">
+  <!-- Header Section -->
+  <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-slate-900">Expenses</h1>
-      <p class="mt-1 text-sm text-slate-500">Manage expense requests, approvals, payments, and receipts.</p>
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-md shadow-amber-200">
+          <i class="fas fa-money-bill-wave text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Expenses</h1>
+          <p class="mt-1 text-sm text-slate-500">Manage expense requests, approvals, payments, and receipts.</p>
+        </div>
+      </div>
     </div>
-    <a href="{% url 'finance:expense_create' %}" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">New Expense</a>
+    <a href="{% url 'finance:expense_create' %}" class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-amber-200 hover:shadow-lg hover:scale-105 transition-all duration-200">
+      <i class="fas fa-plus-circle text-sm"></i>
+      <span>New Expense</span>
+    </a>
   </div>
 
-  <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-    <form method="get" class="grid grid-cols-1 gap-4 md:grid-cols-4">
-      <div class="md:col-span-2">
-        <label class="mb-1 block text-sm font-medium text-slate-700">Search</label>
-        <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Expense number, title, vendor, payee"
-               class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400">
+  <!-- Stats Cards - Fixed paginator issue -->
+  <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+    <div class="rounded-2xl bg-white p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Total Expenses</p>
+          <p class="text-2xl font-bold text-slate-800 mt-1">{{ page_obj.paginator.count|default:expenses.count|default:0 }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center">
+          <i class="fas fa-receipt text-amber-600 text-lg"></i>
+        </div>
       </div>
-
-      <div>
-        <label class="mb-1 block text-sm font-medium text-slate-700">Status</label>
-        <select name="status" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-          <option value="">All statuses</option>
-          {% for value, label in expenses.model.ApprovalStatus.choices %}
-            <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
+    </div>
+    <div class="rounded-2xl bg-white p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Pending Approval</p>
+          <p class="text-2xl font-bold text-amber-600 mt-1">{{ pending_count|default:0 }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center">
+          <i class="fas fa-clock text-amber-600 text-lg"></i>
+        </div>
       </div>
-
-      <div>
-        <label class="mb-1 block text-sm font-medium text-slate-700">Category</label>
-        <select name="category" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-          <option value="">All categories</option>
-          {% for value, label in expenses.model.Category.choices %}
-            <option value="{{ value }}" {% if request.GET.category == value %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
+    </div>
+    <div class="rounded-2xl bg-white p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Approved Unpaid</p>
+          <p class="text-2xl font-bold text-blue-600 mt-1">{{ approved_unpaid_count|default:0 }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
+          <i class="fas fa-check-circle text-blue-600 text-lg"></i>
+        </div>
       </div>
+    </div>
+    <div class="rounded-2xl bg-white p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Total Amount</p>
+          <p class="text-2xl font-bold text-emerald-600 mt-1">UGX {{ total_amount|default:"0"|intcomma }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+          <i class="fas fa-chart-line text-emerald-600 text-lg"></i>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      <div class="md:col-span-4 flex gap-2">
-        <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Filter</button>
-        <a href="{% url 'finance:expense_list' %}" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700">Reset</a>
+  <!-- Filter Section -->
+  <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <form method="get" class="space-y-4">
+      <div class="flex items-center gap-2 mb-3">
+        <i class="fas fa-filter text-slate-400 text-sm"></i>
+        <h3 class="text-sm font-semibold text-slate-700">Filter Expenses</h3>
+      </div>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div class="md:col-span-2">
+          <label class="mb-1.5 block text-xs font-semibold text-slate-600 uppercase tracking-wide">Search</label>
+          <div class="relative">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            <input 
+              type="text" 
+              name="q" 
+              value="{{ request.GET.q }}" 
+              placeholder="Expense number, title, vendor, payee..."
+              class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100 transition-all"
+            >
+          </div>
+        </div>
+
+        <div>
+          <label class="mb-1.5 block text-xs font-semibold text-slate-600 uppercase tracking-wide">Status</label>
+          <select 
+            name="status" 
+            class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100 transition-all bg-white"
+          >
+            <option value="">All statuses</option>
+            {% for value, label in status_choices %}
+              <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label class="mb-1.5 block text-xs font-semibold text-slate-600 uppercase tracking-wide">Category</label>
+          <select 
+            name="category" 
+            class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100 transition-all bg-white"
+          >
+            <option value="">All categories</option>
+            {% for value, label in category_choices %}
+              <option value="{{ value }}" {% if request.GET.category == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="md:col-span-4 flex gap-2">
+          <button type="submit" class="flex-1 md:flex-none rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 transition-all duration-200">
+            <i class="fas fa-search mr-2 text-xs"></i>Apply Filters
+          </button>
+          <a href="{% url 'finance:expense_list' %}" class="flex items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all duration-200">
+            <i class="fas fa-undo-alt text-xs"></i>
+            <span>Reset</span>
+          </a>
+        </div>
       </div>
     </form>
   </div>
 
+  <!-- Expenses Table -->
   <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
     <div class="overflow-x-auto">
       <table class="min-w-full text-sm">
-        <thead class="bg-slate-50 text-slate-600">
-          <tr>
-            <th class="px-4 py-3 text-left font-medium">Expense</th>
-            <th class="px-4 py-3 text-left font-medium">Category</th>
-            <th class="px-4 py-3 text-left font-medium">Payment Date</th>
-            <th class="px-4 py-3 text-left font-medium">Vendor / Payee</th>
-            <th class="px-4 py-3 text-left font-medium">Status</th>
-            <th class="px-4 py-3 text-right font-medium">Total</th>
-            <th class="px-4 py-3 text-right font-medium">Action</th>
-          </tr>
+        <thead>
+          <tr class="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Expense</th>
+            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Category</th>
+            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Date</th>
+            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Vendor / Payee</th>
+            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
+            <th class="px-4 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Amount</th>
+            <th class="px-4 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Paid</th>
+            <th class="px-4 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Action</th>
+           </>
         </thead>
         <tbody class="divide-y divide-slate-100">
           {% for expense in expenses %}
-          <tr class="hover:bg-slate-50">
-            <td class="px-4 py-3">
-              <div class="font-semibold text-slate-900">{{ expense.expense_number }}</div>
-              <div class="text-sm text-slate-700">{{ expense.title }}</div>
-            </td>
-            <td class="px-4 py-3">{{ expense.get_category_display }}</td>
-            <td class="px-4 py-3">{{ expense.payment_date }}</td>
-            <td class="px-4 py-3">
-              <div>{{ expense.vendor|default:"-" }}</div>
-              <div class="text-xs text-slate-500">{{ expense.payee|default:"-" }}</div>
-            </td>
-            <td class="px-4 py-3">
-              {% if expense.approval_status == 'paid' %}
-                <span class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">Paid</span>
-              {% elif expense.approval_status == 'approved' %}
-                <span class="inline-flex rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">Approved</span>
-              {% elif expense.approval_status == 'pending' %}
-                <span class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">Pending</span>
-              {% elif expense.approval_status == 'rejected' %}
-                <span class="inline-flex rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700">Rejected</span>
-              {% else %}
-                <span class="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-semibold text-slate-700">{{ expense.get_approval_status_display }}</span>
+          <tr class="hover:bg-slate-50/80 transition-colors duration-150 group">
+            <td class="px-4 py-3.5">
+              <div class="flex items-center gap-2">
+                <div class="h-8 w-8 rounded-lg bg-amber-50 flex items-center justify-center">
+                  <i class="fas fa-file-invoice text-amber-600 text-sm"></i>
+                </div>
+                <div>
+                  <div class="font-bold text-slate-800">{{ expense.expense_number }}</div>
+                  <div class="text-xs text-slate-500 max-w-xs truncate">{{ expense.title }}</div>
+                </div>
+              </div>
+             </>
+            <td class="px-4 py-3.5">
+              <span class="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                <i class="fas fa-tag text-[10px]"></i>
+                {{ expense.get_category_display }}
+              </span>
+             </>
+            <td class="px-4 py-3.5 text-slate-600 whitespace-nowrap">
+              <i class="fas fa-calendar-alt text-xs text-slate-400 mr-1"></i>
+              {{ expense.expense_date|date:"d M Y" }}
+             </>
+            <td class="px-4 py-3.5">
+              <div class="font-medium text-slate-800">{{ expense.vendor.name|default:expense.payee|default:"-" }}</div>
+              {% if expense.payee and expense.vendor %}
+              <div class="text-xs text-slate-400">{{ expense.payee }}</div>
               {% endif %}
-            </td>
-            <td class="px-4 py-3 text-right font-semibold">UGX {{ expense.total_amount|floatformat:0|intcomma }}</td>
-            <td class="px-4 py-3 text-right">
-              <a href="{% url 'finance:expense_detail' expense.pk %}" class="font-medium text-slate-700 hover:text-slate-900">View</a>
-            </td>
-          </tr>
+             </>
+            <td class="px-4 py-3.5">
+              {% if expense.approval_status == 'paid' %}
+                <span class="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 shadow-sm">
+                  <i class="fas fa-check-circle text-[10px]"></i>
+                  Paid
+                </span>
+              {% elif expense.approval_status == 'approved' %}
+                <span class="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 shadow-sm">
+                  <i class="fas fa-thumbs-up text-[10px]"></i>
+                  Approved
+                </span>
+              {% elif expense.approval_status == 'pending' %}
+                <span class="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 shadow-sm">
+                  <i class="fas fa-hourglass-half text-[10px]"></i>
+                  Pending
+                </span>
+              {% elif expense.approval_status == 'rejected' %}
+                <span class="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 shadow-sm">
+                  <i class="fas fa-times-circle text-[10px]"></i>
+                  Rejected
+                </span>
+              {% elif expense.approval_status == 'partial' %}
+                <span class="inline-flex items-center gap-1 rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-bold text-purple-700 shadow-sm">
+                  <i class="fas fa-chart-simple text-[10px]"></i>
+                  Partial
+                </span>
+              {% else %}
+                <span class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600 shadow-sm">
+                  <i class="fas fa-file text-[10px]"></i>
+                  {{ expense.get_approval_status_display }}
+                </span>
+              {% endif %}
+             </>
+            <td class="px-4 py-3.5 text-right font-bold text-slate-800">
+              UGX {{ expense.total_amount|floatformat:0|intcomma }}
+             </>
+            <td class="px-4 py-3.5 text-right">
+              {% if expense.paid_amount > 0 %}
+                <span class="text-emerald-600 font-semibold">UGX {{ expense.paid_amount|floatformat:0|intcomma }}</span>
+                {% if expense.balance_due > 0 %}
+                  <div class="text-xs text-rose-500">Due: UGX {{ expense.balance_due|floatformat:0|intcomma }}</div>
+                {% endif %}
+              {% else %}
+                <span class="text-slate-400">—</span>
+              {% endif %}
+             </>
+            <td class="px-4 py-3.5 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <a href="{% url 'finance:expense_detail' expense.pk %}" class="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-amber-100 hover:text-amber-700 transition-all duration-200 group-hover:shadow-sm">
+                  <i class="fas fa-eye text-xs"></i>
+                  <span>View</span>
+                </a>
+                {% if expense.approval_status == 'pending' %}
+                <button onclick="openApproveModal({{ expense.pk }}, '{{ expense.title|escapejs }}')" class="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition-all duration-200">
+                  <i class="fas fa-check text-xs"></i>
+                  <span>Approve</span>
+                </button>
+                {% endif %}
+              </div>
+             </>
+           }
+          17
           {% empty %}
           <tr>
-            <td colspan="7" class="px-4 py-10 text-center text-slate-500">No expenses found.</td>
-          </tr>
+            <td colspan="8" class="px-4 py-16 text-center">
+              <div class="flex flex-col items-center gap-3">
+                <div class="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center">
+                  <i class="fas fa-receipt text-slate-400 text-2xl"></i>
+                </div>
+                <p class="text-slate-500 font-medium">No expenses found</p>
+                <p class="text-sm text-slate-400">Try adjusting your filters or create a new expense.</p>
+                <a href="{% url 'finance:expense_create' %}" class="mt-2 inline-flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition-all">
+                  <i class="fas fa-plus-circle"></i>
+                  Create Expense
+                </a>
+              </div>
+             </>
+           }
           {% endfor %}
         </tbody>
-      </table>
+       </div>
     </div>
   </div>
 
+  <!-- Pagination -->
   {% if is_paginated %}
-  <div class="flex items-center justify-between text-sm text-slate-600">
-    <div>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</div>
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div class="text-sm text-slate-500 bg-white px-4 py-2 rounded-xl border border-slate-200 inline-flex items-center gap-2 w-fit">
+      <i class="fas fa-chart-simple text-xs text-slate-400"></i>
+      <span>Page <strong class="text-slate-700">{{ page_obj.number }}</strong> of <strong class="text-slate-700">{{ page_obj.paginator.num_pages }}</strong></span>
+    </div>
     <div class="flex gap-2">
       {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}&category={{ request.GET.category }}" class="rounded-lg border border-slate-300 px-3 py-1.5">Previous</a>
+        <a href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}&category={{ request.GET.category }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:shadow-sm transition-all duration-200">
+          <i class="fas fa-chevron-left text-xs"></i>
+          <span>Previous</span>
+        </a>
+      {% else %}
+        <button disabled class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-400 cursor-not-allowed">
+          <i class="fas fa-chevron-left text-xs"></i>
+          <span>Previous</span>
+        </button>
       {% endif %}
+      
       {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}&category={{ request.GET.category }}" class="rounded-lg border border-slate-300 px-3 py-1.5">Next</a>
+        <a href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}&category={{ request.GET.category }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:shadow-sm transition-all duration-200">
+          <span>Next</span>
+          <i class="fas fa-chevron-right text-xs"></i>
+        </a>
+      {% else %}
+        <button disabled class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-400 cursor-not-allowed">
+          <span>Next</span>
+          <i class="fas fa-chevron-right text-xs"></i>
+        </button>
       {% endif %}
     </div>
   </div>
   {% endif %}
 </div>
+
+<!-- Approve Modal -->
+<div id="approveModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden items-center justify-center">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
+    <div class="p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-slate-800">Approve Expense</h3>
+        <button onclick="closeApproveModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      <form id="approveForm" method="post" action="">
+        {% csrf_token %}
+        <p class="text-slate-600 mb-4">Are you sure you want to approve <strong id="expenseTitle"></strong>?</p>
+        <div class="flex gap-3">
+          <button type="submit" class="flex-1 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-all">
+            Yes, Approve
+          </button>
+          <button type="button" onclick="closeApproveModal()" class="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Approve modal functions
+  function openApproveModal(expenseId, expenseTitle) {
+    const modal = document.getElementById('approveModal');
+    const form = document.getElementById('approveForm');
+    const titleSpan = document.getElementById('expenseTitle');
+    
+    titleSpan.textContent = expenseTitle;
+    form.action = `/finance/expenses/${expenseId}/approve/`;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+  }
+  
+  function closeApproveModal() {
+    const modal = document.getElementById('approveModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = '';
+  }
+  
+  // Close modal on escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeApproveModal();
+    }
+  });
+  
+  // Close modal when clicking outside
+  const modal = document.getElementById('approveModal');
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeApproveModal();
+      }
+    });
+  }
+  
+  // Add hover effects to table rows
+  const tableRows = document.querySelectorAll('tbody tr');
+  tableRows.forEach(row => {
+    row.addEventListener('mouseenter', function() {
+      this.style.backgroundColor = '#f8fafc';
+    });
+    row.addEventListener('mouseleave', function() {
+      this.style.backgroundColor = '';
+    });
+  });
+</script>
 {% endblock %}

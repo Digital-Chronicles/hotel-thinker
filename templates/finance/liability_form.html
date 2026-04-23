@@ -1,0 +1,422 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Edit Liability{% else %}New Liability{% endif %} - Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="space-y-6 p-4 md:p-6 lg:p-8">
+    <!-- Header Section -->
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-md shadow-blue-200">
+                    <i class="fas fa-file-invoice text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
+                        {% if form.instance.pk %}Edit Liability{% else %}New Liability{% endif %}
+                    </h1>
+                    <p class="mt-1 text-sm text-slate-500">
+                        {% if form.instance.pk %}Update liability information and payment status{% else %}Record a new financial obligation or debt{% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        <a href="{% url 'finance:liability_list' %}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all duration-200">
+            <i class="fas fa-arrow-left text-sm"></i>
+            <span>Back to Liabilities</span>
+        </a>
+    </div>
+
+    <!-- Form Section -->
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white px-6 py-4">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-info-circle text-blue-500 text-sm"></i>
+                <h2 class="text-lg font-semibold text-slate-800">Liability Information</h2>
+            </div>
+            <p class="text-sm text-slate-500 mt-0.5">Enter the details of the financial obligation</p>
+        </div>
+        
+        <div class="p-6">
+            <form method="post" id="liabilityForm">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="mb-6 bg-rose-50 border border-rose-200 rounded-xl p-4">
+                        <div class="flex items-center gap-2 text-rose-600">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span class="font-medium">Please correct the following errors:</span>
+                        </div>
+                        <ul class="mt-2 list-disc list-inside text-sm text-rose-600">
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <!-- Liability Name -->
+                    <div class="md:col-span-2">
+                        <label for="{{ form.name.id_for_label }}" class="mb-1.5 block text-sm font-semibold text-slate-700">
+                            Liability Name <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <i class="fas fa-tag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input 
+                                type="text" 
+                                name="{{ form.name.name }}" 
+                                id="{{ form.name.id_for_label }}"
+                                value="{{ form.name.value|default:'' }}"
+                                class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all {% if form.name.errors %}border-rose-500 bg-rose-50{% endif %}"
+                                placeholder="e.g., Supplier Invoice #123, Bank Loan, Tax Payment"
+                                required
+                            >
+                        </div>
+                        {% if form.name.errors %}
+                            <p class="mt-1 text-xs text-rose-600">{{ form.name.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Liability Type & Reference -->
+                    <div>
+                        <label for="{{ form.liability_type.id_for_label }}" class="mb-1.5 block text-sm font-semibold text-slate-700">
+                            Liability Type
+                        </label>
+                        <div class="relative">
+                            <i class="fas fa-layer-group absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <select 
+                                name="{{ form.liability_type.name }}" 
+                                id="{{ form.liability_type.id_for_label }}"
+                                class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all bg-white"
+                            >
+                                {% for value, label in form.liability_type.field.choices %}
+                                    <option value="{{ value }}" {% if form.liability_type.value == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.reference.id_for_label }}" class="mb-1.5 block text-sm font-semibold text-slate-700">
+                            Reference Number
+                        </label>
+                        <div class="relative">
+                            <i class="fas fa-hashtag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input 
+                                type="text" 
+                                name="{{ form.reference.name }}" 
+                                id="{{ form.reference.id_for_label }}"
+                                value="{{ form.reference.value|default:'' }}"
+                                class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                                placeholder="Invoice #, PO #, Agreement #"
+                            >
+                        </div>
+                        <p class="mt-1 text-xs text-slate-400">External reference number for tracking</p>
+                    </div>
+                    
+                    <!-- Vendor & Amount -->
+                    <div>
+                        <label for="{{ form.vendor.id_for_label }}" class="mb-1.5 block text-sm font-semibold text-slate-700">
+                            Vendor/Supplier
+                        </label>
+                        <div class="relative">
+                            <i class="fas fa-building absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <select 
+                                name="{{ form.vendor.name }}" 
+                                id="{{ form.vendor.id_for_label }}"
+                                class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all bg-white"
+                            >
+                                <option value="">-- Select Vendor --</option>
+                                {% for vendor in form.vendor.field.queryset %}
+                                    <option value="{{ vendor.pk }}" {% if form.vendor.value|stringformat:"s" == vendor.pk|stringformat:"s" %}selected{% endif %}>
+                                        {{ vendor.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <p class="mt-1 text-xs text-slate-400">Optional: Link to a registered vendor</p>
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.original_amount.id_for_label }}" class="mb-1.5 block text-sm font-semibold text-slate-700">
+                            Original Amount <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">UGX</span>
+                            <input 
+                                type="number" 
+                                name="{{ form.original_amount.name }}" 
+                                id="{{ form.original_amount.id_for_label }}"
+                                value="{{ form.original_amount.value|default:'0' }}"
+                                step="0.01"
+                                min="0"
+                                class="w-full rounded-xl border border-slate-200 pl-12 pr-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all {% if form.original_amount.errors %}border-rose-500 bg-rose-50{% endif %}"
+                                placeholder="0.00"
+                                required
+                            >
+                        </div>
+                        {% if form.original_amount.errors %}
+                            <p class="mt-1 text-xs text-rose-600">{{ form.original_amount.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Dates -->
+                    <div>
+                        <label for="{{ form.start_date.id_for_label }}" class="mb-1.5 block text-sm font-semibold text-slate-700">
+                            Start Date
+                        </label>
+                        <div class="relative">
+                            <i class="fas fa-calendar-alt absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input 
+                                type="date" 
+                                name="{{ form.start_date.name }}" 
+                                id="{{ form.start_date.id_for_label }}"
+                                value="{{ form.start_date.value|date:'Y-m-d' }}"
+                                class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                            >
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.due_date.id_for_label }}" class="mb-1.5 block text-sm font-semibold text-slate-700">
+                            Due Date
+                        </label>
+                        <div class="relative">
+                            <i class="fas fa-calendar-check absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input 
+                                type="date" 
+                                name="{{ form.due_date.name }}" 
+                                id="{{ form.due_date.id_for_label }}"
+                                value="{{ form.due_date.value|date:'Y-m-d' }}"
+                                class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                            >
+                        </div>
+                        <p class="mt-1 text-xs text-slate-400">Date when payment is expected</p>
+                    </div>
+                    
+                    <!-- Payable Account -->
+                    <div class="md:col-span-2">
+                        <label for="{{ form.payable_account.id_for_label }}" class="mb-1.5 block text-sm font-semibold text-slate-700">
+                            Payable Account
+                        </label>
+                        <div class="relative">
+                            <i class="fas fa-book absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <select 
+                                name="{{ form.payable_account.name }}" 
+                                id="{{ form.payable_account.id_for_label }}"
+                                class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all bg-white"
+                            >
+                                <option value="">-- Select Account --</option>
+                                {% for account in form.payable_account.field.queryset %}
+                                    <option value="{{ account.pk }}" {% if form.payable_account.value|stringformat:"s" == account.pk|stringformat:"s" %}selected{% endif %}>
+                                        {{ account.account_code }} - {{ account.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <p class="mt-1 text-xs text-slate-400">General ledger account for tracking this liability</p>
+                    </div>
+                    
+                    <!-- Notes -->
+                    <div class="md:col-span-2">
+                        <label for="{{ form.notes.id_for_label }}" class="mb-1.5 block text-sm font-semibold text-slate-700">
+                            Notes
+                        </label>
+                        <div class="relative">
+                            <i class="fas fa-sticky-note absolute left-3 top-3 text-slate-400 text-sm"></i>
+                            <textarea 
+                                name="{{ form.notes.name }}" 
+                                id="{{ form.notes.id_for_label }}"
+                                rows="4"
+                                class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                                placeholder="Additional information about this liability...">{{ form.notes.value|default:'' }}</textarea>
+                        </div>
+                        <p class="mt-1 text-xs text-slate-400">Any additional details or payment terms</p>
+                    </div>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end border-t border-slate-200 pt-6">
+                    <a href="{% url 'finance:liability_list' %}" class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all duration-200">
+                        <i class="fas fa-times"></i>
+                        <span>Cancel</span>
+                    </a>
+                    <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-200 hover:shadow-lg hover:scale-105 transition-all duration-200">
+                        <i class="fas fa-save"></i>
+                        <span>{% if form.instance.pk %}Update Liability{% else %}Create Liability{% endif %}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Help Section -->
+    <div class="rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 p-6">
+        <div class="flex items-start gap-3">
+            <div class="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-lightbulb text-blue-600 text-lg"></i>
+            </div>
+            <div>
+                <h3 class="font-semibold text-slate-800 mb-1">Liability Management Tips</h3>
+                <div class="text-sm text-slate-600 space-y-1">
+                    <p><i class="fas fa-check-circle text-green-500 text-xs mr-2"></i> Liabilities represent debts or obligations owed to others.</p>
+                    <p><i class="fas fa-check-circle text-green-500 text-xs mr-2"></i> Common examples include supplier invoices, tax payables, loans, and customer deposits.</p>
+                    <p><i class="fas fa-check-circle text-green-500 text-xs mr-2"></i> Track due dates to avoid late payments and maintain good vendor relationships.</p>
+                    <p><i class="fas fa-check-circle text-green-500 text-xs mr-2"></i> Link liabilities to expenses for better financial tracking.</p>
+                    {% if form.instance.pk %}
+                    <p><i class="fas fa-info-circle text-blue-500 text-xs mr-2"></i> Settled liabilities cannot be edited. Record payments to reduce the balance.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Focus styles */
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+    }
+    
+    /* Number input spinner styling */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        opacity: 0.5;
+    }
+    
+    input[type="number"]:hover::-webkit-inner-spin-button,
+    input[type="number"]:hover::-webkit-outer-spin-button {
+        opacity: 1;
+    }
+    
+    /* Smooth transitions */
+    .transition-all {
+        transition-property: all;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 200ms;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-focus on first field
+    document.addEventListener('DOMContentLoaded', function() {
+        const firstInput = document.getElementById('{{ form.name.id_for_label }}');
+        if (firstInput && !firstInput.value) {
+            firstInput.focus();
+        }
+        
+        // Date validation
+        const startDate = document.getElementById('{{ form.start_date.id_for_label }}');
+        const dueDate = document.getElementById('{{ form.due_date.id_for_label }}');
+        
+        function validateDates() {
+            if (startDate.value && dueDate.value) {
+                if (new Date(dueDate.value) < new Date(startDate.value)) {
+                    dueDate.classList.add('border-amber-500', 'bg-amber-50');
+                    showDateWarning();
+                } else {
+                    dueDate.classList.remove('border-amber-500', 'bg-amber-50');
+                    hideDateWarning();
+                }
+            }
+        }
+        
+        function showDateWarning() {
+            let warningDiv = document.getElementById('dateWarning');
+            if (!warningDiv) {
+                warningDiv = document.createElement('div');
+                warningDiv.id = 'dateWarning';
+                warningDiv.className = 'mt-2 text-xs text-amber-600 bg-amber-50 p-2 rounded-lg';
+                dueDate.parentElement.appendChild(warningDiv);
+            }
+            warningDiv.innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i> Due date should be after the start date.';
+            warningDiv.style.display = 'block';
+        }
+        
+        function hideDateWarning() {
+            const warningDiv = document.getElementById('dateWarning');
+            if (warningDiv) {
+                warningDiv.style.display = 'none';
+            }
+        }
+        
+        if (startDate && dueDate) {
+            startDate.addEventListener('change', validateDates);
+            dueDate.addEventListener('change', validateDates);
+            validateDates();
+        }
+        
+        // Calculate and show projected balance info
+        const amountField = document.getElementById('{{ form.original_amount.id_for_label }}');
+        if (amountField && amountField.value) {
+            showAmountInfo(parseFloat(amountField.value));
+        }
+        
+        if (amountField) {
+            amountField.addEventListener('input', function() {
+                showAmountInfo(parseFloat(this.value || 0));
+            });
+        }
+        
+        function showAmountInfo(amount) {
+            let infoDiv = document.getElementById('amountInfo');
+            if (!infoDiv && amount > 0) {
+                infoDiv = document.createElement('div');
+                infoDiv.id = 'amountInfo';
+                infoDiv.className = 'mt-2 text-xs text-blue-600 bg-blue-50 p-2 rounded-lg';
+                amountField.parentElement.appendChild(infoDiv);
+            }
+            if (infoDiv && amount > 0) {
+                infoDiv.innerHTML = `<i class="fas fa-info-circle mr-1"></i> Initial balance: UGX ${amount.toFixed(2)}. Record payments to reduce this balance.`;
+                infoDiv.style.display = 'block';
+            } else if (infoDiv) {
+                infoDiv.style.display = 'none';
+            }
+        }
+    });
+    
+    // Form validation before submit
+    const form = document.getElementById('liabilityForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const liabilityName = document.getElementById('{{ form.name.id_for_label }}');
+            const amount = document.getElementById('{{ form.original_amount.id_for_label }}');
+            
+            if (liabilityName && !liabilityName.value.trim()) {
+                e.preventDefault();
+                liabilityName.classList.add('border-rose-500', 'bg-rose-50');
+                alert('Please enter the liability name.');
+                liabilityName.focus();
+                return false;
+            }
+            
+            if (amount && (!amount.value || parseFloat(amount.value) <= 0)) {
+                e.preventDefault();
+                amount.classList.add('border-rose-500', 'bg-rose-50');
+                alert('Please enter a valid amount greater than zero.');
+                amount.focus();
+                return false;
+            }
+            
+            // Show loading state
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Saving...</span>';
+            }
+        });
+    }
+    
+    // Remove error styling when user starts typing
+    document.querySelectorAll('input, select, textarea').forEach(field => {
+        field.addEventListener('input', function() {
+            this.classList.remove('border-rose-500', 'bg-rose-50');
+            this.classList.remove('border-amber-500', 'bg-amber-50');
+        });
+    });
+</script>
+{% endblock %}

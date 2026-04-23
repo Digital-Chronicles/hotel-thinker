@@ -53,36 +53,52 @@ urlpatterns = [
 
 
     # =========================
-    # Vendors
+    # Vendors (FULL CRUD)
     # =========================
     path("vendors/", views.VendorListView.as_view(), name="vendor_list"),
+    path("vendors/create/", views.VendorCreateView.as_view(), name="vendor_create"),
     path("vendors/<int:pk>/", views.VendorDetailView.as_view(), name="vendor_detail"),
+    path("vendors/<int:pk>/edit/", views.VendorUpdateView.as_view(), name="vendor_edit"),
+    path("vendors/<int:pk>/delete/", views.vendor_delete, name="vendor_delete"),
 
 
     # =========================
-    # Assets
+    # Assets (FULL CRUD)
     # =========================
     path("assets/", views.AssetListView.as_view(), name="asset_list"),
+    path("assets/create/", views.AssetCreateView.as_view(), name="asset_create"),
     path("assets/<int:pk>/", views.AssetDetailView.as_view(), name="asset_detail"),
+    path("assets/<int:pk>/edit/", views.AssetUpdateView.as_view(), name="asset_edit"),
+    path("assets/<int:pk>/delete/", views.asset_delete, name="asset_delete"),
 
 
     # =========================
-    # Liabilities
+    # Liabilities (FULL CRUD)
     # =========================
     path("liabilities/", views.LiabilityListView.as_view(), name="liability_list"),
+    path("liabilities/create/", views.LiabilityCreateView.as_view(), name="liability_create"),
     path("liabilities/<int:pk>/", views.LiabilityDetailView.as_view(), name="liability_detail"),
+    path("liabilities/<int:pk>/edit/", views.LiabilityUpdateView.as_view(), name="liability_edit"),
+    path("liabilities/<int:pk>/delete/", views.liability_delete, name="liability_delete"),
 
 
     # =========================
-    # Journals
+    # Journals (FULL CRUD + Lines)
     # =========================
     path("journals/", views.JournalListView.as_view(), name="journal_list"),
+    path("journals/create/", views.JournalEntryCreateView.as_view(), name="journal_create"),
     path("journals/<int:pk>/", views.JournalDetailView.as_view(), name="journal_detail"),
+    path("journals/<int:pk>/edit/", views.JournalEntryUpdateView.as_view(), name="journal_edit"),
+    path("journals/<int:pk>/delete/", views.journal_delete, name="journal_delete"),
     path("journals/<int:pk>/post/", views.journal_post, name="journal_post"),
+    
+    # Journal Lines (nested)
+    path("journals/<int:journal_pk>/line/add/", views.journal_line_add, name="journal_line_add"),
+    path("journal-lines/<int:line_pk>/delete/", views.journal_line_delete, name="journal_line_delete"),
 
 
     # =========================
-    # Financial Reports (NEW 🔥)
+    # Financial Reports
     # =========================
     path("reports/profit-loss/", views.ProfitLossView.as_view(), name="profit_loss"),
     path("reports/cash-flow/", views.CashFlowView.as_view(), name="cash_flow"),

@@ -1,86 +1,398 @@
 {% extends "base.html" %}
-{% block title %}Profit & Loss{% endblock %}
+{% load humanize %}
+
+{% block title %}Profit & Loss | Hotel Thinker{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto p-6">
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+<div class="max-w-full mx-auto">
+  
+  <!-- Header Section -->
+  <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-      <h1 class="text-2xl font-bold">Profit &amp; Loss</h1>
-      <p class="text-sm text-gray-600">{{ hotel.name }} | {{ start_date }} to {{ end_date }}</p>
+      <div class="flex items-center gap-2 text-sm text-slate-500 mb-1">
+        <a href="{% url 'finance:dashboard' %}" class="hover:text-indigo-600 transition-colors">
+          <i class="fas fa-chart-line mr-1"></i>Finance
+        </a>
+        <i class="fas fa-chevron-right text-xs text-slate-400"></i>
+        <span class="text-slate-600">Profit & Loss</span>
+      </div>
+      
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 flex items-center justify-center shadow-md">
+          <i class="fas fa-chart-line text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-slate-800">Profit &amp; Loss Statement</h1>
+          <p class="text-sm text-slate-500 mt-0.5">
+            {{ hotel.name }} | {{ start_date|date:"F d, Y" }} - {{ end_date|date:"F d, Y" }}
+          </p>
+        </div>
+      </div>
     </div>
-
-    <form method="get" class="flex gap-2">
-      <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" class="border rounded px-3 py-2">
-      <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" class="border rounded px-3 py-2">
-      <button class="bg-blue-600 text-white px-4 py-2 rounded">Filter</button>
-    </form>
+    
+    <div class="flex items-center gap-2">
+      <form method="get" class="flex flex-wrap gap-2">
+        <div class="relative">
+          <i class="fas fa-calendar-alt absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" 
+                 class="pl-9 pr-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300">
+        </div>
+        <div class="relative">
+          <i class="fas fa-calendar-alt absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" 
+                 class="pl-9 pr-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300">
+        </div>
+        <button type="submit" 
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white text-sm font-semibold shadow-sm transition-all">
+          <i class="fas fa-filter text-xs"></i>
+          <span>Filter</span>
+        </button>
+      </form>
+      
+      <button onclick="window.print()" 
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all">
+        <i class="fas fa-print text-xs"></i>
+        <span>Print</span>
+      </button>
+      
+      <a href="{% url 'finance:expense_list' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}"
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all">
+        <i class="fas fa-receipt text-xs"></i>
+        <span>View All Transactions</span>
+      </a>
+    </div>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-    <div class="bg-white shadow rounded p-4">
-      <p class="text-sm text-gray-500">Total Revenue</p>
-      <p class="text-2xl font-bold text-green-600">{{ total_revenue }}</p>
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
+    
+    <!-- Total Revenue Card -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-all">
+      <div class="p-5">
+        <div class="flex items-center justify-between mb-3">
+          <div class="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+            <i class="fas fa-arrow-up text-emerald-600 text-lg"></i>
+          </div>
+          <i class="fas fa-chart-line text-slate-300 text-sm"></i>
+        </div>
+        <p class="text-sm text-slate-500 mb-1">Total Revenue</p>
+        <p class="text-2xl font-bold text-emerald-600">{{ total_revenue|default:0|intcomma }}</p>
+        <p class="text-xs text-slate-400 mt-2">All income sources</p>
+      </div>
     </div>
-    <div class="bg-white shadow rounded p-4">
-      <p class="text-sm text-gray-500">Total Expenses</p>
-      <p class="text-2xl font-bold text-red-600">{{ total_expenses }}</p>
+
+    <!-- Total Expenses Card -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-all">
+      <div class="p-5">
+        <div class="flex items-center justify-between mb-3">
+          <div class="w-10 h-10 rounded-lg bg-rose-100 flex items-center justify-center">
+            <i class="fas fa-arrow-down text-rose-600 text-lg"></i>
+          </div>
+          <i class="fas fa-receipt text-slate-300 text-sm"></i>
+        </div>
+        <p class="text-sm text-slate-500 mb-1">Total Expenses</p>
+        <p class="text-2xl font-bold text-rose-600">{{ total_expenses|default:0|intcomma }}</p>
+        <p class="text-xs text-slate-400 mt-2">Operating costs</p>
+      </div>
     </div>
-    <div class="bg-white shadow rounded p-4">
-      <p class="text-sm text-gray-500">Net Profit</p>
-      <p class="text-2xl font-bold {% if net_profit >= 0 %}text-blue-600{% else %}text-red-600{% endif %}">
-        {{ net_profit }}
-      </p>
+
+    <!-- Net Profit Card -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-all">
+      <div class="p-5">
+        <div class="flex items-center justify-between mb-3">
+          <div class="w-10 h-10 rounded-lg {% if net_profit >= 0 %}bg-blue-100{% else %}bg-amber-100{% endif %} flex items-center justify-center">
+            <i class="fas {% if net_profit >= 0 %}fa-chart-line{% else %}fa-exclamation-triangle{% endif %} {% if net_profit >= 0 %}text-blue-600{% else %}text-amber-600{% endif %} text-lg"></i>
+          </div>
+          <i class="fas fa-calculator text-slate-300 text-sm"></i>
+        </div>
+        <p class="text-sm text-slate-500 mb-1">Net Profit</p>
+        <p class="text-2xl font-bold {% if net_profit >= 0 %}text-blue-600{% else %}text-amber-600{% endif %}">
+          {{ net_profit|default:0|intcomma }}
+        </p>
+        <p class="text-xs text-slate-400 mt-2">
+          {% if net_profit >= 0 %}Profit for period{% else %}Loss for period{% endif %}
+        </p>
+      </div>
     </div>
   </div>
 
+  <!-- Detailed Tables -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <div class="bg-white shadow rounded">
-      <div class="p-4 border-b">
-        <h2 class="font-semibold">Revenue</h2>
+    
+    <!-- Revenue Table -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-200">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-arrow-up text-emerald-500 text-sm"></i>
+          <h2 class="text-sm font-semibold text-slate-700 uppercase tracking-wide">Revenue Breakdown</h2>
+        </div>
+        <p class="text-xs text-slate-500 mt-1 ml-6">Detailed income by account category</p>
       </div>
-      <table class="w-full text-sm">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="p-3 text-left">Account</th>
-            <th class="p-3 text-right">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in revenue_lines %}
-          <tr class="border-t">
-            <td class="p-3">{{ item.account__name }}</td>
-            <td class="p-3 text-right">{{ item.total }}</td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="2" class="p-4 text-gray-500">No revenue found.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <i class="fas fa-tag mr-1 text-slate-400 text-xs"></i> Account
+              </th>
+              <th class="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <i class="fas fa-dollar-sign mr-1 text-slate-400 text-xs"></i> Amount
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for item in revenue_lines %}
+            <tr class="hover:bg-slate-50 transition-colors">
+              <td class="px-6 py-3 text-sm text-slate-700">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-credit-card text-slate-400 text-xs"></i>
+                  {{ item.account__name }}
+                </div>
+              </td>
+              <td class="px-6 py-3 text-right">
+                <span class="text-sm font-semibold text-emerald-600">{{ item.total|default:0|intcomma }}</span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="2" class="px-6 py-8 text-center text-sm text-slate-500">
+                <i class="fas fa-inbox text-3xl text-slate-300 mb-2 block"></i>
+                No revenue found for this period
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          {% if revenue_lines %}
+          <tfoot class="bg-slate-50 border-t border-slate-200">
+            <tr>
+              <td class="px-6 py-3 text-sm font-semibold text-slate-700">Total Revenue</td>
+              <td class="px-6 py-3 text-right text-sm font-bold text-emerald-600">{{ total_revenue|default:0|intcomma }}</td>
+            </tr>
+          </tfoot>
+          {% endif %}
+        </table>
+      </div>
     </div>
 
-    <div class="bg-white shadow rounded">
-      <div class="p-4 border-b">
-        <h2 class="font-semibold">Expenses</h2>
+    <!-- Expenses Table -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-200">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-arrow-down text-rose-500 text-sm"></i>
+          <h2 class="text-sm font-semibold text-slate-700 uppercase tracking-wide">Expense Breakdown</h2>
+        </div>
+        <p class="text-xs text-slate-500 mt-1 ml-6">Detailed costs by expense category</p>
       </div>
-      <table class="w-full text-sm">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="p-3 text-left">Account</th>
-            <th class="p-3 text-right">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in expense_lines %}
-          <tr class="border-t">
-            <td class="p-3">{{ item.account__name }}</td>
-            <td class="p-3 text-right">{{ item.total }}</td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="2" class="p-4 text-gray-500">No expenses found.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <i class="fas fa-tag mr-1 text-slate-400 text-xs"></i> Account
+              </th>
+              <th class="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <i class="fas fa-dollar-sign mr-1 text-slate-400 text-xs"></i> Amount
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for item in expense_lines %}
+            <tr class="hover:bg-slate-50 transition-colors">
+              <td class="px-6 py-3 text-sm text-slate-700">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-receipt text-slate-400 text-xs"></i>
+                  {{ item.account__name }}
+                </div>
+              </td>
+              <td class="px-6 py-3 text-right">
+                <span class="text-sm font-semibold text-rose-600">{{ item.total|default:0|intcomma }}</span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="2" class="px-6 py-8 text-center text-sm text-slate-500">
+                <i class="fas fa-inbox text-3xl text-slate-300 mb-2 block"></i>
+                No expenses found for this period
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          {% if expense_lines %}
+          <tfoot class="bg-slate-50 border-t border-slate-200">
+            <tr>
+              <td class="px-6 py-3 text-sm font-semibold text-slate-700">Total Expenses</td>
+              <td class="px-6 py-3 text-right text-sm font-bold text-rose-600">{{ total_expenses|default:0|intcomma }}</td>
+            </tr>
+          </tfoot>
+          {% endif %}
+        </table>
+      </div>
     </div>
   </div>
+
+  <!-- Profitability Summary Card -->
+  <div class="mt-6">
+    <div class="bg-gradient-to-r from-indigo-50 to-slate-50 rounded-xl border border-indigo-100 p-6">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="flex items-start gap-3">
+          <div class="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center">
+            <i class="fas fa-chart-pie text-indigo-600 text-xl"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-semibold text-indigo-900 uppercase tracking-wide">Financial Summary</h3>
+            <div class="mt-2 space-y-1">
+              <p class="text-sm text-slate-600">
+                <span class="font-medium">Profit Margin:</span> 
+                {% if total_revenue > 0 %}
+                  <span class="{% if net_profit >= 0 %}text-emerald-600{% else %}text-rose-600{% endif %} font-semibold">
+                    {% widthratio net_profit total_revenue 100 as profit_percentage %}
+                    {{ profit_percentage }}%
+                  </span>
+                {% else %}
+                  <span class="text-slate-500">N/A</span>
+                {% endif %}
+              </p>
+              <p class="text-sm text-slate-600">
+                <span class="font-medium">Expense Ratio:</span>
+                {% if total_revenue > 0 %}
+                  <span class="text-amber-600 font-semibold">
+                    {% widthratio total_expenses total_revenue 100 as expense_percentage %}
+                    {{ expense_percentage }}%
+                  </span>
+                {% else %}
+                  <span class="text-slate-500">N/A</span>
+                {% endif %}
+                of revenue
+              </p>
+              <p class="text-sm text-slate-600">
+                <span class="font-medium">Net Profit Value:</span>
+                <span class="{% if net_profit >= 0 %}text-emerald-600{% else %}text-rose-600{% endif %} font-semibold">
+                  {{ net_profit|default:0|intcomma }}
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="flex gap-2">
+          <a href="{% url 'finance:expense_list' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}&transaction_type=expense"
+             class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all">
+            <i class="fas fa-receipt text-xs"></i>
+            <span>View Expenses</span>
+          </a>
+          <a href="{% url 'finance:expense_list' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}&transaction_type=revenue"
+             class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white text-sm font-semibold shadow-sm transition-all">
+            <i class="fas fa-chart-line text-xs"></i>
+            <span>View Revenue</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help Section -->
+  <div class="mt-6 p-4 bg-gradient-to-r from-indigo-50/30 to-transparent rounded-xl border border-indigo-100">
+    <div class="flex items-start gap-3">
+      <i class="fas fa-lightbulb text-amber-500 text-lg"></i>
+      <div>
+        <p class="text-sm font-semibold text-slate-700">Understanding Your P&L Statement</p>
+        <ul class="text-xs text-slate-500 mt-1 space-y-0.5">
+          <li>• <strong>Revenue</strong> - All income from bookings, services, and other sources</li>
+          <li>• <strong>Expenses</strong> - Operating costs including payroll, utilities, supplies, and maintenance</li>
+          <li>• <strong>Net Profit</strong> - Revenue minus expenses; positive numbers indicate profitability</li>
+          <li>• <strong>Profit Margin</strong> - Percentage of revenue that becomes profit (higher is better)</li>
+          <li>• <strong>Expense Ratio</strong> - Percentage of revenue spent on expenses (lower is better)</li>
+          <li>• Data is updated in real-time as transactions are recorded</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
 </div>
+
+<!-- Print Styles -->
+<style media="print">
+  @media print {
+    body {
+      background: white;
+      padding: 0;
+      margin: 0;
+    }
+    .no-print, 
+    button, 
+    .btn, 
+    form,
+    .print-hide {
+      display: none !important;
+    }
+    .bg-white, 
+    .rounded-xl, 
+    .border {
+      border: 1px solid #ddd !important;
+      box-shadow: none !important;
+    }
+    .text-emerald-600, .text-rose-600, .text-blue-600, .text-amber-600 {
+      color: black !important;
+    }
+    .bg-gradient-to-r {
+      background: white !important;
+    }
+    a {
+      text-decoration: none;
+      color: black;
+    }
+  }
+</style>
+
+<script>
+  // Add animation to cards on load
+  document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.grid > div');
+    cards.forEach((card, index) => {
+      if (card.classList.contains('bg-white')) {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+          card.style.transition = 'all 0.5s ease';
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, index * 100);
+      }
+    });
+  });
+
+  // Style the date inputs
+  const dateInputs = document.querySelectorAll('input[type="date"]');
+  dateInputs.forEach(input => {
+    input.classList.add('pl-9', 'pr-3', 'py-2', 'rounded-lg', 'border-slate-200', 'text-sm', 'focus:ring-2', 'focus:ring-indigo-300', 'focus:border-indigo-300');
+  });
+
+  // Add hover effects to table rows for better UX
+  const tableRows = document.querySelectorAll('tbody tr');
+  tableRows.forEach(row => {
+    if (!row.querySelector('td[colspan]')) {
+      row.classList.add('cursor-pointer');
+      row.addEventListener('click', function() {
+        const accountName = this.querySelector('td:first-child')?.innerText.trim();
+        if (accountName) {
+          // Optional: Redirect to filtered transaction list
+          console.log('View details for:', accountName);
+          // window.location.href = `/finance/transactions/?account=${encodeURIComponent(accountName)}&start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}`;
+        }
+      });
+    }
+  });
+
+  // Add keyboard shortcuts
+  document.addEventListener('keydown', function(e) {
+    // Ctrl+P for print
+    if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+      e.preventDefault();
+      window.print();
+    }
+  });
+</script>
+
 {% endblock %}

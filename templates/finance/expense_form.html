@@ -1,46 +1,645 @@
 {% extends "base.html" %}
+{% load humanize %}
 
-{% block title %}{% if expense %}Edit Expense{% else %}New Expense{% endif %} • Hotel Thinker{% endblock %}
+{% block title %}{% if expense %}Edit Expense{% else %}New Expense{% endif %} | Hotel Thinker{% endblock %}
 
 {% block content %}
-<div class="mx-auto max-w-4xl space-y-6 p-6">
-  <div>
-    <h1 class="text-2xl font-bold text-slate-900">
-      {% if expense %}Edit Expense{% else %}New Expense{% endif %}
-    </h1>
-    <p class="mt-1 text-sm text-slate-500">Capture expense details for approval and finance reporting.</p>
+<div class="max-w-full mx-auto">
+  
+  <!-- Header Section -->
+  <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2 text-sm text-slate-500 mb-1">
+        <a href="{% url 'finance:expense_list' %}" class="hover:text-amber-600 transition-colors">
+          <i class="fas fa-money-bill-wave mr-1"></i>Expenses
+        </a>
+        <i class="fas fa-chevron-right text-xs text-slate-400"></i>
+        <span class="text-slate-600">{% if expense %}Edit Expense{% else %}Create Expense{% endif %}</span>
+      </div>
+      
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-600 to-amber-700 flex items-center justify-center shadow-md">
+          <i class="fas {% if expense %}fa-edit{% else %}fa-plus-circle{% endif %} text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-slate-800">
+            {% if expense %}Edit Expense {{ expense.expense_number }}{% else %}Create New Expense{% endif %}
+          </h1>
+          <p class="text-sm text-slate-500 mt-0.5">
+            {% if expense %}
+              Update expense details for approval and finance reporting
+            {% else %}
+              Capture expense details for approval and finance reporting
+            {% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-2">
+      {% if expense %}
+        <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium
+          {% if expense.approval_status == 'paid' %}bg-emerald-100 text-emerald-700
+          {% elif expense.approval_status == 'approved' %}bg-blue-100 text-blue-700
+          {% elif expense.approval_status == 'pending' %}bg-amber-100 text-amber-700
+          {% elif expense.approval_status == 'rejected' %}bg-rose-100 text-rose-700
+          {% else %}bg-slate-100 text-slate-700{% endif %}">
+          <i class="fas 
+            {% if expense.approval_status == 'paid' %}fa-check-circle
+            {% elif expense.approval_status == 'approved' %}fa-thumbs-up
+            {% elif expense.approval_status == 'pending' %}fa-hourglass-half
+            {% elif expense.approval_status == 'rejected' %}fa-times-circle
+            {% else %}fa-circle{% endif %} text-xs"></i>
+          <span>{{ expense.get_approval_status_display }}</span>
+        </span>
+      {% endif %}
+      
+      <a href="{% url 'finance:expense_list' %}"
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all">
+        <i class="fas fa-arrow-left text-xs"></i>
+        <span>Back to Expenses</span>
+      </a>
+    </div>
   </div>
 
-  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-    <form method="post" enctype="multipart/form-data" class="grid grid-cols-1 gap-5 md:grid-cols-2">
-      {% csrf_token %}
+  <!-- Info Box for Approved/Paid Expenses -->
+  {% if expense and expense.approval_status in 'approved,paid' %}
+  <div class="mb-6 rounded-xl bg-blue-50 border border-blue-200 p-4">
+    <div class="flex items-start gap-3">
+      <i class="fas fa-info-circle text-blue-600 text-sm mt-0.5"></i>
+      <div>
+        <p class="text-sm font-semibold text-blue-800">Information</p>
+        <p class="text-xs text-blue-700">
+          {% if expense.approval_status == 'paid' %}
+            This expense has been marked as paid. Some fields may be locked for editing.
+          {% else %}
+            This expense has been approved. Changes may require re-approval.
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
+  <!-- Form Card -->
+  <form method="post" enctype="multipart/form-data" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    {% csrf_token %}
+
+    <!-- Form Header -->
+    <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-200">
+      <div class="flex items-center gap-2">
+        <i class="fas fa-file-invoice text-amber-500 text-sm"></i>
+        <span class="text-sm font-semibold text-slate-700">Expense Information</span>
+      </div>
+      <p class="text-xs text-slate-500 mt-1 ml-6">Enter the expense details below. Fields marked with * are required.</p>
+    </div>
+
+    <!-- Form Body -->
+    <div class="p-6 space-y-6">
+
+      <!-- Non-field errors -->
       {% if form.non_field_errors %}
-      <div class="md:col-span-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
-        {{ form.non_field_errors }}
+        <div class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3">
+          <div class="flex items-start gap-2">
+            <i class="fas fa-exclamation-triangle text-rose-500 text-sm mt-0.5"></i>
+            <div class="text-sm text-rose-700">
+              {{ form.non_field_errors }}
+            </div>
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Main Fields Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        
+        <!-- Category -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+            Category <span class="text-rose-500">*</span>
+          </label>
+          <div class="relative">
+            <i class="fas fa-tag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            {{ form.category }}
+          </div>
+          {% if form.category.errors %}
+            <p class="text-xs text-rose-600 mt-1 flex items-center gap-1">
+              <i class="fas fa-exclamation-circle text-[10px]"></i>
+              {{ form.category.errors|striptags }}
+            </p>
+          {% else %}
+            <p class="text-xs text-slate-400 mt-1 ml-1">{{ form.category.help_text|default:"Select expense category" }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Title -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+            Title <span class="text-rose-500">*</span>
+          </label>
+          <div class="relative">
+            <i class="fas fa-heading absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            {{ form.title }}
+          </div>
+          {% if form.title.errors %}
+            <p class="text-xs text-rose-600 mt-1 flex items-center gap-1">
+              <i class="fas fa-exclamation-circle text-[10px]"></i>
+              {{ form.title.errors|striptags }}
+            </p>
+          {% else %}
+            <p class="text-xs text-slate-400 mt-1 ml-1">{{ form.title.help_text|default:"Brief description of the expense" }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Amount -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+            Amount <span class="text-rose-500">*</span>
+          </label>
+          <div class="relative">
+            <i class="fas fa-dollar-sign absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            {{ form.amount }}
+          </div>
+          <div class="mt-1 flex justify-between text-xs">
+            <span class="text-slate-400">{{ form.amount.help_text|default:"Enter the expense amount" }}</span>
+            <span class="text-slate-500 font-mono" id="amount-preview">0.00</span>
+          </div>
+          {% if form.amount.errors %}
+            <p class="text-xs text-rose-600 mt-1 flex items-center gap-1">
+              <i class="fas fa-exclamation-circle text-[10px]"></i>
+              {{ form.amount.errors|striptags }}
+            </p>
+          {% endif %}
+        </div>
+
+        <!-- Tax Amount -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+            Tax Amount <span class="text-slate-400 text-xs font-normal">(Optional)</span>
+          </label>
+          <div class="relative">
+            <i class="fas fa-percent absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            {{ form.tax_amount }}
+          </div>
+          <div class="mt-1 flex justify-between text-xs">
+            <span class="text-slate-400">{{ form.tax_amount.help_text|default:"Tax amount if applicable" }}</span>
+            <span class="text-slate-500 font-mono" id="total-preview">Total: 0.00</span>
+          </div>
+          {% if form.tax_amount.errors %}
+            <p class="text-xs text-rose-600 mt-1">{{ form.tax_amount.errors|striptags }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Currency -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+            Currency
+          </label>
+          <div class="relative">
+            <i class="fas fa-globe absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            {{ form.currency }}
+          </div>
+          {% if form.currency.errors %}
+            <p class="text-xs text-rose-600 mt-1">{{ form.currency.errors|striptags }}</p>
+          {% else %}
+            <p class="text-xs text-slate-400 mt-1 ml-1">{{ form.currency.help_text|default:"Select currency (default: UGX)" }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Payment Method -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+            Payment Method
+          </label>
+          <div class="relative">
+            <i class="fas fa-credit-card absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            {{ form.payment_method }}
+          </div>
+          <div class="mt-1 flex gap-2">
+            <i class="fab fa-cc-visa text-slate-300 text-sm"></i>
+            <i class="fab fa-cc-mastercard text-slate-300 text-sm"></i>
+            <i class="fab fa-cc-paypal text-slate-300 text-sm"></i>
+            <i class="fas fa-university text-slate-300 text-sm"></i>
+          </div>
+          {% if form.payment_method.errors %}
+            <p class="text-xs text-rose-600 mt-1">{{ form.payment_method.errors|striptags }}</p>
+          {% else %}
+            <p class="text-xs text-slate-400 mt-1 ml-1">{{ form.payment_method.help_text|default:"Select payment method" }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Payment Date -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+            Payment Date
+          </label>
+          <div class="relative">
+            <i class="fas fa-calendar-alt absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            {{ form.payment_date }}
+          </div>
+          {% if form.payment_date.errors %}
+            <p class="text-xs text-rose-600 mt-1">{{ form.payment_date.errors|striptags }}</p>
+          {% else %}
+            <p class="text-xs text-slate-400 mt-1 ml-1">{{ form.payment_date.help_text|default:"When was the payment made?" }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Payee -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+            Payee
+          </label>
+          <div class="relative">
+            <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            {{ form.payee }}
+          </div>
+          {% if form.payee.errors %}
+            <p class="text-xs text-rose-600 mt-1">{{ form.payee.errors|striptags }}</p>
+          {% else %}
+            <p class="text-xs text-slate-400 mt-1 ml-1">{{ form.payee.help_text|default:"Person or entity receiving payment" }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Vendor -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+            Vendor
+          </label>
+          <div class="relative">
+            <i class="fas fa-building absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            {{ form.vendor }}
+          </div>
+          {% if form.vendor.errors %}
+            <p class="text-xs text-rose-600 mt-1">{{ form.vendor.errors|striptags }}</p>
+          {% else %}
+            <p class="text-xs text-slate-400 mt-1 ml-1">{{ form.vendor.help_text|default:"Company or supplier name" }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Invoice Reference -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+            Invoice Reference <span class="text-slate-400 text-xs font-normal">(Optional)</span>
+          </label>
+          <div class="relative">
+            <i class="fas fa-file-invoice absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            {{ form.invoice_reference }}
+          </div>
+          {% if form.invoice_reference.errors %}
+            <p class="text-xs text-rose-600 mt-1">{{ form.invoice_reference.errors|striptags }}</p>
+          {% else %}
+            <p class="text-xs text-slate-400 mt-1 ml-1">{{ form.invoice_reference.help_text|default:"Invoice number from vendor" }}</p>
+          {% endif %}
+        </div>
+
+      </div>
+
+      <!-- Full-width Description Field -->
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+          Description
+        </label>
+        <div class="relative">
+          <i class="fas fa-align-left absolute left-3 top-3 text-slate-400 text-sm"></i>
+          {{ form.description }}
+        </div>
+        <div class="mt-1 flex justify-between text-xs">
+          <span class="text-slate-400">{{ form.description.help_text|default:"Detailed description of the expense" }}</span>
+          <span class="text-slate-500">
+            <span id="description-counter">0</span> / 500 characters
+          </span>
+        </div>
+        {% if form.description.errors %}
+          <p class="text-xs text-rose-600 mt-1">{{ form.description.errors|striptags }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Receipt Upload Card -->
+      <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition-all hover:border-amber-200">
+        <label class="block text-sm font-semibold text-slate-700 mb-3">
+          <i class="fas fa-receipt text-amber-500 mr-2"></i>
+          Receipt <span class="text-slate-400 text-xs font-normal">(Optional)</span>
+        </label>
+        
+        <div class="rounded-lg border-2 border-dashed border-slate-200 bg-white p-6 transition-all hover:border-amber-300 hover:bg-amber-50/30 cursor-pointer" id="drop-zone">
+          <div class="flex flex-col items-center gap-2">
+            <i class="fas fa-cloud-upload-alt text-3xl text-slate-400"></i>
+            <div class="text-sm text-slate-600">
+              {{ form.receipt }}
+            </div>
+            <p class="text-xs text-slate-500">Drag & drop or click to upload</p>
+            <p class="text-xs text-slate-400">Supported formats: PDF, JPG, PNG (Max 5MB)</p>
+          </div>
+        </div>
+        
+        {% if form.receipt.errors %}
+          <p class="text-xs text-rose-600 mt-2">{{ form.receipt.errors|striptags }}</p>
+        {% endif %}
+        
+        {% if expense and expense.receipt %}
+        <div class="mt-3 flex items-center justify-between rounded-lg bg-slate-100 p-3">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-paperclip text-slate-500 text-sm"></i>
+            <span class="text-xs text-slate-600">Current file:</span>
+            <a href="{{ expense.receipt.url }}" target="_blank" class="text-xs text-amber-600 hover:underline font-medium">
+              {{ expense.receipt.name|slice:"20:" }}
+            </a>
+          </div>
+          <button type="button" class="text-xs text-rose-500 hover:text-rose-700 transition-colors" id="remove-file">
+            <i class="fas fa-trash-alt mr-1"></i>Remove
+          </button>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Notes Field (Internal Use) -->
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+          <i class="fas fa-sticky-note text-slate-400 mr-2"></i>
+          Notes <span class="text-slate-400 text-xs font-normal">(Internal Use Only)</span>
+        </label>
+        {{ form.notes }}
+        {% if form.notes.help_text %}
+          <p class="text-xs text-slate-400 mt-1">{{ form.notes.help_text }}</p>
+        {% endif %}
+        {% if form.notes.errors %}
+          <p class="text-xs text-rose-600 mt-1">{{ form.notes.errors|striptags }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Preview Section (for existing expenses) -->
+      {% if expense %}
+      <div class="rounded-xl bg-amber-50/30 border border-amber-100 p-4">
+        <div class="flex items-start gap-3">
+          <i class="fas fa-info-circle text-amber-500 text-sm mt-0.5"></i>
+          <div>
+            <p class="text-sm font-semibold text-amber-800">Expense Summary</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 mt-2 text-sm">
+              <div class="flex items-center gap-2">
+                <span class="text-slate-500 text-xs">Expense Number:</span>
+                <span class="font-mono text-xs font-medium text-slate-700">{{ expense.expense_number }}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-slate-500 text-xs">Created:</span>
+                <span class="text-xs text-slate-700">{{ expense.created_at|date:"M d, Y" }}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-slate-500 text-xs">Category:</span>
+                <span class="text-xs font-medium text-slate-700">{{ expense.category.name|default:"N/A" }}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-slate-500 text-xs">Total Amount:</span>
+                <span class="text-xs font-semibold text-emerald-600">{{ expense.currency }} {{ expense.total_amount|intcomma }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       {% endif %}
 
-      {% for field in form %}
-      <div class="{% if field.name == 'description' or field.name == 'notes' %}md:col-span-2{% endif %}">
-        <label class="mb-1 block text-sm font-medium text-slate-700">{{ field.label }}</label>
-        {{ field }}
-        {% if field.help_text %}
-          <p class="mt-1 text-xs text-slate-500">{{ field.help_text }}</p>
-        {% endif %}
-        {% for error in field.errors %}
-          <p class="mt-1 text-sm text-rose-600">{{ error }}</p>
-        {% endfor %}
-      </div>
-      {% endfor %}
+    </div>
 
-      <div class="md:col-span-2 flex justify-end gap-3">
-        <a href="{% url 'finance:expense_list' %}" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700">Cancel</a>
-        <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">
-          {% if expense %}Update Expense{% else %}Save Expense{% endif %}
+    <!-- Form Actions -->
+    <div class="px-6 py-4 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div class="text-xs text-slate-400">
+        <i class="fas fa-lock mr-1"></i> All changes are logged for audit purposes
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="{% url 'finance:expense_list' %}"
+           class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-600 transition-all">
+          <i class="fas fa-times text-xs"></i>
+          <span>Cancel</span>
+        </a>
+        <button type="submit"
+                class="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white text-sm font-semibold shadow-sm transition-all">
+          <i class="fas fa-save text-xs"></i>
+          <span>{% if expense %}Update Expense{% else %}Create Expense{% endif %}</span>
         </button>
       </div>
-    </form>
+    </div>
+  </form>
+
+  <!-- Help Section -->
+  <div class="mt-6 p-4 bg-gradient-to-r from-amber-50/30 to-transparent rounded-xl border border-amber-100">
+    <div class="flex items-start gap-3">
+      <i class="fas fa-lightbulb text-amber-500 text-lg"></i>
+      <div>
+        <p class="text-sm font-semibold text-slate-700">Quick Tips</p>
+        <ul class="text-xs text-slate-500 mt-1 space-y-0.5">
+          <li>• All expenses require approval before payment processing</li>
+          <li>• Attach receipts for expenses above UGX 100,000</li>
+          <li>• Tax amounts will be automatically calculated if configured</li>
+          <li>• Use notes for internal comments not visible in reports</li>
+          <li>• Approved expenses cannot be deleted, only adjusted</li>
+        </ul>
+      </div>
+    </div>
   </div>
+
 </div>
+
+<!-- Custom CSS for form styling -->
+<style>
+  /* Style form inputs */
+  input, select, textarea {
+    transition: all 0.2s ease;
+  }
+  
+  input:focus, select:focus, textarea:focus {
+    border-color: #f59e0b;
+    ring-color: #f59e0b;
+  }
+  
+  /* Custom checkbox styling */
+  input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 0.375rem;
+    border: 2px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  input[type="checkbox"]:checked {
+    background-color: #f59e0b;
+    border-color: #f59e0b;
+  }
+  
+  input[type="checkbox"]:focus {
+    ring-color: #f59e0b;
+  }
+  
+  /* Textarea styling */
+  textarea {
+    width: 100%;
+    border-radius: 0.5rem;
+    border-color: #e2e8f0;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  textarea:focus {
+    border-color: #f59e0b;
+    outline: none;
+    ring: 2px solid #f59e0b;
+  }
+</style>
+
+<script>
+  // Live amount preview
+  const amountInput = document.querySelector('input[name="amount"]');
+  const taxInput = document.querySelector('input[name="tax_amount"]');
+  const amountPreview = document.getElementById('amount-preview');
+  const totalPreview = document.getElementById('total-preview');
+
+  function updatePreviews() {
+    const amount = parseFloat(amountInput?.value) || 0;
+    const tax = parseFloat(taxInput?.value) || 0;
+    if (amountPreview) amountPreview.textContent = amount.toFixed(2);
+    if (totalPreview) totalPreview.textContent = `Total: ${(amount + tax).toFixed(2)}`;
+  }
+
+  if (amountInput) {
+    amountInput.addEventListener('input', updatePreviews);
+    updatePreviews();
+  }
+  if (taxInput) {
+    taxInput.addEventListener('input', updatePreviews);
+  }
+
+  // Description character counter
+  const descriptionField = document.querySelector('textarea[name="description"]');
+  const counterSpan = document.getElementById('description-counter');
+  
+  if (descriptionField && counterSpan) {
+    function updateCounter() {
+      const length = descriptionField.value.length;
+      counterSpan.textContent = length;
+      if (length > 500) {
+        counterSpan.classList.add('text-rose-500');
+        counterSpan.classList.remove('text-slate-500');
+      } else {
+        counterSpan.classList.remove('text-rose-500');
+        counterSpan.classList.add('text-slate-500');
+      }
+    }
+    descriptionField.addEventListener('input', updateCounter);
+    updateCounter();
+  }
+
+  // Style select elements
+  const selects = document.querySelectorAll('select');
+  selects.forEach(select => {
+    select.classList.add('w-full', 'rounded-lg', 'border-slate-200', 'pl-9', 'pr-3', 'py-2', 'text-sm', 'focus:ring-2', 'focus:ring-amber-300', 'focus:border-amber-300', 'bg-white', 'appearance-none');
+    
+    // Add custom dropdown arrow if not already present
+    const wrapper = select.parentElement;
+    if (wrapper && !wrapper.querySelector('.custom-arrow')) {
+      const arrow = document.createElement('i');
+      arrow.className = 'fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none custom-arrow';
+      wrapper.style.position = 'relative';
+      wrapper.appendChild(arrow);
+    }
+  });
+  
+  // Style input fields
+  const inputs = document.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]');
+  inputs.forEach(input => {
+    input.classList.add('w-full', 'rounded-lg', 'border-slate-200', 'pl-9', 'pr-3', 'py-2', 'text-sm', 'focus:ring-2', 'focus:ring-amber-300', 'focus:border-amber-300');
+  });
+
+  // Style textarea
+  const textareas = document.querySelectorAll('textarea');
+  textareas.forEach(textarea => {
+    if (!textarea.classList.contains('notes-field')) {
+      textarea.classList.add('w-full', 'rounded-lg', 'border-slate-200', 'px-3', 'py-2', 'text-sm', 'focus:ring-2', 'focus:ring-amber-300', 'focus:border-amber-300');
+    }
+  });
+
+  // Drag & drop styling for file upload
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.querySelector('input[type="file"]');
+
+  if (dropZone && fileInput) {
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight() {
+      dropZone.classList.add('border-amber-400', 'bg-amber-100');
+    }
+
+    function unhighlight() {
+      dropZone.classList.remove('border-amber-400', 'bg-amber-100');
+    }
+
+    dropZone.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      fileInput.files = files;
+    }
+
+    dropZone.addEventListener('click', () => {
+      fileInput.click();
+    });
+  }
+
+  // Remove file button
+  const removeBtn = document.getElementById('remove-file');
+  if (removeBtn) {
+    removeBtn.addEventListener('click', () => {
+      const fileInput = document.querySelector('input[type="file"]');
+      if (fileInput) {
+        fileInput.value = '';
+      }
+      removeBtn.closest('.mt-3').remove();
+    });
+  }
+
+  // Add focus styles to all form inputs
+  document.querySelectorAll('input, select, textarea').forEach(input => {
+    input.addEventListener('focus', function() {
+      this.parentElement?.classList.add('ring-2', 'ring-amber-200');
+    });
+    input.addEventListener('blur', function() {
+      this.parentElement?.classList.remove('ring-2', 'ring-amber-200');
+    });
+  });
+
+  // Unsaved changes warning
+  let formChanged = false;
+  const form = document.querySelector('form');
+  const formInputs = form.querySelectorAll('input, select, textarea');
+  
+  formInputs.forEach(input => {
+    input.addEventListener('change', () => formChanged = true);
+    if (input.type === 'text' || input.type === 'textarea') {
+      input.addEventListener('input', () => formChanged = true);
+    }
+  });
+  
+  window.addEventListener('beforeunload', (e) => {
+    if (formChanged) {
+      e.preventDefault();
+      e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+    }
+  });
+  
+  form.addEventListener('submit', () => formChanged = false);
+</script>
+
 {% endblock %}

@@ -1,36 +1,598 @@
 {% extends "base.html" %}
-{% block title %}Journals{% endblock %}
+{% load humanize %}
+
+{% block title %}Journal Entries • Hotel Thinker{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto p-6">
+<div class="space-y-6 p-4 md:p-6 lg:p-8">
+  <!-- Header Section -->
+  <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div>
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md shadow-purple-200">
+          <i class="fas fa-book text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Journal Entries</h1>
+          <p class="mt-1 text-sm text-slate-500">Record and manage accounting journal entries, debits, and credits.</p>
+        </div>
+      </div>
+    </div>
+    <a href="{% url 'finance:journal_create' %}" class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-purple-200 hover:shadow-lg hover:scale-105 transition-all duration-200">
+      <i class="fas fa-plus-circle text-sm"></i>
+      <span>New Journal Entry</span>
+    </a>
+  </div>
 
-<h1 class="text-2xl font-bold mb-4">Journal Entries</h1>
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-2 gap-4 md:grid-cols-5">
+    <div class="rounded-2xl bg-white p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Total Entries</p>
+          <p class="text-2xl font-bold text-slate-800 mt-1">{{ total_entries|default:0 }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center">
+          <i class="fas fa-book-open text-purple-600 text-lg"></i>
+        </div>
+      </div>
+    </div>
+    <div class="rounded-2xl bg-white p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Posted</p>
+          <p class="text-2xl font-bold text-emerald-600 mt-1">{{ posted_count|default:0 }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+          <i class="fas fa-check-circle text-emerald-600 text-lg"></i>
+        </div>
+      </div>
+    </div>
+    <div class="rounded-2xl bg-white p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Draft</p>
+          <p class="text-2xl font-bold text-amber-600 mt-1">{{ draft_count|default:0 }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center">
+          <i class="fas fa-pencil-alt text-amber-600 text-lg"></i>
+        </div>
+      </div>
+    </div>
+    <div class="rounded-2xl bg-white p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Total Debits</p>
+          <p class="text-2xl font-bold text-blue-600 mt-1">{{ total_debits|default:0|intcomma }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
+          <i class="fas fa-arrow-right-to-bracket text-blue-600 text-lg"></i>
+        </div>
+      </div>
+    </div>
+    <div class="rounded-2xl bg-white p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Total Credits</p>
+          <p class="text-2xl font-bold text-rose-600 mt-1">{{ total_credits|default:0|intcomma }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-rose-50 flex items-center justify-center">
+          <i class="fas fa-arrow-left-from-bracket text-rose-600 text-lg"></i>
+        </div>
+      </div>
+    </div>
+  </div>
 
-<table class="w-full bg-white shadow rounded">
-<thead class="bg-gray-100">
-<tr>
-<th>Entry #</th>
-<th>Date</th>
-<th>Status</th>
-<th>Amount</th>
-</tr>
-</thead>
+  <!-- Filter Section -->
+  <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <form method="get" class="space-y-4">
+      <div class="flex items-center gap-2 mb-3">
+        <i class="fas fa-filter text-slate-400 text-sm"></i>
+        <h3 class="text-sm font-semibold text-slate-700">Filter Journal Entries</h3>
+      </div>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div class="md:col-span-2">
+          <label class="mb-1.5 block text-xs font-semibold text-slate-600 uppercase tracking-wide">Search</label>
+          <div class="relative">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            <input 
+              type="text" 
+              name="q" 
+              value="{{ request.GET.q }}" 
+              placeholder="Entry number, description, reference..."
+              class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all"
+            >
+          </div>
+        </div>
 
-<tbody>
-{% for j in journals %}
-<tr class="border-t">
-<td class="p-3">
-<a href="{% url 'finance:journal_detail' j.pk %}" class="text-blue-600">
-{{ j.entry_number }}
-</a>
-</td>
-<td>{{ j.entry_date }}</td>
-<td>{{ j.status }}</td>
-<td>{{ j.total_debits }}</td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
+        <div>
+          <label class="mb-1.5 block text-xs font-semibold text-slate-600 uppercase tracking-wide">Status</label>
+          <select 
+            name="status" 
+            class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all bg-white"
+          >
+            <option value="">All statuses</option>
+            <option value="draft" {% if request.GET.status == 'draft' %}selected{% endif %}>Draft</option>
+            <option value="posted" {% if request.GET.status == 'posted' %}selected{% endif %}>Posted</option>
+            <option value="reversed" {% if request.GET.status == 'reversed' %}selected{% endif %}>Reversed</option>
+          </select>
+        </div>
 
+        <div>
+          <label class="mb-1.5 block text-xs font-semibold text-slate-600 uppercase tracking-wide">Reference Type</label>
+          <select 
+            name="reference_type" 
+            class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all bg-white"
+          >
+            <option value="">All types</option>
+            <option value="invoice" {% if request.GET.reference_type == 'invoice' %}selected{% endif %}>Invoice</option>
+            <option value="payment" {% if request.GET.reference_type == 'payment' %}selected{% endif %}>Payment</option>
+            <option value="expense" {% if request.GET.reference_type == 'expense' %}selected{% endif %}>Expense</option>
+            <option value="adjustment" {% if request.GET.reference_type == 'adjustment' %}selected{% endif %}>Adjustment</option>
+          </select>
+        </div>
+
+        <div class="md:col-span-4 flex gap-2">
+          <button type="submit" class="flex-1 md:flex-none rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 transition-all duration-200">
+            <i class="fas fa-search mr-2 text-xs"></i>Apply Filters
+          </button>
+          <a href="{% url 'finance:journal_list' %}" class="flex items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all duration-200">
+            <i class="fas fa-undo-alt text-xs"></i>
+            <span>Reset</span>
+          </a>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Journals Table -->
+  <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead>
+          <tr class="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Entry #</th>
+            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Date</th>
+            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Description</th>
+            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Reference</th>
+            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
+            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Created By</th>
+            <th class="px-4 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Total Debits</th>
+            <th class="px-4 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Total Credits</th>
+            <th class="px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">Actions</th>
+           </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for journal in journals %}
+          <tr class="hover:bg-slate-50/80 transition-colors duration-150 group">
+            <td class="px-4 py-3.5">
+              <div class="flex items-center gap-2">
+                <div class="h-8 w-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                  <i class="fas fa-hashtag text-purple-600 text-sm"></i>
+                </div>
+                <div>
+                  <a href="{% url 'finance:journal_detail' journal.pk %}" class="font-mono font-bold text-slate-800 hover:text-purple-600 transition-colors inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                    {{ journal.entry_number }}
+                    <i class="fas fa-arrow-right text-xs opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                  </a>
+                </div>
+              </div>
+             </td>
+            <td class="px-4 py-3.5 text-slate-600 whitespace-nowrap">
+              <i class="fas fa-calendar-alt text-xs text-slate-400 mr-1"></i>
+              {{ journal.entry_date|date:"d M Y" }}
+             </td>
+            <td class="px-4 py-3.5">
+              <div class="max-w-xs">
+                <p class="text-slate-700 line-clamp-2">{{ journal.description|truncatechars:80 }}</p>
+              </div>
+             </td>
+            <td class="px-4 py-3.5">
+              {% if journal.reference_type %}
+                <div class="space-y-0.5">
+                  <span class="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                    <i class="fas fa-tag text-[10px]"></i>
+                    {{ journal.reference_type|title }}
+                  </span>
+                  {% if journal.reference_id %}
+                  <div class="text-xs text-slate-400">ID: {{ journal.reference_id }}</div>
+                  {% endif %}
+                </div>
+              {% else %}
+                <span class="text-slate-400 text-xs">—</span>
+              {% endif %}
+             </td>
+            <td class="px-4 py-3.5">
+              {% if journal.status == 'posted' %}
+                <span class="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                  <i class="fas fa-check-circle text-[10px]"></i>
+                  Posted
+                </span>
+              {% elif journal.status == 'draft' %}
+                <span class="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                  <i class="fas fa-pencil-alt text-[10px]"></i>
+                  Draft
+                </span>
+              {% elif journal.status == 'reversed' %}
+                <span class="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700">
+                  <i class="fas fa-undo-alt text-[10px]"></i>
+                  Reversed
+                </span>
+              {% else %}
+                <span class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
+                  {{ journal.get_status_display }}
+                </span>
+              {% endif %}
+             </td>
+            <td class="px-4 py-3.5">
+              {% if journal.created_by %}
+                <div class="flex items-center gap-1.5">
+                  <div class="h-6 w-6 rounded-full bg-purple-100 flex items-center justify-center">
+                    <span class="text-xs font-bold text-purple-600">{{ journal.created_by.get_full_name|default:journal.created_by.username|first|upper }}</span>
+                  </div>
+                  <span class="text-xs text-slate-600">{{ journal.created_by.get_full_name|default:journal.created_by.username|truncatechars:15 }}</span>
+                </div>
+              {% else %}
+                <span class="text-slate-400 text-xs">—</span>
+              {% endif %}
+             </td>
+            <td class="px-4 py-3.5 text-right font-semibold text-blue-600 whitespace-nowrap">
+              {{ journal.total_debits|floatformat:2|intcomma }}
+             </td>
+            <td class="px-4 py-3.5 text-right font-semibold text-rose-600 whitespace-nowrap">
+              {{ journal.total_credits|floatformat:2|intcomma }}
+             </td>
+            <td class="px-4 py-3.5 text-center">
+              <div class="flex items-center justify-center gap-2">
+                <a href="{% url 'finance:journal_detail' journal.pk %}" class="inline-flex items-center justify-center gap-1 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-purple-100 hover:text-purple-700 transition-all duration-200" title="View Details">
+                  <i class="fas fa-eye text-xs"></i>
+                  <span class="hidden sm:inline">View</span>
+                </a>
+                
+                {% if journal.status == 'draft' %}
+                  <a href="{% url 'finance:journal_edit' journal.pk %}" class="inline-flex items-center justify-center gap-1 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-all duration-200" title="Edit">
+                    <i class="fas fa-edit text-xs"></i>
+                    <span class="hidden sm:inline">Edit</span>
+                  </a>
+                  
+                  <button onclick="openPostModal({{ journal.pk }}, '{{ journal.entry_number|escapejs }}')" class="inline-flex items-center justify-center gap-1 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition-all duration-200" title="Post">
+                    <i class="fas fa-check-circle text-xs"></i>
+                    <span class="hidden sm:inline">Post</span>
+                  </button>
+                  
+                  <button onclick="openDeleteModal({{ journal.pk }}, '{{ journal.entry_number|escapejs }}')" class="inline-flex items-center justify-center gap-1 rounded-lg bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition-all duration-200" title="Delete">
+                    <i class="fas fa-trash-alt text-xs"></i>
+                    <span class="hidden sm:inline">Delete</span>
+                  </button>
+                {% endif %}
+              </div>
+             </td>
+            </tr>
+          {% empty %}
+          <tr>
+            <td colspan="9" class="px-4 py-16 text-center">
+              <div class="flex flex-col items-center gap-3">
+                <div class="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center">
+                  <i class="fas fa-book text-slate-400 text-2xl"></i>
+                </div>
+                <p class="text-slate-500 font-medium">No journal entries found</p>
+                <p class="text-sm text-slate-400">Try adjusting your filters or create a new journal entry.</p>
+                <a href="{% url 'finance:journal_create' %}" class="mt-2 inline-flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 transition-all">
+                  <i class="fas fa-plus-circle"></i>
+                  Create Journal Entry
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  {% if is_paginated %}
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div class="text-sm text-slate-500 bg-white px-4 py-2 rounded-xl border border-slate-200 inline-flex items-center gap-2 w-fit">
+      <i class="fas fa-chart-simple text-xs text-slate-400"></i>
+      <span>Page <strong class="text-slate-700">{{ page_obj.number }}</strong> of <strong class="text-slate-700">{{ page_obj.paginator.num_pages }}</strong></span>
+    </div>
+    <div class="flex gap-2">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}&reference_type={{ request.GET.reference_type }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:shadow-sm transition-all duration-200">
+          <i class="fas fa-chevron-left text-xs"></i>
+          <span>Previous</span>
+        </a>
+      {% else %}
+        <button disabled class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-400 cursor-not-allowed">
+          <i class="fas fa-chevron-left text-xs"></i>
+          <span>Previous</span>
+        </button>
+      {% endif %}
+      
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}&reference_type={{ request.GET.reference_type }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:shadow-sm transition-all duration-200">
+          <span>Next</span>
+          <i class="fas fa-chevron-right text-xs"></i>
+        </a>
+      {% else %}
+        <button disabled class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-400 cursor-not-allowed">
+          <span>Next</span>
+          <i class="fas fa-chevron-right text-xs"></i>
+        </button>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
 </div>
+
+<!-- Post Journal Modal -->
+<div id="postModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden items-center justify-center">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all animate-modal-slide-in">
+    <div class="p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-slate-800">Post Journal Entry</h3>
+        <button onclick="closePostModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      <form id="postForm" method="post">
+        {% csrf_token %}
+        <div class="space-y-4">
+          <div class="bg-amber-50 p-4 rounded-xl border border-amber-200">
+            <div class="flex items-start gap-3">
+              <i class="fas fa-exclamation-triangle text-amber-600 mt-0.5"></i>
+              <div>
+                <p class="text-amber-800 font-medium">Are you sure?</p>
+                <p class="text-sm text-amber-700 mt-1">
+                  You are about to post journal entry <strong id="journalEntryNumber"></strong>.
+                </p>
+                <p class="text-xs text-amber-600 mt-2">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  This action cannot be undone. The journal entry will be permanently recorded in your financial statements.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <button type="submit" class="flex-1 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-all">
+              Yes, Post Entry
+            </button>
+            <button type="button" onclick="closePostModal()" class="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Journal Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden items-center justify-center">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all animate-modal-slide-in">
+    <div class="p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-slate-800">Delete Journal Entry</h3>
+        <button onclick="closeDeleteModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      <form id="deleteForm" method="post">
+        {% csrf_token %}
+        <div class="space-y-4">
+          <div class="bg-rose-50 p-4 rounded-xl border border-rose-200">
+            <div class="flex items-start gap-3">
+              <i class="fas fa-exclamation-triangle text-rose-600 mt-0.5"></i>
+              <div>
+                <p class="text-rose-800 font-medium">Warning!</p>
+                <p class="text-sm text-rose-700 mt-1">
+                  You are about to delete journal entry <strong id="deleteJournalNumber"></strong>.
+                </p>
+                <p class="text-xs text-rose-600 mt-2">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  This action cannot be undone. The journal entry will be permanently removed.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <button type="submit" class="flex-1 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 transition-all">
+              Yes, Delete Entry
+            </button>
+            <button type="button" onclick="closeDeleteModal()" class="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Notification Container -->
+<div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+<style>
+  @keyframes modalSlideIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+  
+  .animate-modal-slide-in {
+    animation: modalSlideIn 0.2s ease-out;
+  }
+  
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  /* Custom scrollbar for tables */
+  .overflow-x-auto::-webkit-scrollbar {
+    height: 6px;
+  }
+  
+  .overflow-x-auto::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+  
+  .overflow-x-auto::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+  
+  .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Post modal functions
+  function openPostModal(journalId, journalNumber) {
+    const modal = document.getElementById('postModal');
+    const form = document.getElementById('postForm');
+    const numberSpan = document.getElementById('journalEntryNumber');
+    
+    numberSpan.textContent = journalNumber;
+    form.action = `/finance/journals/${journalId}/post/`;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+  }
+  
+  function closePostModal() {
+    const modal = document.getElementById('postModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = '';
+  }
+  
+  // Delete modal functions
+  function openDeleteModal(journalId, journalNumber) {
+    const modal = document.getElementById('deleteModal');
+    const form = document.getElementById('deleteForm');
+    const numberSpan = document.getElementById('deleteJournalNumber');
+    
+    numberSpan.textContent = journalNumber;
+    form.action = `/finance/journals/${journalId}/delete/`;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+  }
+  
+  function closeDeleteModal() {
+    const modal = document.getElementById('deleteModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = '';
+  }
+  
+  // Close modals on escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closePostModal();
+      closeDeleteModal();
+    }
+  });
+  
+  // Close modals when clicking outside
+  const postModal = document.getElementById('postModal');
+  const deleteModal = document.getElementById('deleteModal');
+  
+  if (postModal) {
+    postModal.addEventListener('click', function(e) {
+      if (e.target === this) {
+        closePostModal();
+      }
+    });
+  }
+  
+  if (deleteModal) {
+    deleteModal.addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeDeleteModal();
+      }
+    });
+  }
+  
+  // Show toast notification if there are messages
+  document.addEventListener('DOMContentLoaded', function() {
+    {% if messages %}
+      {% for message in messages %}
+        showToast('{{ message|escapejs }}', '{{ message.tags }}');
+      {% endfor %}
+    {% endif %}
+  });
+  
+  function showToast(message, type) {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    
+    const bgColor = type === 'success' ? 'bg-emerald-500' : 
+                    type === 'error' ? 'bg-rose-500' : 
+                    type === 'warning' ? 'bg-amber-500' : 'bg-blue-500';
+    
+    const icon = type === 'success' ? 'fa-check-circle' :
+                 type === 'error' ? 'fa-exclamation-circle' :
+                 type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle';
+    
+    toast.className = `${bgColor} text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 transform transition-all duration-300 translate-x-full`;
+    toast.innerHTML = `
+      <i class="fas ${icon}"></i>
+      <span class="text-sm">${message}</span>
+      <button onclick="this.parentElement.remove()" class="ml-auto hover:text-white/80">
+        <i class="fas fa-times"></i>
+      </button>
+    `;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.classList.remove('translate-x-full');
+    }, 100);
+    
+    setTimeout(() => {
+      toast.classList.add('translate-x-full');
+      setTimeout(() => toast.remove(), 300);
+    }, 5000);
+  }
+  
+  // Add hover effects to table rows
+  const tableRows = document.querySelectorAll('tbody tr');
+  tableRows.forEach(row => {
+    row.addEventListener('mouseenter', function() {
+      this.style.backgroundColor = '#f8fafc';
+    });
+    row.addEventListener('mouseleave', function() {
+      this.style.backgroundColor = '';
+    });
+  });
+  
+  // Preserve filter values on form submission
+  const filterForm = document.querySelector('form');
+  if (filterForm) {
+    filterForm.addEventListener('submit', function() {
+      const q = this.querySelector('input[name="q"]').value;
+      const status = this.querySelector('select[name="status"]').value;
+      const referenceType = this.querySelector('select[name="reference_type"]').value;
+      
+      if (!q) this.querySelector('input[name="q"]').remove();
+      if (!status) this.querySelector('select[name="status"]').remove();
+      if (!referenceType) this.querySelector('select[name="reference_type"]').remove();
+    });
+  }
+</script>
 {% endblock %}

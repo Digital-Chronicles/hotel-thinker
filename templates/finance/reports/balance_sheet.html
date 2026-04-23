@@ -1,96 +1,453 @@
 {% extends "base.html" %}
-{% block title %}Balance Sheet{% endblock %}
+{% load humanize %}
+
+{% block title %}Balance Sheet • Hotel Thinker{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto p-6">
-  <div class="mb-6">
-    <h1 class="text-2xl font-bold">Balance Sheet</h1>
-    <p class="text-sm text-gray-600">{{ hotel.name }} | As at {{ as_of_date }}</p>
+<div class="space-y-6 p-4 md:p-6 lg:p-8">
+  
+  <!-- Header Section -->
+  <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div>
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-md shadow-indigo-200">
+          <i class="fas fa-scale-balanced text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Balance Sheet</h1>
+          <p class="mt-1 text-sm text-slate-500">
+            {{ hotel.name }} | As at {{ as_of_date|date:"F d, Y" }}
+          </p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="flex gap-2">
+      <button onclick="window.print()" 
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all duration-200">
+        <i class="fas fa-print text-xs"></i>
+        <span>Print</span>
+      </button>
+      <button onclick="window.location.href='?export=pdf'" 
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white text-sm font-semibold shadow-sm transition-all duration-200">
+        <i class="fas fa-download text-xs"></i>
+        <span>Export</span>
+      </button>
+    </div>
   </div>
 
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+    <!-- Assets Card -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-all duration-200">
+      <div class="p-5">
+        <div class="flex items-center justify-between mb-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+            <i class="fas fa-building-columns text-emerald-600 text-lg"></i>
+          </div>
+          <i class="fas fa-chart-line text-slate-300 text-sm"></i>
+        </div>
+        <p class="text-sm text-slate-500 mb-1">Total Assets</p>
+        <p class="text-2xl font-bold text-emerald-600">UGX {{ total_assets|floatformat:0|intcomma }}</p>
+        <p class="text-xs text-slate-400 mt-2">Resources owned by the company</p>
+      </div>
+    </div>
+
+    <!-- Liabilities Card -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-all duration-200">
+      <div class="p-5">
+        <div class="flex items-center justify-between mb-3">
+          <div class="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center">
+            <i class="fas fa-hand-holding-dollar text-rose-600 text-lg"></i>
+          </div>
+          <i class="fas fa-receipt text-slate-300 text-sm"></i>
+        </div>
+        <p class="text-sm text-slate-500 mb-1">Total Liabilities</p>
+        <p class="text-2xl font-bold text-rose-600">UGX {{ total_liabilities|floatformat:0|intcomma }}</p>
+        <p class="text-xs text-slate-400 mt-2">Obligations owed to others</p>
+      </div>
+    </div>
+
+    <!-- Equity Card -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-all duration-200">
+      <div class="p-5">
+        <div class="flex items-center justify-between mb-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+            <i class="fas fa-chart-pie text-blue-600 text-lg"></i>
+          </div>
+          <i class="fas fa-calculator text-slate-300 text-sm"></i>
+        </div>
+        <p class="text-sm text-slate-500 mb-1">Total Equity</p>
+        <p class="text-2xl font-bold text-blue-600">UGX {{ total_equity|floatformat:0|intcomma }}</p>
+        <p class="text-xs text-slate-400 mt-2">Owners' residual interest</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Balance Sheet Equation Card -->
+  <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl border border-indigo-200 p-5">
+    <div class="flex items-center justify-between flex-wrap gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center">
+          <i class="fas fa-scale-balanced text-indigo-600 text-xl"></i>
+        </div>
+        <div>
+          <p class="text-sm font-medium text-slate-600">Accounting Equation</p>
+          <p class="text-lg font-bold text-indigo-700">Assets = Liabilities + Equity</p>
+        </div>
+      </div>
+      <div class="text-right">
+        <p class="text-xs text-slate-500">
+          {% if total_assets == total_liabilities|add:total_equity %}
+            <span class="text-emerald-600">✓ Balanced ✓</span>
+          {% else %}
+            <span class="text-rose-600">⚠ Out of Balance ⚠</span>
+          {% endif %}
+        </p>
+        <p class="text-xs text-slate-400 mt-1">
+          {{ total_assets|floatformat:0|intcomma }} = {{ total_liabilities|floatformat:0|intcomma }} + {{ total_equity|floatformat:0|intcomma }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Balance Sheet Tables -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <div class="bg-white shadow rounded">
-      <div class="p-4 border-b">
-        <h2 class="font-semibold text-green-700">Assets</h2>
+    
+    <!-- Assets Column -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="px-5 py-4 bg-gradient-to-r from-emerald-50 to-white border-b border-slate-200">
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center">
+            <i class="fas fa-building-columns text-emerald-600 text-xs"></i>
+          </div>
+          <h2 class="text-sm font-semibold text-emerald-700 uppercase tracking-wide">Assets</h2>
+        </div>
+        <p class="text-xs text-slate-500 mt-1 ml-8">What the company owns</p>
       </div>
-      <table class="w-full text-sm">
-        <tbody>
-          {% for acc in assets %}
-          <tr class="border-t">
-            <td class="p-3">{{ acc.name }}</td>
-            <td class="p-3 text-right">{{ acc.balance }}</td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="2" class="p-4 text-gray-500">No assets found.</td></tr>
-          {% endfor %}
-          <tr class="border-t font-bold bg-gray-50">
-            <td class="p-3">Total Assets</td>
-            <td class="p-3 text-right">{{ total_assets }}</td>
-          </tr>
-        </tbody>
-      </table>
+      
+      <div class="max-h-[500px] overflow-y-auto">
+        <table class="w-full text-sm">
+          <thead class="sticky top-0 bg-slate-50">
+            <tr class="border-b border-slate-200">
+              <th class="px-5 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Account</th>
+              <th class="px-5 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Balance</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for acc in assets %}
+            <tr class="hover:bg-slate-50/80 transition-colors duration-150 group">
+              <td class="px-5 py-3">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-folder-open text-slate-400 text-xs group-hover:text-emerald-500 transition-colors"></i>
+                  <span class="text-slate-700">{{ acc.name }}</span>
+                </div>
+                {% if acc.account_code %}
+                <div class="text-xs text-slate-400 mt-0.5 ml-5">{{ acc.account_code }}</div>
+                {% endif %}
+              </td>
+              <td class="px-5 py-3 text-right">
+                <span class="font-semibold text-emerald-600">UGX {{ acc.balance|floatformat:0|intcomma }}</span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="2" class="px-5 py-8 text-center">
+                <div class="flex flex-col items-center gap-2">
+                  <i class="fas fa-inbox text-slate-300 text-3xl"></i>
+                  <p class="text-sm text-slate-500">No assets found</p>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          {% if assets %}
+          <tfoot class="sticky bottom-0 bg-emerald-50 border-t-2 border-emerald-200">
+            <tr class="font-bold">
+              <td class="px-5 py-3 text-sm text-emerald-800">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-calculator text-emerald-600"></i>
+                  <span>Total Assets</span>
+                </div>
+              </td>
+              <td class="px-5 py-3 text-right text-sm font-bold text-emerald-800">
+                UGX {{ total_assets|floatformat:0|intcomma }}
+              </td>
+            </tr>
+          </tfoot>
+          {% endif %}
+        </table>
+      </div>
     </div>
 
-    <div class="bg-white shadow rounded">
-      <div class="p-4 border-b">
-        <h2 class="font-semibold text-red-700">Liabilities</h2>
+    <!-- Liabilities Column -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="px-5 py-4 bg-gradient-to-r from-rose-50 to-white border-b border-slate-200">
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-lg bg-rose-100 flex items-center justify-center">
+            <i class="fas fa-hand-holding-dollar text-rose-600 text-xs"></i>
+          </div>
+          <h2 class="text-sm font-semibold text-rose-700 uppercase tracking-wide">Liabilities</h2>
+        </div>
+        <p class="text-xs text-slate-500 mt-1 ml-8">What the company owes</p>
       </div>
-      <table class="w-full text-sm">
-        <tbody>
-          {% for acc in liabilities %}
-          <tr class="border-t">
-            <td class="p-3">{{ acc.name }}</td>
-            <td class="p-3 text-right">{{ acc.balance }}</td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="2" class="p-4 text-gray-500">No liabilities found.</td></tr>
-          {% endfor %}
-          <tr class="border-t font-bold bg-gray-50">
-            <td class="p-3">Total Liabilities</td>
-            <td class="p-3 text-right">{{ total_liabilities }}</td>
-          </tr>
-        </tbody>
-      </table>
+      
+      <div class="max-h-[500px] overflow-y-auto">
+        <table class="w-full text-sm">
+          <thead class="sticky top-0 bg-slate-50">
+            <tr class="border-b border-slate-200">
+              <th class="px-5 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Account</th>
+              <th class="px-5 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Balance</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for acc in liabilities %}
+            <tr class="hover:bg-slate-50/80 transition-colors duration-150 group">
+              <td class="px-5 py-3">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-folder-open text-slate-400 text-xs group-hover:text-rose-500 transition-colors"></i>
+                  <span class="text-slate-700">{{ acc.name }}</span>
+                </div>
+                {% if acc.account_code %}
+                <div class="text-xs text-slate-400 mt-0.5 ml-5">{{ acc.account_code }}</div>
+                {% endif %}
+              </td>
+              <td class="px-5 py-3 text-right">
+                <span class="font-semibold text-rose-600">UGX {{ acc.balance|floatformat:0|intcomma }}</span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="2" class="px-5 py-8 text-center">
+                <div class="flex flex-col items-center gap-2">
+                  <i class="fas fa-inbox text-slate-300 text-3xl"></i>
+                  <p class="text-sm text-slate-500">No liabilities found</p>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          {% if liabilities %}
+          <tfoot class="sticky bottom-0 bg-rose-50 border-t-2 border-rose-200">
+            <tr class="font-bold">
+              <td class="px-5 py-3 text-sm text-rose-800">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-calculator text-rose-600"></i>
+                  <span>Total Liabilities</span>
+                </div>
+              </td>
+              <td class="px-5 py-3 text-right text-sm font-bold text-rose-800">
+                UGX {{ total_liabilities|floatformat:0|intcomma }}
+              </td>
+            </tr>
+          </tfoot>
+          {% endif %}
+        </table>
+      </div>
     </div>
 
-    <div class="bg-white shadow rounded">
-      <div class="p-4 border-b">
-        <h2 class="font-semibold text-blue-700">Equity</h2>
+    <!-- Equity Column -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="px-5 py-4 bg-gradient-to-r from-blue-50 to-white border-b border-slate-200">
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center">
+            <i class="fas fa-chart-pie text-blue-600 text-xs"></i>
+          </div>
+          <h2 class="text-sm font-semibold text-blue-700 uppercase tracking-wide">Equity</h2>
+        </div>
+        <p class="text-xs text-slate-500 mt-1 ml-8">Owners' residual interest</p>
       </div>
-      <table class="w-full text-sm">
-        <tbody>
-          {% for acc in equity %}
-          <tr class="border-t">
-            <td class="p-3">{{ acc.name }}</td>
-            <td class="p-3 text-right">{{ acc.balance }}</td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="2" class="p-4 text-gray-500">No equity accounts found.</td></tr>
-          {% endfor %}
-          <tr class="border-t font-bold bg-gray-50">
-            <td class="p-3">Total Equity</td>
-            <td class="p-3 text-right">{{ total_equity }}</td>
-          </tr>
-        </tbody>
-      </table>
+      
+      <div class="max-h-[500px] overflow-y-auto">
+        <table class="w-full text-sm">
+          <thead class="sticky top-0 bg-slate-50">
+            <tr class="border-b border-slate-200">
+              <th class="px-5 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Account</th>
+              <th class="px-5 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Balance</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for acc in equity %}
+            <tr class="hover:bg-slate-50/80 transition-colors duration-150 group">
+              <td class="px-5 py-3">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-folder-open text-slate-400 text-xs group-hover:text-blue-500 transition-colors"></i>
+                  <span class="text-slate-700">{{ acc.name }}</span>
+                </div>
+                {% if acc.account_code %}
+                <div class="text-xs text-slate-400 mt-0.5 ml-5">{{ acc.account_code }}</div>
+                {% endif %}
+              </td>
+              <td class="px-5 py-3 text-right">
+                <span class="font-semibold text-blue-600">UGX {{ acc.balance|floatformat:0|intcomma }}</span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="2" class="px-5 py-8 text-center">
+                <div class="flex flex-col items-center gap-2">
+                  <i class="fas fa-inbox text-slate-300 text-3xl"></i>
+                  <p class="text-sm text-slate-500">No equity accounts found</p>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          {% if equity %}
+          <tfoot class="sticky bottom-0 bg-blue-50 border-t-2 border-blue-200">
+            <tr class="font-bold">
+              <td class="px-5 py-3 text-sm text-blue-800">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-calculator text-blue-600"></i>
+                  <span>Total Equity</span>
+                </div>
+              </td>
+              <td class="px-5 py-3 text-right text-sm font-bold text-blue-800">
+                UGX {{ total_equity|floatformat:0|intcomma }}
+              </td>
+            </tr>
+          </tfoot>
+          {% endif %}
+        </table>
+      </div>
     </div>
   </div>
 
-  <div class="mt-6 bg-white shadow rounded p-4">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-      <div>
-        <p class="text-sm text-gray-500">Assets</p>
-        <p class="text-xl font-bold text-green-700">{{ total_assets }}</p>
+  <!-- Verification Section -->
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-200">
+      <div class="flex items-center gap-2">
+        <i class="fas fa-check-circle text-emerald-500 text-sm"></i>
+        <h2 class="text-sm font-semibold text-slate-700 uppercase tracking-wide">Balance Sheet Verification</h2>
       </div>
-      <div>
-        <p class="text-sm text-gray-500">Liabilities</p>
-        <p class="text-xl font-bold text-red-700">{{ total_liabilities }}</p>
+    </div>
+    
+    <div class="p-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="text-center">
+          <p class="text-xs text-slate-500 uppercase tracking-wide mb-2">Assets</p>
+          <p class="text-2xl font-bold text-emerald-600">UGX {{ total_assets|floatformat:0|intcomma }}</p>
+        </div>
+        <div class="text-center">
+          <p class="text-xs text-slate-500 uppercase tracking-wide mb-2">Liabilities + Equity</p>
+          <p class="text-2xl font-bold text-indigo-600">UGX {% widthratio total_liabilities|add:total_equity 1 1 as total_liabilities_equity %}{{ total_liabilities|add:total_equity|floatformat:0|intcomma }}</p>
+        </div>
+        <div class="text-center">
+          <p class="text-xs text-slate-500 uppercase tracking-wide mb-2">Difference</p>
+          <p class="text-2xl font-bold {% if total_assets == total_liabilities|add:total_equity %}text-emerald-600{% else %}text-rose-600{% endif %}">
+            {% with diff=total_assets|add:total_liabilities|add:total_equity|floatformat:0 %}
+              UGX {{ diff|intcomma }}
+            {% endwith %}
+          </p>
+        </div>
       </div>
-      <div>
-        <p class="text-sm text-gray-500">Equity</p>
-        <p class="text-xl font-bold text-blue-700">{{ total_equity }}</p>
+      
+      <div class="mt-6 p-4 rounded-xl {% if total_assets == total_liabilities|add:total_equity %}bg-emerald-50 border border-emerald-200{% else %}bg-rose-50 border border-rose-200{% endif %}">
+        <div class="flex items-center gap-3">
+          <i class="fas {% if total_assets == total_liabilities|add:total_equity %}fa-check-circle text-emerald-600{% else %}fa-exclamation-triangle text-rose-600{% endif %} text-lg"></i>
+          <div>
+            <p class="text-sm font-semibold {% if total_assets == total_liabilities|add:total_equity %}text-emerald-800{% else %}text-rose-800{% endif %}">
+              {% if total_assets == total_liabilities|add:total_equity %}
+                ✓ Balance Sheet is balanced
+              {% else %}
+                ⚠ Balance Sheet is out of balance
+              {% endif %}
+            </p>
+            <p class="text-xs {% if total_assets == total_liabilities|add:total_equity %}text-emerald-600{% else %}text-rose-600{% endif %} mt-0.5">
+              {% if total_assets == total_liabilities|add:total_equity %}
+                The accounting equation holds true: Assets = Liabilities + Equity
+              {% else %}
+                The accounting equation does not balance. Please review your journal entries.
+              {% endif %}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- Help Section -->
+  <div class="p-5 bg-gradient-to-r from-indigo-50/50 to-transparent rounded-2xl border border-indigo-100">
+    <div class="flex items-start gap-3">
+      <div class="h-8 w-8 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
+        <i class="fas fa-lightbulb text-indigo-600 text-sm"></i>
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-slate-700 mb-2">Understanding the Balance Sheet</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-slate-600">
+          <div class="space-y-1">
+            <p><strong class="text-emerald-600">• Assets</strong> - Resources owned (Cash, Inventory, Equipment)</p>
+            <p><strong class="text-emerald-600">• Current Assets</strong> - Convertible to cash within 1 year</p>
+          </div>
+          <div class="space-y-1">
+            <p><strong class="text-rose-600">• Liabilities</strong> - Debts owed (Loans, Payables)</p>
+            <p><strong class="text-rose-600">• Current Liabilities</strong> - Due within 1 year</p>
+          </div>
+          <div class="space-y-1">
+            <p><strong class="text-blue-600">• Equity</strong> - Owners' claim (Capital, Retained Earnings)</p>
+            <p><strong class="text-blue-600">• Net Assets</strong> - Assets minus Liabilities</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
+
+<!-- Print Styles -->
+<style media="print">
+  @media print {
+    body {
+      background: white;
+      padding: 0;
+      margin: 0;
+    }
+    .no-print, 
+    button, 
+    .btn, 
+    .print-hide {
+      display: none !important;
+    }
+    .bg-white, 
+    .rounded-xl, 
+    .rounded-2xl, 
+    .border {
+      border: 1px solid #ddd !important;
+      box-shadow: none !important;
+    }
+    .bg-gradient-to-r {
+      background: white !important;
+    }
+    .text-emerald-600, .text-rose-600, .text-blue-600, .text-indigo-600 {
+      color: black !important;
+    }
+    a {
+      text-decoration: none;
+      color: black;
+    }
+    .max-h-[500px] {
+      max-height: none !important;
+      overflow-y: visible !important;
+    }
+  }
+</style>
+
+<script>
+  // Add animation to cards on load
+  document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.grid > div');
+    cards.forEach((card, index) => {
+      if (card.classList.contains('bg-white') || card.classList.contains('bg-gradient-to-r')) {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+          card.style.transition = 'all 0.5s ease';
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, index * 100);
+      }
+    });
+  });
+</script>
+
 {% endblock %}

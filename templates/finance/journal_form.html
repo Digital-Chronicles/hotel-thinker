@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Edit Journal Entry{% else %}New Journal Entry{% endif %} - Hotel Thinker{% endblock %}
+
+{% block content %}
+<div class="space-y-6 p-4 md:p-6 lg:p-8">
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md shadow-purple-200">
+                    <i class="fas fa-book text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
+                        {% if form.instance.pk %}Edit Journal Entry{% else %}New Journal Entry{% endif %}
+                    </h1>
+                    <p class="mt-1 text-sm text-slate-500">
+                        {% if form.instance.pk %}Update the journal entry details{% else %}Create a new accounting journal entry{% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        <a href="{% url 'finance:journal_list' %}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all duration-200">
+            <i class="fas fa-arrow-left text-sm"></i>
+            <span>Back to List</span>
+        </a>
+    </div>
+
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white px-6 py-4">
+            <h2 class="text-lg font-semibold text-slate-800">Journal Entry Information</h2>
+            <p class="text-sm text-slate-500 mt-0.5">Enter the basic details of the journal entry</p>
+        </div>
+        
+        <div class="p-6">
+            <form method="post" id="journalForm">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="mb-6 bg-rose-50 border border-rose-200 rounded-xl p-4">
+                        <div class="flex items-center gap-2 text-rose-600">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span class="font-medium">Please correct the following errors:</span>
+                        </div>
+                        <ul class="mt-2 list-disc list-inside text-sm text-rose-600">
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <!-- Entry Date -->
+                    <div>
+                        <label for="{{ form.entry_date.id_for_label }}" class="mb-1.5 block text-sm font-semibold text-slate-700">
+                            Entry Date <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <i class="fas fa-calendar-alt absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input 
+                                type="date" 
+                                name="{{ form.entry_date.name }}" 
+                                id="{{ form.entry_date.id_for_label }}"
+                                value="{{ form.entry_date.value|default:''|date:'Y-m-d' }}"
+                                class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all {% if form.entry_date.errors %}border-rose-500 bg-rose-50{% endif %}"
+                                required
+                            >
+                        </div>
+                        {% if form.entry_date.errors %}
+                            <p class="mt-1 text-xs text-rose-600">{{ form.entry_date.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Reference Type -->
+                    <div>
+                        <label for="{{ form.reference_type.id_for_label }}" class="mb-1.5 block text-sm font-semibold text-slate-700">
+                            Reference Type
+                        </label>
+                        <div class="relative">
+                            <i class="fas fa-tag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <select 
+                                name="{{ form.reference_type.name }}" 
+                                id="{{ form.reference_type.id_for_label }}"
+                                class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all bg-white"
+                            >
+                                <option value="">-- Select Reference Type --</option>
+                                <option value="invoice" {% if form.reference_type.value == 'invoice' %}selected{% endif %}>Invoice</option>
+                                <option value="payment" {% if form.reference_type.value == 'payment' %}selected{% endif %}>Payment</option>
+                                <option value="expense" {% if form.reference_type.value == 'expense' %}selected{% endif %}>Expense</option>
+                                <option value="adjustment" {% if form.reference_type.value == 'adjustment' %}selected{% endif %}>Adjustment</option>
+                                <option value="depreciation" {% if form.reference_type.value == 'depreciation' %}selected{% endif %}>Depreciation</option>
+                                <option value="closing" {% if form.reference_type.value == 'closing' %}selected{% endif %}>Period Closing</option>
+                            </select>
+                        </div>
+                        {% if form.reference_type.errors %}
+                            <p class="mt-1 text-xs text-rose-600">{{ form.reference_type.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Reference ID -->
+                    <div>
+                        <label for="{{ form.reference_id.id_for_label }}" class="mb-1.5 block text-sm font-semibold text-slate-700">
+                            Reference ID
+                        </label>
+                        <div class="relative">
+                            <i class="fas fa-hashtag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input 
+                                type="number" 
+                                name="{{ form.reference_id.name }}" 
+                                id="{{ form.reference_id.id_for_label }}"
+                                value="{{ form.reference_id.value|default:'' }}"
+                                class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all"
+                                placeholder="Enter reference ID"
+                            >
+                        </div>
+                        {% if form.reference_id.errors %}
+                            <p class="mt-1 text-xs text-rose-600">{{ form.reference_id.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-xs text-slate-400">Optional: Link this journal entry to a specific record</p>
+                    </div>
+                    
+                    <!-- Placeholder for spacing -->
+                    <div></div>
+                    
+                    <!-- Description (full width) -->
+                    <div class="md:col-span-2">
+                        <label for="{{ form.description.id_for_label }}" class="mb-1.5 block text-sm font-semibold text-slate-700">
+                            Description <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <i class="fas fa-align-left absolute left-3 top-3 text-slate-400 text-sm"></i>
+                            <textarea 
+                                name="{{ form.description.name }}" 
+                                id="{{ form.description.id_for_label }}"
+                                rows="4"
+                                class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all {% if form.description.errors %}border-rose-500 bg-rose-50{% endif %}"
+                                placeholder="Enter a detailed description of this journal entry..."
+                                required>{{ form.description.value|default:'' }}</textarea>
+                        </div>
+                        {% if form.description.errors %}
+                            <p class="mt-1 text-xs text-rose-600">{{ form.description.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-xs text-slate-400">Provide a clear description of why this journal entry is being created</p>
+                    </div>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                    <a href="{% url 'finance:journal_list' %}" class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all duration-200">
+                        <i class="fas fa-times"></i>
+                        <span>Cancel</span>
+                    </a>
+                    <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-purple-200 hover:shadow-lg hover:scale-105 transition-all duration-200">
+                        <i class="fas fa-save"></i>
+                        <span>{% if form.instance.pk %}Update Journal Entry{% else %}Create Journal Entry{% endif %}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Help Section -->
+    <div class="rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 p-6">
+        <div class="flex items-start gap-3">
+            <div class="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-lightbulb text-blue-600 text-lg"></i>
+            </div>
+            <div>
+                <h3 class="font-semibold text-slate-800 mb-1">Journal Entry Tips</h3>
+                <div class="text-sm text-slate-600 space-y-1">
+                    <p><i class="fas fa-check-circle text-green-500 text-xs mr-2"></i> After creating the journal entry, you'll be redirected to add journal lines (debits and credits).</p>
+                    <p><i class="fas fa-check-circle text-green-500 text-xs mr-2"></i> A journal entry must have at least one debit and one credit line.</p>
+                    <p><i class="fas fa-check-circle text-green-500 text-xs mr-2"></i> Total debits must equal total credits before posting.</p>
+                    <p><i class="fas fa-check-circle text-green-500 text-xs mr-2"></i> Draft entries can be edited and deleted. Posted entries are permanently recorded.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Focus styles */
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+    }
+    
+    /* Number input spinner styling */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        opacity: 0.5;
+    }
+    
+    input[type="number"]:hover::-webkit-inner-spin-button,
+    input[type="number"]:hover::-webkit-outer-spin-button {
+        opacity: 1;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-focus on first field
+    document.addEventListener('DOMContentLoaded', function() {
+        const firstInput = document.querySelector('input:not([type="hidden"]), select, textarea');
+        if (firstInput && !firstInput.value) {
+            firstInput.focus();
+        }
+    });
+    
+    // Form validation before submit
+    const form = document.getElementById('journalForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const entryDate = document.querySelector('[name="entry_date"]');
+            const description = document.querySelector('[name="description"]');
+            
+            if (entryDate && !entryDate.value) {
+                e.preventDefault();
+                entryDate.classList.add('border-rose-500', 'bg-rose-50');
+                alert('Please enter the entry date.');
+                entryDate.focus();
+                return false;
+            }
+            
+            if (description && !description.value.trim()) {
+                e.preventDefault();
+                description.classList.add('border-rose-500', 'bg-rose-50');
+                alert('Please enter a description.');
+                description.focus();
+                return false;
+            }
+            
+            // Show loading state
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Saving...</span>';
+            }
+        });
+    }
+    
+    // Remove error styling when user starts typing
+    document.querySelectorAll('input, select, textarea').forEach(field => {
+        field.addEventListener('input', function() {
+            this.classList.remove('border-rose-500', 'bg-rose-50');
+        });
+    });
+</script>
+{% endblock %}
