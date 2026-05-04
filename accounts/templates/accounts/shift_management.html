@@ -338,8 +338,8 @@
                                     </div>
                                 </div>
                             </td>
-                            {% for day in "M,T,W,T,F,S,Su"|split:"," %}
-                            <td class="px-4 py-3 text-center day-cell" data-day="{{ day }}">
+                            <!-- Monday -->
+                            <td class="px-4 py-3 text-center day-cell" data-day="M">
                                 <span class="inline-flex px-2.5 py-1.5 rounded-lg text-xs font-medium shift-badge
                                     {% if shift_type == 'morning' %}bg-amber-100 text-amber-700 border border-amber-200
                                     {% elif shift_type == 'afternoon' %}bg-blue-100 text-blue-700 border border-blue-200
@@ -354,7 +354,102 @@
                                     {{ member.get_shift_preference_display|default:"Flexible" }}
                                 </span>
                             </td>
-                            {% endfor %}
+                            <!-- Tuesday -->
+                            <td class="px-4 py-3 text-center day-cell" data-day="T">
+                                <span class="inline-flex px-2.5 py-1.5 rounded-lg text-xs font-medium shift-badge
+                                    {% if shift_type == 'morning' %}bg-amber-100 text-amber-700 border border-amber-200
+                                    {% elif shift_type == 'afternoon' %}bg-blue-100 text-blue-700 border border-blue-200
+                                    {% elif shift_type == 'night' %}bg-indigo-100 text-indigo-700 border border-indigo-200
+                                    {% else %}bg-slate-100 text-slate-600 border border-slate-200{% endif %}">
+                                    <i class="fas 
+                                        {% if shift_type == 'morning' %}fa-sun
+                                        {% elif shift_type == 'afternoon' %}fa-cloud-sun
+                                        {% elif shift_type == 'night' %}fa-moon
+                                        {% else %}fa-exchange-alt{% endif %} 
+                                        text-xs mr-1"></i>
+                                    {{ member.get_shift_preference_display|default:"Flexible" }}
+                                </span>
+                            </td>
+                            <!-- Wednesday -->
+                            <td class="px-4 py-3 text-center day-cell" data-day="W">
+                                <span class="inline-flex px-2.5 py-1.5 rounded-lg text-xs font-medium shift-badge
+                                    {% if shift_type == 'morning' %}bg-amber-100 text-amber-700 border border-amber-200
+                                    {% elif shift_type == 'afternoon' %}bg-blue-100 text-blue-700 border border-blue-200
+                                    {% elif shift_type == 'night' %}bg-indigo-100 text-indigo-700 border border-indigo-200
+                                    {% else %}bg-slate-100 text-slate-600 border border-slate-200{% endif %}">
+                                    <i class="fas 
+                                        {% if shift_type == 'morning' %}fa-sun
+                                        {% elif shift_type == 'afternoon' %}fa-cloud-sun
+                                        {% elif shift_type == 'night' %}fa-moon
+                                        {% else %}fa-exchange-alt{% endif %} 
+                                        text-xs mr-1"></i>
+                                    {{ member.get_shift_preference_display|default:"Flexible" }}
+                                </span>
+                            </td>
+                            <!-- Thursday -->
+                            <td class="px-4 py-3 text-center day-cell" data-day="Th">
+                                <span class="inline-flex px-2.5 py-1.5 rounded-lg text-xs font-medium shift-badge
+                                    {% if shift_type == 'morning' %}bg-amber-100 text-amber-700 border border-amber-200
+                                    {% elif shift_type == 'afternoon' %}bg-blue-100 text-blue-700 border border-blue-200
+                                    {% elif shift_type == 'night' %}bg-indigo-100 text-indigo-700 border border-indigo-200
+                                    {% else %}bg-slate-100 text-slate-600 border border-slate-200{% endif %}">
+                                    <i class="fas 
+                                        {% if shift_type == 'morning' %}fa-sun
+                                        {% elif shift_type == 'afternoon' %}fa-cloud-sun
+                                        {% elif shift_type == 'night' %}fa-moon
+                                        {% else %}fa-exchange-alt{% endif %} 
+                                        text-xs mr-1"></i>
+                                    {{ member.get_shift_preference_display|default:"Flexible" }}
+                                </span>
+                            </td>
+                            <!-- Friday -->
+                            <td class="px-4 py-3 text-center day-cell" data-day="F">
+                                <span class="inline-flex px-2.5 py-1.5 rounded-lg text-xs font-medium shift-badge
+                                    {% if shift_type == 'morning' %}bg-amber-100 text-amber-700 border border-amber-200
+                                    {% elif shift_type == 'afternoon' %}bg-blue-100 text-blue-700 border border-blue-200
+                                    {% elif shift_type == 'night' %}bg-indigo-100 text-indigo-700 border border-indigo-200
+                                    {% else %}bg-slate-100 text-slate-600 border border-slate-200{% endif %}">
+                                    <i class="fas 
+                                        {% if shift_type == 'morning' %}fa-sun
+                                        {% elif shift_type == 'afternoon' %}fa-cloud-sun
+                                        {% elif shift_type == 'night' %}fa-moon
+                                        {% else %}fa-exchange-alt{% endif %} 
+                                        text-xs mr-1"></i>
+                                    {{ member.get_shift_preference_display|default:"Flexible" }}
+                                </span>
+                            </td>
+                            <!-- Saturday -->
+                            <td class="px-4 py-3 text-center day-cell" data-day="S">
+                                <span class="inline-flex px-2.5 py-1.5 rounded-lg text-xs font-medium shift-badge
+                                    {% if shift_type == 'morning' %}bg-amber-100 text-amber-700 border border-amber-200
+                                    {% elif shift_type == 'afternoon' %}bg-blue-100 text-blue-700 border border-blue-200
+                                    {% elif shift_type == 'night' %}bg-indigo-100 text-indigo-700 border border-indigo-200
+                                    {% else %}bg-slate-100 text-slate-600 border border-slate-200{% endif %}">
+                                    <i class="fas 
+                                        {% if shift_type == 'morning' %}fa-sun
+                                        {% elif shift_type == 'afternoon' %}fa-cloud-sun
+                                        {% elif shift_type == 'night' %}fa-moon
+                                        {% else %}fa-exchange-alt{% endif %} 
+                                        text-xs mr-1"></i>
+                                    {{ member.get_shift_preference_display|default:"Flexible" }}
+                                </span>
+                            </td>
+                            <!-- Sunday -->
+                            <td class="px-4 py-3 text-center day-cell" data-day="Su">
+                                <span class="inline-flex px-2.5 py-1.5 rounded-lg text-xs font-medium shift-badge
+                                    {% if shift_type == 'morning' %}bg-amber-100 text-amber-700 border border-amber-200
+                                    {% elif shift_type == 'afternoon' %}bg-blue-100 text-blue-700 border border-blue-200
+                                    {% elif shift_type == 'night' %}bg-indigo-100 text-indigo-700 border border-indigo-200
+                                    {% else %}bg-slate-100 text-slate-600 border border-slate-200{% endif %}">
+                                    <i class="fas 
+                                        {% if shift_type == 'morning' %}fa-sun
+                                        {% elif shift_type == 'afternoon' %}fa-cloud-sun
+                                        {% elif shift_type == 'night' %}fa-moon
+                                        {% else %}fa-exchange-alt{% endif %} 
+                                        text-xs mr-1"></i>
+                                    {{ member.get_shift_preference_display|default:"Flexible" }}
+                                </span>
+                            </td>
                             <td class="px-4 py-3 text-center">
                                 <div class="flex items-center justify-center gap-1">
                                     <button onclick="editShift('{{ member.pk }}')" class="p-1.5 text-slate-400 hover:text-blue-600 transition-colors" title="Edit Schedule">
@@ -687,18 +782,20 @@ function showToast(message, type = 'success') {
 }
 
 // Close modal when clicking outside
-document.getElementById('shiftModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeShiftModal();
-    }
-});
+const shiftModal = document.getElementById('shiftModal');
+if (shiftModal) {
+    shiftModal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeShiftModal();
+        }
+    });
+}
 
 // Week Navigation
 let currentWeekOffset = 0;
 
 function updateWeek(offset) {
     currentWeekOffset += offset;
-    // In a real implementation, you would fetch data for the new week
     showToast(`Loading week ${currentWeekOffset > 0 ? '+' : ''}${currentWeekOffset}`, 'info');
 }
 
@@ -757,7 +854,7 @@ document.addEventListener('keydown', (e) => {
         e.preventDefault();
         openShiftModal();
     }
-    if (e.key === 'Escape' && document.getElementById('shiftModal').classList.contains('flex')) {
+    if (e.key === 'Escape' && shiftModal && shiftModal.classList.contains('flex')) {
         closeShiftModal();
     }
 });

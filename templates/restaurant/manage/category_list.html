@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Menu Categories - Restaurant Setup{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
+          <i class="fas fa-tag text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-slate-800">Menu Categories</h1>
+          <p class="text-sm text-slate-500 mt-1">Organize your menu items into categories</p>
+        </div>
+      </div>
+    </div>
+    <a href="{% url 'restaurant:category_create' %}" 
+       class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:shadow-lg transition-all">
+      <i class="fas fa-plus text-sm"></i>
+      <span>Add Category</span>
+    </a>
+  </div>
+
+  <!-- Categories Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    {% for category in categories %}
+    <div class="group bg-white rounded-2xl border border-slate-200 hover:shadow-xl transition-all duration-300 overflow-hidden">
+      <div class="p-5">
+        <div class="flex items-start justify-between mb-3">
+          <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+            <i class="fas fa-folder-open text-purple-600 text-xl"></i>
+          </div>
+          <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">
+            {{ category.items.count }} items
+          </span>
+        </div>
+        
+        <h3 class="text-lg font-bold text-slate-900 mb-1">{{ category.name }}</h3>
+        
+        {% if category.description %}
+        <p class="text-sm text-slate-600 mb-4">{{ category.description|truncatewords:15 }}</p>
+        {% endif %}
+        
+        <div class="flex items-center gap-2 pt-4 border-t border-slate-100">
+          <a href="{% url 'restaurant:category_update' category.pk %}" 
+             class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-all text-sm font-medium">
+            <i class="fas fa-edit text-xs"></i>
+            <span>Edit</span>
+          </a>
+          <button type="button" 
+                  onclick="confirmDelete({{ category.pk }}, '{{ category.name|escapejs }}')"
+                  class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-rose-50 hover:text-rose-600 transition-all text-sm font-medium">
+            <i class="fas fa-trash-alt text-xs"></i>
+            <span>Delete</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-span-full">
+      <div class="text-center py-12 bg-white rounded-2xl border border-slate-200">
+        <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+          <i class="fas fa-tag text-slate-400 text-3xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-800 mb-2">No categories yet</h3>
+        <p class="text-sm text-slate-600 mb-6">Create categories to organize your menu items</p>
+        <a href="{% url 'restaurant:category_create' %}" 
+           class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:shadow-lg transition-all">
+          <i class="fas fa-plus text-sm"></i>
+          <span>Create Category</span>
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if is_paginated %}
+  <div class="flex justify-center mt-8">
+    <div class="flex gap-2">
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition">Previous</a>
+      {% endif %}
+      
+      <span class="px-4 py-2 rounded-lg bg-purple-600 text-white">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition">Next</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function confirmDelete(id, name) {
+  if (confirm(`Delete category "${name}"? This will also delete all items in this category.`)) {
+    window.location.href = `/restaurant/manage/categories/${id}/delete/`;
+  }
+}
+</script>
+{% endblock %}

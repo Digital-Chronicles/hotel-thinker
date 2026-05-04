@@ -1,4 +1,4 @@
-<!-- accounts/templates/accounts/hotel_members_list.html -->
+{# accounts/templates/accounts/hotel_members_list.html #}
 {% extends "base.html" %}
 {% load static %}
 
@@ -13,156 +13,166 @@
 
 {% block content %}
 <div class="space-y-6">
-  <!-- Header Section -->
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+  <!-- Header Section - Professional & Clean -->
+  <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
     <div>
-      <h1 class="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-        Staff Management
-      </h1>
-      <p class="text-slate-500 mt-1 text-sm">Manage your hotel team members, roles, and permissions</p>
+      <h1 class="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Staff management</h1>
+      <p class="text-slate-500 mt-1 text-sm">Manage team members, roles, and permissions across your hotel</p>
     </div>
     <div class="flex flex-wrap gap-3">
       <a href="{% url 'accounts:hotel_member_invite' %}" 
-         class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105">
+         class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm">
         <i class="fas fa-user-plus text-sm"></i>
-        <span>Invite Member</span>
+        <span>Invite member</span>
       </a>
       <a href="{% url 'accounts:hotel_member_bulk_invite' %}" 
-         class="inline-flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-blue-200 text-blue-700 rounded-xl font-semibold text-sm hover:bg-blue-50 transition-all duration-200">
+         class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
         <i class="fas fa-upload text-sm"></i>
-        <span>Bulk Invite</span>
+        <span>Bulk invite</span>
       </a>
       <div class="relative group">
-        <button class="inline-flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-slate-200 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-50 transition-all duration-200">
+        <button class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
           <i class="fas fa-download text-sm"></i>
           <span>Export</span>
-          <i class="fas fa-chevron-down text-xs"></i>
+          <i class="fas fa-chevron-down text-xs ml-1"></i>
         </button>
-        <div class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
-          <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 rounded-t-xl">
-            <i class="fas fa-file-csv text-emerald-600"></i> Export as CSV
+        <div class="absolute right-0 mt-2 w-44 bg-white rounded-lg shadow-lg border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+          <a href="#" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-t-lg">
+            <i class="fas fa-file-csv text-emerald-600"></i> CSV
           </a>
-          <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50">
-            <i class="fas fa-file-excel text-green-600"></i> Export as Excel
+          <a href="#" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+            <i class="fas fa-file-excel text-green-600"></i> Excel
           </a>
-          <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 rounded-b-xl">
-            <i class="fas fa-print text-blue-600"></i> Print Report
+          <a href="#" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-b-lg">
+            <i class="fas fa-print text-blue-600"></i> Print
           </a>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Stats Cards -->
+  <!-- Stats Cards - Modern & Informative -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all cursor-pointer group" onclick="window.location.href='?status=all'">
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-slate-500 text-sm font-medium">Total Staff</p>
-          <p class="text-3xl font-bold text-slate-800 mt-1">{{ total_members }}</p>
+          <p class="text-slate-500 text-xs font-medium uppercase tracking-wide">Total staff</p>
+          <p class="text-2xl font-bold text-slate-800 mt-1" id="totalStaffCount">{{ total_members }}</p>
         </div>
-        <div class="h-12 w-12 rounded-xl bg-blue-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-          <i class="fas fa-users text-blue-600 text-xl"></i>
+        <div class="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
+          <i class="fas fa-users text-blue-600 text-lg"></i>
         </div>
+      </div>
+      <div class="mt-3 text-xs text-slate-400">
+        <span class="text-emerald-600 font-medium">+{{ active_count|default:"0" }}</span> active members
       </div>
     </div>
     
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all cursor-pointer group" onclick="window.location.href='?status=active'">
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-slate-500 text-sm font-medium">Active Staff</p>
-          <p class="text-3xl font-bold text-emerald-600 mt-1">{{ active_count }}</p>
+          <p class="text-slate-500 text-xs font-medium uppercase tracking-wide">On leave</p>
+          <p class="text-2xl font-bold text-slate-800 mt-1">{{ on_leave_count }}</p>
         </div>
-        <div class="h-12 w-12 rounded-xl bg-emerald-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-          <i class="fas fa-check-circle text-emerald-600 text-xl"></i>
+        <div class="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
+          <i class="fas fa-umbrella-beach text-amber-600 text-lg"></i>
         </div>
+      </div>
+      <div class="mt-3 text-xs text-slate-400">
+        Currently away
       </div>
     </div>
     
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all cursor-pointer group" onclick="window.location.href='?status=on_leave'">
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-slate-500 text-sm font-medium">On Leave</p>
-          <p class="text-3xl font-bold text-amber-600 mt-1">{{ on_leave_count }}</p>
+          <p class="text-slate-500 text-xs font-medium uppercase tracking-wide">Management</p>
+          <p class="text-2xl font-bold text-slate-800 mt-1">{{ management_count }}</p>
         </div>
-        <div class="h-12 w-12 rounded-xl bg-amber-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-          <i class="fas fa-umbrella-beach text-amber-600 text-xl"></i>
+        <div class="h-10 w-10 rounded-lg bg-purple-50 flex items-center justify-center">
+          <i class="fas fa-crown text-purple-600 text-lg"></i>
         </div>
       </div>
-    </div>
-    
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all cursor-pointer group" onclick="window.location.href='?role=admin,general_manager,operations_manager'">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-slate-500 text-sm font-medium">Management</p>
-          <p class="text-3xl font-bold text-purple-600 mt-1">{{ management_count }}</p>
-        </div>
-        <div class="h-12 w-12 rounded-xl bg-purple-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-          <i class="fas fa-crown text-purple-600 text-xl"></i>
-        </div>
+      <div class="mt-3 text-xs text-slate-400">
+        Leadership team
       </div>
     </div>
 
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all cursor-pointer group" onclick="window.location.href='{% url 'accounts:team_management' %}'">
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-slate-500 text-sm font-medium">Team View</p>
-          <p class="text-2xl font-bold text-slate-800 mt-1">Organization</p>
+          <p class="text-slate-500 text-xs font-medium uppercase tracking-wide">Departments</p>
+          <p class="text-2xl font-bold text-slate-800 mt-1">{{ department_count|default:"6" }}</p>
         </div>
-        <div class="h-12 w-12 rounded-xl bg-indigo-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-          <i class="fas fa-sitemap text-indigo-600 text-xl"></i>
+        <div class="h-10 w-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+          <i class="fas fa-building text-indigo-600 text-lg"></i>
         </div>
+      </div>
+      <div class="mt-3 text-xs text-slate-400">
+        Active divisions
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-slate-500 text-xs font-medium uppercase tracking-wide">Turnover</p>
+          <p class="text-2xl font-bold text-slate-800 mt-1">{{ turnover_rate|default:"12" }}%</p>
+        </div>
+        <div class="h-10 w-10 rounded-lg bg-rose-50 flex items-center justify-center">
+          <i class="fas fa-chart-line text-rose-600 text-lg"></i>
+        </div>
+      </div>
+      <div class="mt-3 text-xs text-slate-400">
+        Last 12 months
       </div>
     </div>
   </div>
 
-  <!-- Quick Action Bar -->
-  <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4 border border-blue-100">
+  <!-- Quick Action Bar - Subtle & Functional -->
+  <div class="bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <i class="fas fa-bolt text-blue-600 text-lg"></i>
-        <span class="text-sm font-semibold text-slate-700">Quick Actions:</span>
+      <div class="flex items-center gap-2">
+        <i class="fas fa-bolt text-slate-400 text-sm"></i>
+        <span class="text-xs font-medium text-slate-500 uppercase tracking-wide">Quick actions</span>
       </div>
       <div class="flex flex-wrap gap-2">
-        <a href="{% url 'accounts:hotel_member_invite' %}" class="px-3 py-1.5 bg-white rounded-lg text-sm text-blue-700 hover:bg-blue-600 hover:text-white transition-all">
-          <i class="fas fa-user-plus mr-1"></i> New Member
+        <a href="{% url 'accounts:hotel_member_invite' %}" class="px-3 py-1.5 bg-white rounded-md text-xs text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors border border-slate-200">
+          <i class="fas fa-user-plus mr-1"></i> New member
         </a>
-        <a href="{% url 'accounts:shift_management' %}" class="px-3 py-1.5 bg-white rounded-lg text-sm text-slate-700 hover:bg-slate-600 hover:text-white transition-all">
-          <i class="fas fa-clock mr-1"></i> Manage Shifts
+        <a href="{% url 'accounts:shift_management' %}" class="px-3 py-1.5 bg-white rounded-md text-xs text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors border border-slate-200">
+          <i class="fas fa-clock mr-1"></i> Shifts
         </a>
-        <a href="{% url 'accounts:staff_report' %}" class="px-3 py-1.5 bg-white rounded-lg text-sm text-slate-700 hover:bg-slate-600 hover:text-white transition-all">
-          <i class="fas fa-chart-bar mr-1"></i> Staff Reports
+        <a href="{% url 'accounts:staff_report' %}" class="px-3 py-1.5 bg-white rounded-md text-xs text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors border border-slate-200">
+          <i class="fas fa-chart-bar mr-1"></i> Reports
         </a>
-        <a href="{% url 'accounts:performance_report' %}" class="px-3 py-1.5 bg-white rounded-lg text-sm text-slate-700 hover:bg-slate-600 hover:text-white transition-all">
-          <i class="fas fa-star mr-1"></i> Performance Review
-        </a>
-        <a href="{% url 'accounts:member_stats_api' %}" class="px-3 py-1.5 bg-white rounded-lg text-sm text-slate-700 hover:bg-slate-600 hover:text-white transition-all" id="refreshStats">
-          <i class="fas fa-sync-alt mr-1"></i> Refresh Stats
+        <a href="{% url 'accounts:performance_report' %}" class="px-3 py-1.5 bg-white rounded-md text-xs text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors border border-slate-200">
+          <i class="fas fa-star mr-1"></i> Performance
         </a>
       </div>
     </div>
   </div>
 
-  <!-- Filters and Search -->
-  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-    <form method="get" class="space-y-4">
+  <!-- Filters and Search - Streamlined -->
+  <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
+    <form method="get" id="filterForm" class="space-y-4">
       <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
         <!-- Search -->
         <div class="md:col-span-2">
-          <label class="block text-sm font-medium text-slate-700 mb-2">Search</label>
+          <label class="block text-xs font-medium text-slate-600 mb-1.5">Search</label>
           <div class="relative">
             <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-            <input type="text" name="q" value="{{ search_query }}" 
-                   placeholder="Search by name, email, or employee ID..."
-                   class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all">
+            <input type="text" name="q" id="searchInput" value="{{ search_query }}" 
+                   placeholder="Name, email, or employee ID..."
+                   class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 transition-all">
           </div>
         </div>
         
         <!-- Role Filter -->
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">Role</label>
-          <select name="role" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all">
-            <option value="">All Roles</option>
+          <label class="block text-xs font-medium text-slate-600 mb-1.5">Role</label>
+          <select name="role" id="roleFilter" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 transition-all">
+            <option value="">All roles</option>
             {% for role_value, role_label in role_choices %}
             <option value="{{ role_value }}" {% if current_role == role_value %}selected{% endif %}>
               {{ role_label }}
@@ -173,115 +183,120 @@
         
         <!-- Status Filter -->
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">Status</label>
-          <select name="status" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all">
-            <option value="">All Status</option>
+          <label class="block text-xs font-medium text-slate-600 mb-1.5">Status</label>
+          <select name="status" id="statusFilter" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 transition-all">
+            <option value="">All status</option>
             <option value="active" {% if current_status == 'active' %}selected{% endif %}>Active</option>
             <option value="inactive" {% if current_status == 'inactive' %}selected{% endif %}>Inactive</option>
-            <option value="on_leave" {% if current_status == 'on_leave' %}selected{% endif %}>On Leave</option>
+            <option value="on_leave" {% if current_status == 'on_leave' %}selected{% endif %}>On leave</option>
           </select>
         </div>
 
         <!-- Sort By -->
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">Sort By</label>
-          <select name="order_by" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all">
-            <option value="-is_active" {% if current_order == '-is_active' %}selected{% endif %}>Active Status</option>
+          <label class="block text-xs font-medium text-slate-600 mb-1.5">Sort by</label>
+          <select name="order_by" id="sortFilter" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 transition-all">
+            <option value="-is_active" {% if current_order == '-is_active' %}selected{% endif %}>Active status</option>
             <option value="user__email" {% if current_order == 'user__email' %}selected{% endif %}>Email (A-Z)</option>
             <option value="-user__email" {% if current_order == '-user__email' %}selected{% endif %}>Email (Z-A)</option>
             <option value="role" {% if current_order == 'role' %}selected{% endif %}>Role (A-Z)</option>
-            <option value="-joined_at" {% if current_order == '-joined_at' %}selected{% endif %}>Newest First</option>
-            <option value="joined_at" {% if current_order == 'joined_at' %}selected{% endif %}>Oldest First</option>
-            <option value="employee_code" {% if current_order == 'employee_code' %}selected{% endif %}>Employee ID</option>
+            <option value="-joined_at" {% if current_order == '-joined_at' %}selected{% endif %}>Newest first</option>
+            <option value="joined_at" {% if current_order == 'joined_at' %}selected{% endif %}>Oldest first</option>
           </select>
         </div>
       </div>
       
-      <div class="flex justify-between items-center">
-        <div class="flex items-center gap-2">
-          <span class="text-sm text-slate-500">
-            <i class="fas fa-filter"></i> Active Filters:
-          </span>
+      <div class="flex justify-between items-center pt-1">
+        <div class="flex items-center gap-2 flex-wrap" id="activeFilters">
+          <span class="text-xs text-slate-400">Active filters:</span>
           {% if current_role %}
-          <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs">
+          <span class="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs" data-filter="role">
             Role: {{ current_role }}
-            <a href="?{% for key, value in request.GET.items %}{% if key != 'role' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="hover:text-red-600">
-              <i class="fas fa-times-circle"></i>
-            </a>
+            <button type="button" class="remove-filter hover:text-red-500 ml-0.5" data-filter-name="role">
+              <i class="fas fa-times-circle text-xs"></i>
+            </button>
           </span>
           {% endif %}
           {% if current_status %}
-          <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs">
+          <span class="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs" data-filter="status">
             Status: {{ current_status }}
-            <a href="?{% for key, value in request.GET.items %}{% if key != 'status' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="hover:text-red-600">
-              <i class="fas fa-times-circle"></i>
-            </a>
+            <button type="button" class="remove-filter hover:text-red-500 ml-0.5" data-filter-name="status">
+              <i class="fas fa-times-circle text-xs"></i>
+            </button>
+          </span>
+          {% endif %}
+          {% if search_query %}
+          <span class="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs" data-filter="q">
+            Search: {{ search_query|truncatechars:20 }}
+            <button type="button" class="remove-filter hover:text-red-500 ml-0.5" data-filter-name="q">
+              <i class="fas fa-times-circle text-xs"></i>
+            </button>
           </span>
           {% endif %}
         </div>
-        <div class="flex gap-3">
-          <a href="{% url 'accounts:hotel_members_list' %}" class="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors">
-            <i class="fas fa-eraser"></i> Clear All
+        <div class="flex gap-2">
+          <a href="{% url 'accounts:hotel_members_list' %}" class="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700 transition-colors">
+            Clear all
           </a>
-          <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-all">
-            <i class="fas fa-search"></i> Apply Filters
+          <button type="submit" class="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors shadow-sm">
+            Apply filters
           </button>
         </div>
       </div>
     </form>
   </div>
 
-  <!-- Staff Table -->
-  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+  <!-- Staff Table - Clean & Professional with Full Container Scroll -->
+  <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="w-full">
+      <table class="w-full min-w-[800px]">
         <thead class="bg-slate-50 border-b border-slate-200">
           <tr>
-            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-              <input type="checkbox" id="selectAll" class="rounded border-slate-300">
+            <th class="px-5 py-3 text-left">
+              <input type="checkbox" id="selectAll" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
             </th>
-            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Member</th>
-            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Role</th>
-            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Employee ID</th>
-            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Department</th>
-            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
-            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Joined</th>
-            <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Member</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Employee ID</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Department</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Joined</th>
+            <th class="px-5 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100">
+        <tbody id="membersTableBody">
           {% for member in members %}
-          <tr class="hover:bg-slate-50 transition-colors group">
-            <td class="px-6 py-4">
-              <input type="checkbox" class="member-checkbox rounded border-slate-300" value="{{ member.pk }}">
+          <tr class="hover:bg-slate-50/80 transition-colors member-row" data-member-id="{{ member.pk }}">
+            <td class="px-5 py-3">
+              <input type="checkbox" class="member-checkbox rounded border-slate-300 text-blue-600 focus:ring-blue-500" value="{{ member.pk }}">
             </td>
-            <td class="px-6 py-4">
+            <td class="px-5 py-3">
               <div class="flex items-center gap-3">
-                <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-sm">
+                <div class="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-medium text-sm shadow-sm">
                   {{ member.user.get_full_name|default:member.user.email|first|upper }}
                 </div>
                 <div>
-                  <p class="font-semibold text-slate-800">{{ member.user.get_full_name|default:member.user.username }}</p>
-                  <p class="text-sm text-slate-500">{{ member.user.email }}</p>
+                  <p class="font-medium text-slate-800 text-sm">{{ member.user.get_full_name|default:member.user.username }}</p>
+                  <p class="text-xs text-slate-400">{{ member.user.email }}</p>
                 </div>
               </div>
             </td>
-            <td class="px-6 py-4">
-              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
-                {% if member.role == 'admin' or member.role == 'general_manager' %}bg-purple-100 text-purple-700
-                {% elif member.role == 'operations_manager' or member.role == 'front_desk_manager' or member.role == 'housekeeping_manager' or member.role == 'restaurant_manager' %}bg-blue-100 text-blue-700
-                {% elif member.role == 'front_desk' or member.role == 'housekeeper' or member.role == 'server' or member.role == 'chef' %}bg-emerald-100 text-emerald-700
-                {% else %}bg-slate-100 text-slate-700{% endif %}">
+            <td class="px-5 py-3">
+              <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium
+                {% if member.role == 'admin' or member.role == 'general_manager' %}bg-purple-50 text-purple-700
+                {% elif member.role == 'operations_manager' or member.role == 'front_desk_manager' or member.role == 'housekeeping_manager' or member.role == 'restaurant_manager' %}bg-blue-50 text-blue-700
+                {% elif member.role == 'front_desk' or member.role == 'housekeeper' or member.role == 'server' or member.role == 'chef' %}bg-emerald-50 text-emerald-700
+                {% else %}bg-slate-100 text-slate-600{% endif %}">
                 {{ member.get_role_display }}
               </span>
-            </td>
-            <td class="px-6 py-4">
-              <code class="text-sm font-mono text-slate-600">{{ member.employee_code|default:"—" }}</code>
-            </td>
-            <td class="px-6 py-4">
+             </td>
+            <td class="px-5 py-3">
+              <code class="text-xs font-mono text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded">{{ member.employee_code|default:"—" }}</code>
+             </td>
+            <td class="px-5 py-3">
               <span class="text-sm text-slate-600">{{ member.department|default:"—" }}</span>
-            </td>
-            <td class="px-6 py-4">
+             </td>
+            <td class="px-5 py-3">
               {% if member.is_active %}
                 {% if member.is_on_leave %}
                   <span class="inline-flex items-center gap-1.5 text-amber-600">
@@ -289,12 +304,11 @@
                       <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                       <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
                     </span>
-                    <span class="text-sm font-medium">On Leave</span>
+                    <span class="text-sm font-medium">On leave</span>
                   </span>
                 {% else %}
                   <span class="inline-flex items-center gap-1.5 text-emerald-600">
                     <span class="relative flex h-2 w-2">
-                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                       <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                     </span>
                     <span class="text-sm font-medium">Active</span>
@@ -302,38 +316,38 @@
                 {% endif %}
               {% else %}
                 <span class="inline-flex items-center gap-1.5 text-slate-400">
-                  <i class="fas fa-circle text-[8px]"></i>
+                  <i class="fas fa-circle text-[6px]"></i>
                   <span class="text-sm font-medium">Inactive</span>
                 </span>
               {% endif %}
-            </td>
-            <td class="px-6 py-4 text-sm text-slate-600">
+             </td>
+            <td class="px-5 py-3 text-sm text-slate-500">
               {{ member.joined_at|date:"M d, Y" }}
-            </td>
-            <td class="px-6 py-4 text-right">
-              <div class="flex items-center justify-end gap-2">
+             </td>
+            <td class="px-5 py-3 text-right">
+              <div class="flex items-center justify-end gap-1">
+                <a href="{% url 'accounts:hotel_member_detail' member.pk %}" class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="View details">
+                  <i class="fas fa-eye text-sm"></i>
+                </a>
+                <a href="{% url 'accounts:hotel_member_update' member.pk %}" class="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" title="Edit member">
+                  <i class="fas fa-edit text-sm"></i>
+                </a>
                 <div class="relative group">
-                  <button class="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
-                    <i class="fas fa-ellipsis-v"></i>
+                  <button class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors" title="More actions">
+                    <i class="fas fa-ellipsis-v text-sm"></i>
                   </button>
-                  <div class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
-                    <a href="{% url 'accounts:hotel_member_detail' member.pk %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 rounded-t-xl">
-                      <i class="fas fa-eye text-blue-600"></i> View Details
+                  <div class="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                    <a href="{% url 'accounts:member_performance' member.pk %}" class="flex items-center gap-2 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 rounded-t-lg">
+                      <i class="fas fa-chart-line text-purple-500"></i> Performance
                     </a>
-                    <a href="{% url 'accounts:hotel_member_update' member.pk %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
-                      <i class="fas fa-edit text-amber-600"></i> Edit Member
-                    </a>
-                    <a href="{% url 'accounts:member_performance' member.pk %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
-                      <i class="fas fa-chart-line text-purple-600"></i> Performance Review
-                    </a>
-                    <a href="{% url 'accounts:member_activity' member.pk %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
-                      <i class="fas fa-history text-slate-600"></i> Activity Log
+                    <a href="{% url 'accounts:member_activity' member.pk %}" class="flex items-center gap-2 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50">
+                      <i class="fas fa-history text-slate-500"></i> Activity log
                     </a>
                     {% if member.invitation_accepted_at is None and member.invitation_sent_at %}
                     <form method="post" action="{% url 'accounts:resend_invitation' member.pk %}" class="block">
                       {% csrf_token %}
-                      <button type="submit" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
-                        <i class="fas fa-envelope text-purple-600"></i> Resend Invitation
+                      <button type="submit" class="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50">
+                        <i class="fas fa-envelope text-purple-500"></i> Resend invite
                       </button>
                     </form>
                     {% endif %}
@@ -341,177 +355,118 @@
                     <form method="post" action="{% url 'accounts:hotel_member_toggle_active' member.pk %}" class="block">
                       {% csrf_token %}
                       <button type="submit" 
-                              class="w-full flex items-center gap-3 px-4 py-2.5 text-sm {% if member.is_active %}text-red-600 hover:bg-red-50{% else %}text-emerald-600 hover:bg-emerald-50{% endif %} rounded-b-xl"
-                              onclick="return confirm('{% if member.is_active %}Are you sure you want to deactivate this member?{% else %}Are you sure you want to activate this member?{% endif %}')">
+                              class="w-full flex items-center gap-2 px-3 py-2 text-xs {% if member.is_active %}text-red-600 hover:bg-red-50{% else %}text-emerald-600 hover:bg-emerald-50{% endif %} rounded-b-lg"
+                              onclick="return confirm('{% if member.is_active %}Deactivate this member?{% else %}Activate this member?{% endif %}')">
                         <i class="fas {% if member.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}"></i>
-                        {% if member.is_active %}Deactivate{% else %}Activate{% endif %} Member
+                        {% if member.is_active %}Deactivate{% else %}Activate{% endif %}
                       </button>
                     </form>
                   </div>
                 </div>
               </div>
-            </td>
-          </tr>
+             </td>
+           </tr>
           {% empty %}
           <tr>
-            <td colspan="8" class="px-6 py-12 text-center">
-              <div class="flex flex-col items-center justify-center gap-3">
-                <div class="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center">
-                  <i class="fas fa-users text-2xl text-slate-400"></i>
+            <td colspan="8" class="px-5 py-12 text-center">
+              <div class="flex flex-col items-center justify-center gap-2">
+                <div class="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center">
+                  <i class="fas fa-users text-slate-400 text-xl"></i>
                 </div>
-                <p class="text-slate-500 font-medium">No staff members found</p>
-                <a href="{% url 'accounts:hotel_member_invite' %}" class="text-blue-600 hover:text-blue-700 font-medium">
+                <p class="text-slate-500 font-medium text-sm">No staff members found</p>
+                <a href="{% url 'accounts:hotel_member_invite' %}" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
                   Invite your first team member →
                 </a>
               </div>
-            </td>
-          </tr>
+             </td>
+           </tr>
           {% endfor %}
         </tbody>
-      </table>
+       </table>
     </div>
     
-    <!-- Bulk Actions -->
-    <div id="bulkActions" class="hidden px-6 py-3 bg-blue-50 border-t border-blue-100 flex items-center justify-between">
+    <!-- Bulk Actions - Contextual & Clean -->
+    <div id="bulkActions" class="hidden px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <span class="text-sm text-blue-700">
-          <span id="selectedCount">0</span> members selected
+        <span class="text-sm text-slate-600">
+          <span id="selectedCount">0</span> selected
         </span>
-        <button id="bulkDeactivate" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">
-          <i class="fas fa-user-slash"></i> Deactivate
+        <button id="bulkDeactivate" class="px-3 py-1 text-xs bg-white border border-red-200 text-red-600 rounded-md hover:bg-red-50 transition-colors">
+          <i class="fas fa-user-slash mr-1"></i> Deactivate
         </button>
-        <button id="bulkActivate" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700">
-          <i class="fas fa-user-check"></i> Activate
+        <button id="bulkActivate" class="px-3 py-1 text-xs bg-white border border-emerald-200 text-emerald-600 rounded-md hover:bg-emerald-50 transition-colors">
+          <i class="fas fa-user-check mr-1"></i> Activate
         </button>
-        <button id="bulkExport" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
-          <i class="fas fa-download"></i> Export Selected
+        <button id="bulkExport" class="px-3 py-1 text-xs bg-white border border-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors">
+          <i class="fas fa-download mr-1"></i> Export
         </button>
       </div>
-      <button id="clearSelection" class="text-sm text-slate-500 hover:text-slate-700">
-        <i class="fas fa-times"></i> Clear
+      <button id="clearSelection" class="text-xs text-slate-400 hover:text-slate-600">
+        Clear
       </button>
     </div>
 
-    <!-- Pagination -->
-    {% if is_paginated %}
-    <div class="px-6 py-4 border-t border-slate-200 bg-slate-50">
+    <!-- Client-side Pagination Component -->
+    <div id="paginationContainer" class="px-5 py-4 border-t border-slate-200 bg-white">
       <div class="flex items-center justify-between flex-wrap gap-3">
-        <div class="text-sm text-slate-600">
-          Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ paginator.count }} members
+        <div class="text-xs text-slate-500" id="paginationInfo">
+          Showing <span id="startIndex">0</span>-<span id="endIndex">0</span> of <span id="totalCount">0</span> members
         </div>
-        <div class="flex gap-2">
-          {% if page_obj.has_previous %}
-          <a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-             class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-all">
-            <i class="fas fa-chevron-left text-xs"></i> Previous
-          </a>
-          {% endif %}
-          
-          <div class="flex gap-1">
-            {% for i in paginator.page_range %}
-              {% if page_obj.number == i %}
-                <span class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">{{ i }}</span>
-              {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
-                <a href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-                   class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-all">
-                  {{ i }}
-                </a>
-              {% endif %}
-            {% endfor %}
-          </div>
-          
-          {% if page_obj.has_next %}
-          <a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-             class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-all">
-            Next <i class="fas fa-chevron-right text-xs"></i>
-          </a>
-          {% endif %}
+        <div class="flex gap-1.5" id="paginationControls">
+          <!-- Pagination buttons will be injected here -->
         </div>
       </div>
     </div>
-    {% endif %}
   </div>
 
-  <!-- Additional Links Section -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <!-- Supporting Information Cards - Subtle & Useful -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
     <!-- Quick Links -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-      <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-        <i class="fas fa-link text-blue-600"></i>
-        Quick Links
+    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
+      <h3 class="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
+        <i class="fas fa-link text-slate-400 text-xs"></i>
+        Useful links
       </h3>
-      <div class="space-y-3">
-        <a href="{% url 'accounts:team_management' %}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group">
-          <i class="fas fa-sitemap text-indigo-600 w-5"></i>
-          <div class="flex-1">
-            <p class="font-medium text-slate-700 group-hover:text-blue-600">Team Organization Chart</p>
-            <p class="text-xs text-slate-500">View team structure and hierarchy</p>
-          </div>
-          <i class="fas fa-chevron-right text-slate-400 text-sm"></i>
+      <div class="grid grid-cols-2 gap-2">
+        <a href="{% url 'accounts:team_management' %}" class="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50 transition-colors text-sm text-slate-600">
+          <i class="fas fa-sitemap text-indigo-400 w-4"></i> Team structure
         </a>
-        <a href="{% url 'accounts:shift_management' %}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group">
-          <i class="fas fa-clock text-emerald-600 w-5"></i>
-          <div class="flex-1">
-            <p class="font-medium text-slate-700 group-hover:text-blue-600">Shift Management</p>
-            <p class="text-xs text-slate-500">Manage staff shifts and schedules</p>
-          </div>
-          <i class="fas fa-chevron-right text-slate-400 text-sm"></i>
+        <a href="{% url 'accounts:shift_management' %}" class="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50 transition-colors text-sm text-slate-600">
+          <i class="fas fa-clock text-emerald-400 w-4"></i> Shift planner
         </a>
-        <a href="{% url 'accounts:staff_report' %}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group">
-          <i class="fas fa-chart-bar text-purple-600 w-5"></i>
-          <div class="flex-1">
-            <p class="font-medium text-slate-700 group-hover:text-blue-600">Staff Reports</p>
-            <p class="text-xs text-slate-500">View detailed staff analytics</p>
-          </div>
-          <i class="fas fa-chevron-right text-slate-400 text-sm"></i>
+        <a href="{% url 'accounts:staff_report' %}" class="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50 transition-colors text-sm text-slate-600">
+          <i class="fas fa-chart-bar text-purple-400 w-4"></i> Analytics
+        </a>
+        <a href="{% url 'accounts:performance_report' %}" class="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50 transition-colors text-sm text-slate-600">
+          <i class="fas fa-star text-amber-400 w-4"></i> Reviews
         </a>
       </div>
     </div>
 
-    <!-- Upcoming Events -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-      <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-        <i class="fas fa-calendar-alt text-amber-600"></i>
-        Upcoming Events
+    <!-- Upcoming -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
+      <h3 class="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
+        <i class="fas fa-calendar-alt text-slate-400 text-xs"></i>
+        Upcoming
       </h3>
-      <div class="space-y-3">
-        <div class="flex items-center gap-3 p-3 bg-amber-50 rounded-xl">
-          <div class="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
-            <i class="fas fa-star text-amber-600"></i>
+      <div class="space-y-2">
+        <div class="flex items-center gap-3 p-2 rounded-lg bg-slate-50">
+          <div class="h-7 w-7 rounded-md bg-amber-100 flex items-center justify-center">
+            <i class="fas fa-star text-amber-600 text-xs"></i>
           </div>
-          <div>
-            <p class="text-sm font-medium text-slate-800">Performance Reviews Due</p>
-            <p class="text-xs text-slate-500">Next review cycle: {{ upcoming_reviews_count|default:"15" }} reviews pending</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-3 p-3 bg-blue-50 rounded-xl">
-          <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-            <i class="fas fa-graduation-cap text-blue-600"></i>
-          </div>
-          <div>
-            <p class="text-sm font-medium text-slate-800">Training Sessions</p>
-            <p class="text-xs text-slate-500">3 upcoming training sessions this month</p>
+          <div class="flex-1">
+            <p class="text-xs font-medium text-slate-700">Performance reviews</p>
+            <p class="text-xs text-slate-400">{{ upcoming_reviews_count|default:"15" }} pending</p>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Announcements -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-      <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-        <i class="fas fa-bullhorn text-red-600"></i>
-        Announcements
-      </h3>
-      <div class="space-y-3">
-        <div class="p-3 border border-slate-100 rounded-xl">
-          <p class="text-sm font-medium text-slate-800">New HR Policy Update</p>
-          <p class="text-xs text-slate-500 mt-1">Updated leave policy effective next month</p>
-          <span class="text-xs text-blue-600 mt-2 inline-block">Read more →</span>
-        </div>
-        <div class="p-3 border border-slate-100 rounded-xl">
-          <p class="text-sm font-medium text-slate-800">Team Building Event</p>
-          <p class="text-xs text-slate-500 mt-1">Annual staff retreat scheduled for next quarter</p>
-          <span class="text-xs text-blue-600 mt-2 inline-block">RSVP now →</span>
+        <div class="flex items-center gap-3 p-2 rounded-lg bg-slate-50">
+          <div class="h-7 w-7 rounded-md bg-blue-100 flex items-center justify-center">
+            <i class="fas fa-graduation-cap text-blue-600 text-xs"></i>
+          </div>
+          <div class="flex-1">
+            <p class="text-xs font-medium text-slate-700">Training sessions</p>
+            <p class="text-xs text-slate-400">3 this month</p>
+          </div>
         </div>
       </div>
     </div>
@@ -522,7 +477,243 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Select All functionality
+  // ============================================
+  // CLIENT-SIDE PAGINATION SYSTEM
+  // ============================================
+  
+  const membersTableBody = document.getElementById('membersTableBody');
+  const paginationContainer = document.getElementById('paginationContainer');
+  const startIndexSpan = document.getElementById('startIndex');
+  const endIndexSpan = document.getElementById('endIndex');
+  const totalCountSpan = document.getElementById('totalCount');
+  const paginationControls = document.getElementById('paginationControls');
+  
+  let currentPage = 1;
+  let rowsPerPage = 10;
+  let allRows = [];
+  let filteredRows = [];
+  
+  // Initialize pagination by collecting all member rows
+  function initializePagination() {
+    // Get all member rows (excluding the "no results" row if present)
+    const rows = Array.from(document.querySelectorAll('#membersTableBody tr.member-row'));
+    
+    if (rows.length === 0) {
+      // If no member rows, check if there's a "no results" row
+      const noResultsRow = document.querySelector('#membersTableBody tr:not(.member-row)');
+      if (noResultsRow) {
+        paginationContainer.style.display = 'none';
+      }
+      return;
+    }
+    
+    allRows = rows;
+    filteredRows = [...allRows];
+    totalCountSpan.textContent = filteredRows.length;
+    
+    if (filteredRows.length <= rowsPerPage) {
+      // Hide pagination if not needed
+      paginationContainer.style.display = 'none';
+      showPage(1);
+    } else {
+      paginationContainer.style.display = 'block';
+      showPage(1);
+      renderPaginationButtons();
+    }
+  }
+  
+  // Show a specific page
+  function showPage(page) {
+    if (!filteredRows.length) return;
+    
+    currentPage = page;
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    
+    // Hide all rows first
+    allRows.forEach(row => row.style.display = 'none');
+    filteredRows.forEach(row => row.style.display = 'none');
+    
+    // Show rows for current page
+    const rowsToShow = filteredRows.slice(start, end);
+    rowsToShow.forEach(row => row.style.display = 'table-row');
+    
+    // Update pagination info
+    const totalFiltered = filteredRows.length;
+    const displayedEnd = Math.min(end, totalFiltered);
+    startIndexSpan.textContent = totalFiltered === 0 ? 0 : start + 1;
+    endIndexSpan.textContent = displayedEnd;
+    totalCountSpan.textContent = totalFiltered;
+    
+    // Update active state of pagination buttons
+    updatePaginationButtons();
+  }
+  
+  // Render pagination buttons
+  function renderPaginationButtons() {
+    const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+    if (totalPages <= 1) {
+      paginationControls.innerHTML = '';
+      return;
+    }
+    
+    let buttonsHtml = '';
+    
+    // Previous button
+    buttonsHtml += `
+      <button class="pagination-prev px-3 py-1.5 bg-white border border-slate-200 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" 
+              ${currentPage === 1 ? 'disabled' : ''}>
+        <i class="fas fa-chevron-left text-xs"></i> Previous
+      </button>
+    `;
+    
+    // Page numbers
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
+    
+    if (startPage > 1) {
+      buttonsHtml += `<button class="pagination-page px-3 py-1.5 bg-white border border-slate-200 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors" data-page="1">1</button>`;
+      if (startPage > 2) {
+        buttonsHtml += `<span class="px-2 text-slate-400">...</span>`;
+      }
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      buttonsHtml += `
+        <button class="pagination-page px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${currentPage === i ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}" 
+                data-page="${i}">
+          ${i}
+        </button>
+      `;
+    }
+    
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        buttonsHtml += `<span class="px-2 text-slate-400">...</span>`;
+      }
+      buttonsHtml += `<button class="pagination-page px-3 py-1.5 bg-white border border-slate-200 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors" data-page="${totalPages}">${totalPages}</button>`;
+    }
+    
+    // Next button
+    buttonsHtml += `
+      <button class="pagination-next px-3 py-1.5 bg-white border border-slate-200 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" 
+              ${currentPage === totalPages ? 'disabled' : ''}>
+        Next <i class="fas fa-chevron-right text-xs"></i>
+      </button>
+    `;
+    
+    paginationControls.innerHTML = buttonsHtml;
+    
+    // Attach event listeners
+    document.querySelectorAll('.pagination-page').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const page = parseInt(btn.dataset.page);
+        if (!isNaN(page) && page !== currentPage) {
+          showPage(page);
+          renderPaginationButtons();
+        }
+      });
+    });
+    
+    const prevBtn = document.querySelector('.pagination-prev');
+    const nextBtn = document.querySelector('.pagination-next');
+    
+    if (prevBtn && !prevBtn.disabled) {
+      prevBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+          showPage(currentPage - 1);
+          renderPaginationButtons();
+        }
+      });
+    }
+    
+    if (nextBtn && !nextBtn.disabled) {
+      nextBtn.addEventListener('click', () => {
+        const totalPagesCalc = Math.ceil(filteredRows.length / rowsPerPage);
+        if (currentPage < totalPagesCalc) {
+          showPage(currentPage + 1);
+          renderPaginationButtons();
+        }
+      });
+    }
+  }
+  
+  function updatePaginationButtons() {
+    const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+    const prevBtn = document.querySelector('.pagination-prev');
+    const nextBtn = document.querySelector('.pagination-next');
+    
+    if (prevBtn) {
+      if (currentPage === 1) {
+        prevBtn.disabled = true;
+        prevBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        prevBtn.disabled = false;
+        prevBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    }
+    
+    if (nextBtn) {
+      if (currentPage === totalPages) {
+        nextBtn.disabled = true;
+        nextBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        nextBtn.disabled = false;
+        nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    }
+  }
+  
+  // Filter function for client-side search (optional enhancement)
+  function filterRows() {
+    const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+    const roleFilter = document.getElementById('roleFilter')?.value || '';
+    const statusFilter = document.getElementById('statusFilter')?.value || '';
+    
+    filteredRows = allRows.filter(row => {
+      let matches = true;
+      
+      // Search filter
+      if (searchTerm) {
+        const nameEl = row.querySelector('td:nth-child(2) .font-medium');
+        const emailEl = row.querySelector('td:nth-child(2) .text-xs');
+        const employeeIdEl = row.querySelector('td:nth-child(4) code');
+        
+        const name = nameEl?.textContent.toLowerCase() || '';
+        const email = emailEl?.textContent.toLowerCase() || '';
+        const employeeId = employeeIdEl?.textContent.toLowerCase() || '';
+        
+        if (!name.includes(searchTerm) && !email.includes(searchTerm) && !employeeId.includes(searchTerm)) {
+          matches = false;
+        }
+      }
+      
+      // Role filter - would need to extract role text, keeping simple for now
+      // This would require more complex logic; for now we rely on server-side filtering
+      
+      return matches;
+    });
+    
+    totalCountSpan.textContent = filteredRows.length;
+    
+    if (filteredRows.length <= rowsPerPage) {
+      paginationContainer.style.display = 'none';
+    } else {
+      paginationContainer.style.display = 'block';
+    }
+    
+    showPage(1);
+    if (filteredRows.length > rowsPerPage) {
+      renderPaginationButtons();
+    } else {
+      paginationControls.innerHTML = '';
+    }
+  }
+  
+  // ============================================
+  // BULK ACTIONS & SELECT ALL
+  // ============================================
+  
   const selectAllCheckbox = document.getElementById('selectAll');
   const memberCheckboxes = document.querySelectorAll('.member-checkbox');
   const bulkActions = document.getElementById('bulkActions');
@@ -540,26 +731,37 @@ document.addEventListener('DOMContentLoaded', function() {
   
   if (selectAllCheckbox) {
     selectAllCheckbox.addEventListener('change', function() {
-      memberCheckboxes.forEach(cb => cb.checked = this.checked);
+      // Only select checkboxes from visible rows (current page)
+      const visibleRows = document.querySelectorAll('#membersTableBody tr.member-row[style*="display: table-row"], #membersTableBody tr.member-row:not([style*="display: none"])');
+      visibleRows.forEach(row => {
+        const cb = row.querySelector('.member-checkbox');
+        if (cb) cb.checked = selectAllCheckbox.checked;
+      });
       updateBulkActions();
     });
   }
   
-  memberCheckboxes.forEach(cb => {
-    cb.addEventListener('change', updateBulkActions);
-  });
+  // Update checkbox listener for dynamic rows (pagination changes)
+  function attachCheckboxListeners() {
+    document.querySelectorAll('.member-checkbox').forEach(cb => {
+      cb.removeEventListener('change', updateBulkActions);
+      cb.addEventListener('change', updateBulkActions);
+    });
+  }
+  
+  attachCheckboxListeners();
   
   // Clear selection
   const clearSelection = document.getElementById('clearSelection');
   if (clearSelection) {
     clearSelection.addEventListener('click', function() {
-      memberCheckboxes.forEach(cb => cb.checked = false);
+      document.querySelectorAll('.member-checkbox').forEach(cb => cb.checked = false);
       if (selectAllCheckbox) selectAllCheckbox.checked = false;
       updateBulkActions();
     });
   }
   
-  // Bulk actions
+  // Bulk actions placeholders
   const bulkDeactivate = document.getElementById('bulkDeactivate');
   const bulkActivate = document.getElementById('bulkActivate');
   const bulkExport = document.getElementById('bulkExport');
@@ -567,8 +769,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (bulkDeactivate) {
     bulkDeactivate.addEventListener('click', function() {
       const selected = Array.from(document.querySelectorAll('.member-checkbox:checked')).map(cb => cb.value);
-      if (selected.length > 0 && confirm(`Are you sure you want to deactivate ${selected.length} member(s)?`)) {
-        // Implement bulk deactivation via AJAX or form submission
+      if (selected.length && confirm(`Deactivate ${selected.length} member(s)?`)) {
         console.log('Deactivate:', selected);
       }
     });
@@ -577,7 +778,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (bulkActivate) {
     bulkActivate.addEventListener('click', function() {
       const selected = Array.from(document.querySelectorAll('.member-checkbox:checked')).map(cb => cb.value);
-      if (selected.length > 0 && confirm(`Are you sure you want to activate ${selected.length} member(s)?`)) {
+      if (selected.length && confirm(`Activate ${selected.length} member(s)?`)) {
         console.log('Activate:', selected);
       }
     });
@@ -586,20 +787,41 @@ document.addEventListener('DOMContentLoaded', function() {
   if (bulkExport) {
     bulkExport.addEventListener('click', function() {
       const selected = Array.from(document.querySelectorAll('.member-checkbox:checked')).map(cb => cb.value);
-      if (selected.length > 0) {
+      if (selected.length) {
         window.location.href = `?export=csv&ids=${selected.join(',')}`;
       }
     });
   }
   
-  // Refresh stats
-  const refreshStats = document.getElementById('refreshStats');
-  if (refreshStats) {
-    refreshStats.addEventListener('click', function(e) {
-      e.preventDefault();
-      location.reload();
+  // Remove filter functionality
+  document.querySelectorAll('.remove-filter').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const filterName = this.dataset.filterName;
+      if (filterName === 'role') {
+        document.getElementById('roleFilter').value = '';
+      } else if (filterName === 'status') {
+        document.getElementById('statusFilter').value = '';
+      } else if (filterName === 'q') {
+        document.getElementById('searchInput').value = '';
+      }
+      document.getElementById('filterForm').submit();
     });
-  }
+  });
+  
+  // Initialize pagination after DOM is fully loaded
+  initializePagination();
+  
+  // Re-initialize pagination after any dynamic updates (like form submissions that reload content)
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.type === 'childList' && mutation.target.id === 'membersTableBody') {
+        initializePagination();
+        attachCheckboxListeners();
+      }
+    });
+  });
+  
+  observer.observe(membersTableBody, { childList: true, subtree: true });
 });
 </script>
 {% endblock %}

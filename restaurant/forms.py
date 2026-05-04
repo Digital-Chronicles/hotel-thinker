@@ -3,12 +3,13 @@ from __future__ import annotations
 from decimal import Decimal
 from django import forms
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from .models import (
     DiningArea, Table,
     MenuCategory, MenuItem,
     RestaurantOrder, RestaurantOrderItem,
-    RestaurantPayment,
+    RestaurantPayment, RestaurantInvoice,
 )
 
 # Tailwind CSS classes
@@ -33,7 +34,7 @@ def apply_tailwind(form: forms.Form):
             widget.attrs["class"] = (css + " " + TW_TEXTAREA).strip()
         elif isinstance(widget, forms.FileInput):
             widget.attrs["class"] = (css + " " + TW_FILE).strip()
-        elif isinstance(widget, (forms.TextInput, forms.EmailInput, forms.NumberInput, forms.DateInput, forms.TimeInput)):
+        elif isinstance(widget, (forms.TextInput, forms.EmailInput, forms.NumberInput, forms.DateInput, forms.TimeInput, forms.PasswordInput)):
             widget.attrs["class"] = (css + " " + TW_INPUT).strip()
         else:
             widget.attrs["class"] = (css + " " + TW_INPUT).strip()
@@ -303,6 +304,11 @@ class MenuItemFilterForm(BaseHotelFilterForm):
         required=False,
         widget=forms.Select(attrs={"class": "w-40"})
     )
+    featured = forms.ChoiceField(
+        choices=[("", "All"), ("featured", "Featured"), ("recommended", "Recommended")],
+        required=False,
+        widget=forms.Select(attrs={"class": "w-40"})
+    )
     search = forms.CharField(
         required=False,
         widget=forms.TextInput(attrs={"placeholder": "Search items...", "class": "w-48"})
@@ -326,36 +332,60 @@ class RestaurantOrderForm(forms.ModelForm):
         model = RestaurantOrder
         fields = [
             "table", "customer_name", "customer_phone", "customer_email",
-            "booking", "room_charge", "discount", "discount_percent",
-            "tax", "tax_percent", "service_charge", "special_instructions"
+            "booking", "room_charge", "status",
+            "discount", "discount_percent", "tax", "tax_percent", 
+            "service_charge", "special_instructions", "kitchen_notes"
         ]
         widgets = {
             "customer_name": forms.TextInput(attrs={"placeholder": "Guest name (for walk-ins)"}),
             "customer_phone": forms.TextInput(attrs={"placeholder": "Contact number"}),
             "customer_email": forms.EmailInput(attrs={"placeholder": "Email for digital receipt"}),
-            "special_instructions": forms.Textarea(attrs={"rows": 2, "placeholder": "Special requests or instructions"}),
+            "special_instructions": forms.Textarea(attrs={"rows": 2, "placeholder": "Special requests or instructions for kitchen"}),
+            "kitchen_notes": forms.Textarea(attrs={"rows": 2, "placeholder": "Internal notes for kitchen staff"}),
             "discount": forms.NumberInput(attrs={"step": "0.01", "min": "0", "placeholder": "0.00"}),
             "discount_percent": forms.NumberInput(attrs={"step": "0.01", "min": "0", "max": "100", "placeholder": "0"}),
             "tax": forms.NumberInput(attrs={"step": "0.01", "min": "0", "placeholder": "0.00"}),
             "tax_percent": forms.NumberInput(attrs={"step": "0.01", "min": "0", "max": "100", "placeholder": "0"}),
             "service_charge": forms.NumberInput(attrs={"step": "0.01", "min": "0", "placeholder": "0.00"}),
+            "status": forms.Select(attrs={"class": TW_SELECT}),
         }
     
     def __init__(self, *args, hotel=None, **kwargs):
         super().__init__(*args, **kwargs)
         if hotel is not None:
-            self.fields["table"].queryset = Table.objects.filter(hotel=hotel, is_active=True).order_by("number")
-            if hasattr(hotel, 'bookings'):
-                self.fields["booking"].queryset = hotel.bookings.filter(
-                    status__in=['confirmed', 'checked_in']
-                ).select_related('guest')
+            # Filter tables by hotel
+            self.fields["table"].queryset = Table.objects.filter(
+                hotel=hotel, is_active=True
+            ).select_related("area").order_by("area__name", "number")
+            self.fields["table"].label_from_instance = lambda obj: f"Table {obj.number} - {obj.area.name if obj.area else 'No area'} ({obj.seats} seats)"
+            
+            # Filter bookings for room charge (only active/checked-in bookings)
+            from bookings.models import Booking
+            self.fields["booking"].queryset = Booking.objects.filter(
+                hotel=hotel, 
+                status__in=['confirmed', 'checked_in']
+            ).select_related('guest').order_by('-created_at')
+            self.fields["booking"].label_from_instance = lambda obj: f"{obj.booking_number} - {obj.guest.full_name if obj.guest else 'Guest'}"
         
         apply_tailwind(self)
         
+        # Set default values
+        self.fields["status"].initial = RestaurantOrder.Status.OPEN
+        self.fields["discount"].initial = Decimal("0.00")
+        self.fields["discount_percent"].initial = Decimal("0.00")
+        self.fields["tax"].initial = Decimal("0.00")
+        self.fields["tax_percent"].initial = Decimal("0.00")
+        self.fields["service_charge"].initial = Decimal("0.00")
+        self.fields["room_charge"].initial = False
+        
         # Add help texts
-        self.fields["room_charge"].help_text = "Charge to guest's room account"
+        self.fields["table"].help_text = "Select table for dine-in orders (leave empty for walk-ins)"
+        self.fields["booking"].help_text = "Link to registered hotel guest"
+        self.fields["room_charge"].help_text = "Charge to guest's room account (only available when guest is selected)"
+        self.fields["status"].help_text = "Open status allows adding items; moves to Kitchen automatically when items are added"
         self.fields["discount_percent"].help_text = "Apply percentage discount (overrides fixed discount)"
         self.fields["tax_percent"].help_text = "Apply percentage tax (overrides fixed tax)"
+        self.fields["kitchen_notes"].help_text = "Internal notes visible only to kitchen staff"
     
     def clean(self):
         cleaned_data = super().clean()
@@ -363,6 +393,8 @@ class RestaurantOrderForm(forms.ModelForm):
         discount_percent = cleaned_data.get("discount_percent", 0)
         tax = cleaned_data.get("tax", 0)
         tax_percent = cleaned_data.get("tax_percent", 0)
+        booking = cleaned_data.get("booking")
+        room_charge = cleaned_data.get("room_charge", False)
         
         if discount < 0:
             self.add_error("discount", "Discount cannot be negative.")
@@ -382,6 +414,9 @@ class RestaurantOrderForm(forms.ModelForm):
         if tax > 0 and tax_percent > 0:
             self.add_error(None, "Please use either fixed tax OR percentage tax, not both.")
         
+        if room_charge and not booking:
+            self.add_error("room_charge", "Room charge requires selecting a hotel guest first.")
+        
         return cleaned_data
 
 
@@ -392,8 +427,8 @@ class RestaurantOrderItemForm(forms.ModelForm):
         model = RestaurantOrderItem
         fields = ["item", "qty", "note"]
         widgets = {
-            "qty": forms.NumberInput(attrs={"min": "1", "step": "1", "value": "1"}),
-            "note": forms.TextInput(attrs={"placeholder": "Special instructions (optional)"}),
+            "qty": forms.NumberInput(attrs={"min": "1", "step": "1", "value": "1", "class": "w-24"}),
+            "note": forms.TextInput(attrs={"placeholder": "Special instructions (e.g., no onions, extra spicy)", "class": "w-full"}),
         }
     
     def __init__(self, *args, hotel=None, order=None, **kwargs):
@@ -402,6 +437,7 @@ class RestaurantOrderItemForm(forms.ModelForm):
             self.fields["item"].queryset = MenuItem.objects.filter(
                 hotel=hotel, is_active=True
             ).select_related("category").order_by("category__sort_order", "name")
+            self.fields["item"].label_from_instance = lambda obj: f"{obj.name} - ${obj.price}"
         
         self.order = order
         apply_tailwind(self)
@@ -409,7 +445,7 @@ class RestaurantOrderItemForm(forms.ModelForm):
         # Add help text
         self.fields["item"].help_text = "Select a menu item"
         self.fields["qty"].help_text = "Quantity to order"
-        self.fields["note"].help_text = "Any special requests for this item"
+        self.fields["note"].help_text = "Any special requests for this specific item"
     
     def clean_qty(self):
         qty = self.cleaned_data.get("qty") or 0
@@ -424,34 +460,19 @@ class RestaurantOrderItemForm(forms.ModelForm):
         return item
 
 
-class OrderItemFormSet(forms.BaseInlineFormSet):
-    """Custom formset for order items with validation"""
-    
-    def clean(self):
-        """Validate that all items are valid"""
-        super().clean()
-        items = []
-        
-        for form in self.forms:
-            if form.cleaned_data and not form.cleaned_data.get("DELETE", False):
-                item = form.cleaned_data.get("item")
-                if item:
-                    if item in items:
-                        raise forms.ValidationError("Duplicate items are not allowed. Please combine quantities.")
-                    items.append(item)
-
-
-# Import for formset factory
+# Create inline formset factory
 from django.forms import inlineformset_factory
 
 OrderItemFormSet = inlineformset_factory(
     RestaurantOrder,
     RestaurantOrderItem,
     form=RestaurantOrderItemForm,
-    formset=OrderItemFormSet,
     extra=1,
     can_delete=True,
-    fields=["item", "qty", "note"]
+    fields=["item", "qty", "note"],
+    widgets={
+        "note": forms.TextInput(attrs={"placeholder": "Special instructions"}),
+    }
 )
 
 
@@ -462,11 +483,27 @@ OrderItemFormSet = inlineformset_factory(
 class OrderStatusForm(forms.Form):
     """Form for changing order status"""
     status = forms.ChoiceField(choices=RestaurantOrder.Status.choices)
-    notes = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 2, "placeholder": "Optional notes"}))
+    notes = forms.CharField(
+        required=False, 
+        widget=forms.Textarea(attrs={"rows": 2, "placeholder": "Optional notes about status change"})
+    )
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         apply_tailwind(self)
+        
+        # Add status descriptions
+        status_descriptions = {
+            RestaurantOrder.Status.OPEN: "Order is open, items can be added",
+            RestaurantOrder.Status.KITCHEN: "Order sent to kitchen for preparation",
+            RestaurantOrder.Status.SERVED: "Food has been served to customer",
+            RestaurantOrder.Status.BILLED: "Invoice generated, awaiting payment",
+            RestaurantOrder.Status.PAID: "Payment received, order complete",
+            RestaurantOrder.Status.CANCELLED: "Order cancelled",
+        }
+        
+        # Add help text to status field
+        self.fields["status"].help_text = "Current order status"
     
     def clean_status(self):
         status = self.cleaned_data.get("status")
@@ -479,8 +516,15 @@ class PaymentForm(forms.Form):
     """Form for processing payments"""
     method = forms.ChoiceField(choices=RestaurantPayment.Method.choices)
     amount = forms.DecimalField(min_value=Decimal("0.01"), decimal_places=2, max_digits=12)
-    reference = forms.CharField(required=False, max_length=120, widget=forms.TextInput(attrs={"placeholder": "Transaction reference"}))
-    notes = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 2, "placeholder": "Payment notes"}))
+    reference = forms.CharField(
+        required=False, 
+        max_length=120, 
+        widget=forms.TextInput(attrs={"placeholder": "Transaction reference (for mobile/card payments)"})
+    )
+    notes = forms.CharField(
+        required=False, 
+        widget=forms.Textarea(attrs={"rows": 2, "placeholder": "Payment notes (optional)"})
+    )
     
     def __init__(self, *args, order=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -492,7 +536,8 @@ class PaymentForm(forms.Form):
         
         # Add help texts based on method
         self.fields["method"].help_text = "Select payment method"
-        self.fields["reference"].help_text = "Transaction ID or reference number (if applicable)"
+        self.fields["reference"].help_text = "Transaction ID or reference number (required for mobile/card payments)"
+        self.fields["amount"].help_text = f"Total amount due: {order.total if order else '0.00'}"
     
     def clean(self):
         cleaned_data = super().clean()
@@ -504,17 +549,17 @@ class PaymentForm(forms.Form):
         if amount is None:
             return cleaned_data
         
+        # Validate amount matches order total
         if amount != self.order.total:
             self.add_error("amount", f"Payment amount must equal order total ({self.order.total}).")
         
         method = cleaned_data.get("method")
         reference = cleaned_data.get("reference")
         
-        if method == RestaurantPayment.Method.MOMO and not reference:
-            self.add_error("reference", "Transaction reference is required for mobile money payments.")
-        
-        if method == RestaurantPayment.Method.CARD and not reference:
-            self.add_error("reference", "Transaction reference is required for card payments.")
+        # Require reference for mobile money and card payments
+        if method in [RestaurantPayment.Method.MOMO, RestaurantPayment.Method.CARD]:
+            if not reference:
+                self.add_error("reference", f"Transaction reference is required for {dict(RestaurantPayment.Method.choices).get(method, method)} payments.")
         
         return cleaned_data
 
@@ -537,6 +582,12 @@ class DateRangeForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         apply_tailwind(self)
+        
+        # Set default dates to last 30 days if not provided
+        if not self.is_bound:
+            today = timezone.localdate()
+            self.initial["date_from"] = today - timezone.timedelta(days=30)
+            self.initial["date_to"] = today
     
     def clean(self):
         cleaned_data = super().clean()
@@ -558,7 +609,7 @@ class SalesReportForm(DateRangeForm):
         widget=forms.Select(attrs={"class": "w-48"})
     )
     status = forms.ChoiceField(
-        choices=[("", "All")] + list(RestaurantOrder.Status.choices),
+        choices=[("", "All Orders"), ("paid", "Completed (Paid)"), ("cancelled", "Cancelled")],
         required=False,
         widget=forms.Select(attrs={"class": "w-36"})
     )
@@ -573,9 +624,102 @@ class SalesReportForm(DateRangeForm):
         initial="day",
         widget=forms.Select(attrs={"class": "w-36"})
     )
+    payment_method = forms.ChoiceField(
+        choices=[("", "All Methods")] + list(RestaurantPayment.Method.choices),
+        required=False,
+        widget=forms.Select(attrs={"class": "w-44"})
+    )
     
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         if user and hasattr(user, 'hotels'):
             self.fields["hotel"].queryset = user.hotels.all()
         apply_tailwind(self)
+
+
+class StockReportForm(DateRangeForm):
+    """Form for stock/inventory reporting"""
+    category = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        empty_label="All Categories",
+        widget=forms.Select(attrs={"class": "w-44"})
+    )
+    low_stock_only = forms.BooleanField(
+        required=False,
+        initial=False,
+        widget=forms.CheckboxInput(attrs={"class": TW_CHECKBOX})
+    )
+    sort_by = forms.ChoiceField(
+        choices=[
+            ("name", "By Name"),
+            ("stock_qty", "By Stock Quantity"),
+            ("sales_count", "By Sales Volume"),
+        ],
+        initial="name",
+        widget=forms.Select(attrs={"class": "w-36"})
+    )
+    
+    def __init__(self, *args, hotel=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if hotel:
+            self.fields["category"].queryset = MenuCategory.objects.filter(hotel=hotel, is_active=True)
+        apply_tailwind(self)
+        
+        # Add help text
+        self.fields["low_stock_only"].help_text = "Show only items below reorder level"
+
+
+# ============================================================================
+# Quick Order Form (for fast POS)
+# ============================================================================
+
+class QuickOrderForm(forms.Form):
+    """Quick order form for fast POS entry"""
+    table = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        widget=forms.Select(attrs={"class": "w-48"})
+    )
+    customer_name = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": "Customer name", "class": "w-48"})
+    )
+    items = forms.CharField(
+        required=True,
+        widget=forms.Textarea(attrs={
+            "rows": 4,
+            "placeholder": "Enter items (one per line)\nFormat: Item Name, Quantity\nExample: Burger, 2\nFries, 1",
+            "class": "w-full font-mono"
+        })
+    )
+    
+    def __init__(self, *args, hotel=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if hotel:
+            self.fields["table"].queryset = Table.objects.filter(hotel=hotel, is_active=True)
+        apply_tailwind(self)
+    
+    def clean_items(self):
+        items_data = self.cleaned_data.get("items", "")
+        parsed_items = []
+        
+        for line in items_data.strip().split("\n"):
+            if not line.strip():
+                continue
+            parts = [p.strip() for p in line.split(",")]
+            if len(parts) < 1:
+                raise forms.ValidationError(f"Invalid line format: {line}. Expected 'Item Name, Quantity'")
+            
+            item_name = parts[0]
+            quantity = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 1
+            
+            parsed_items.append({
+                "name": item_name,
+                "quantity": quantity
+            })
+        
+        if not parsed_items:
+            raise forms.ValidationError("At least one menu item is required.")
+        
+        return parsed_items

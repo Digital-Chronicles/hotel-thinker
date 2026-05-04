@@ -1,0 +1,91 @@
+{% load static %}
+
+<div class="item-form-row bg-white rounded-xl border border-slate-200 p-4 mb-3 transition-all hover:shadow-md" data-form-index="{{ forloop.counter0 }}">
+  <div class="grid grid-cols-12 gap-3 items-start">
+    <div class="col-span-12 md:col-span-5">
+      <label class="block text-xs font-medium text-slate-600 mb-1">
+        <i class="fas fa-wine-bottle text-blue-500 mr-1"></i>Item
+      </label>
+      <select name="{{ form.item.html_name }}" 
+              id="{{ form.item.id_for_label }}"
+              class="item-select w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-200 {% if form.item.errors %}border-rose-500{% endif %}">
+        <option value="">---------</option>
+        {% for item in hotel.bar_items.all %}
+          {% if item.is_active %}
+            <option value="{{ item.id }}" 
+                    data-price="{{ item.selling_price }}"
+                    {% if form.item.value == item.id %}selected{% endif %}>
+              {{ item.name }} ({{ item.category.name }}) - UGX {{ item.selling_price }}
+            </option>
+          {% endif %}
+        {% endfor %}
+      </select>
+      {% if form.item.errors %}
+        <p class="text-xs text-rose-500 mt-1">{{ form.item.errors.0 }}</p>
+      {% endif %}
+    </div>
+    
+    <div class="col-span-6 md:col-span-2">
+      <label class="block text-xs font-medium text-slate-600 mb-1">
+        <i class="fas fa-hashtag text-blue-500 mr-1"></i>Qty
+      </label>
+      <input type="number" 
+             name="{{ form.qty.html_name }}" 
+             id="{{ form.qty.id_for_label }}"
+             value="{{ form.qty.value|default:1 }}" 
+             min="1" 
+             step="1"
+             class="item-qty w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-200 {% if form.qty.errors %}border-rose-500{% endif %}">
+      {% if form.qty.errors %}
+        <p class="text-xs text-rose-500 mt-1">{{ form.qty.errors.0 }}</p>
+      {% endif %}
+    </div>
+    
+    <div class="col-span-6 md:col-span-2">
+      <label class="block text-xs font-medium text-slate-600 mb-1">
+        <i class="fas fa-tag text-blue-500 mr-1"></i>Price (UGX)
+      </label>
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+          <span class="text-xs text-slate-400">UGX</span>
+        </div>
+        <input type="number" 
+               name="{{ form.unit_price.html_name }}" 
+               id="{{ form.unit_price.id_for_label }}"
+               value="{{ form.unit_price.value }}" 
+               step="0.01" 
+               min="0"
+               class="item-price w-full rounded-lg border border-slate-300 pl-12 pr-3 py-2 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-200 {% if form.unit_price.errors %}border-rose-500{% endif %}">
+      </div>
+      {% if form.unit_price.errors %}
+        <p class="text-xs text-rose-500 mt-1">{{ form.unit_price.errors.0 }}</p>
+      {% endif %}
+    </div>
+    
+    <div class="col-span-12 md:col-span-2">
+      <label class="block text-xs font-medium text-slate-600 mb-1">
+        <i class="fas fa-pencil-alt text-blue-500 mr-1"></i>Note
+      </label>
+      <input type="text" 
+             name="{{ form.note.html_name }}" 
+             id="{{ form.note.id_for_label }}"
+             value="{{ form.note.value|default:'' }}" 
+             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-200" 
+             placeholder="Optional">
+    </div>
+    
+    <div class="col-span-12 md:col-span-1">
+      <label class="block text-xs font-medium text-slate-600 mb-1 invisible">Actions</label>
+      <button type="button" 
+              class="delete-item-btn w-full py-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-all">
+        <i class="fas fa-trash-alt text-sm"></i>
+        <span class="text-xs ml-1 hidden md:inline">Remove</span>
+      </button>
+    </div>
+    
+    {% if form.instance.pk %}
+      <input type="hidden" name="{{ form.id.html_name }}" value="{{ form.instance.pk }}">
+    {% endif %}
+    <input type="hidden" name="{{ form.DELETE.html_name }}" id="{{ form.DELETE.id_for_label }}">
+  </div>
+</div>

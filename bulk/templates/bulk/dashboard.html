@@ -1,0 +1,117 @@
+{% extends "bulk/base_bulk.html" %}
+
+{% block bulk_content %}
+<div class="space-y-6">
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white rounded-2xl border p-5 shadow-sm">
+      <p class="text-sm font-medium text-blue-600 uppercase">Total Jobs</p>
+      <p class="text-3xl font-bold text-gray-900 mt-2">{{ total_jobs|default:0 }}</p>
+    </div>
+
+    <div class="bg-white rounded-2xl border p-5 shadow-sm">
+      <p class="text-sm font-medium text-green-600 uppercase">Success Rate</p>
+      <p class="text-3xl font-bold text-gray-900 mt-2">{{ success_rate|default:0 }}%</p>
+    </div>
+
+    <div class="bg-white rounded-2xl border p-5 shadow-sm">
+      <p class="text-sm font-medium text-purple-600 uppercase">Rows Processed</p>
+      <p class="text-3xl font-bold text-gray-900 mt-2">{{ total_rows|default:0 }}</p>
+    </div>
+
+    <div class="bg-white rounded-2xl border p-5 shadow-sm">
+      <p class="text-sm font-medium text-red-600 uppercase">Failed Rows</p>
+      <p class="text-3xl font-bold text-gray-900 mt-2">{{ failed_rows|default:0 }}</p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+    <div class="p-5 border-b bg-gray-50 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+      <div>
+        <h2 class="text-xl font-bold text-gray-900">Bulk Job History</h2>
+        <p class="text-sm text-gray-500">Latest import and export activities.</p>
+      </div>
+
+      <input id="searchJobs"
+             type="text"
+             placeholder="Search jobs..."
+             class="w-full lg:w-80 px-4 py-2 rounded-xl border border-gray-300 text-sm">
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead class="bg-gray-50 border-b">
+          <tr>
+            <th class="px-4 py-3 text-left font-semibold text-gray-600">Date</th>
+            <th class="px-4 py-3 text-left font-semibold text-gray-600">Action</th>
+            <th class="px-4 py-3 text-left font-semibold text-gray-600">Model</th>
+            <th class="px-4 py-3 text-right font-semibold text-gray-600">Total</th>
+            <th class="px-4 py-3 text-right font-semibold text-gray-600">Success</th>
+            <th class="px-4 py-3 text-right font-semibold text-gray-600">Failed</th>
+            <th class="px-4 py-3 text-left font-semibold text-gray-600">Status</th>
+            <th class="px-4 py-3 text-left font-semibold text-gray-600">Message</th>
+          </tr>
+        </thead>
+
+        <tbody id="jobTableBody" class="divide-y">
+          {% for job in jobs %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-3 whitespace-nowrap">{{ job.created_at|date:"M d, Y H:i" }}</td>
+            <td class="px-4 py-3">{{ job.get_action_display }}</td>
+            <td class="px-4 py-3 font-mono text-xs">{{ job.app_label }}.{{ job.model_name }}</td>
+            <td class="px-4 py-3 text-right">{{ job.total_rows }}</td>
+            <td class="px-4 py-3 text-right text-green-700">{{ job.success_rows }}</td>
+            <td class="px-4 py-3 text-right text-red-700">{{ job.failed_rows }}</td>
+            <td class="px-4 py-3">
+              {% if job.status == "success" %}
+                <span class="px-2 py-1 rounded-lg bg-green-100 text-green-700 text-xs font-semibold">Success</span>
+              {% elif job.status == "failed" %}
+                <span class="px-2 py-1 rounded-lg bg-red-100 text-red-700 text-xs font-semibold">Failed</span>
+              {% else %}
+                <span class="px-2 py-1 rounded-lg bg-yellow-100 text-yellow-700 text-xs font-semibold">Partial</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 max-w-lg">
+              {% if job.message %}
+                <details class="text-xs">
+                  <summary class="cursor-pointer text-red-600 font-semibold">
+                    View error details
+                  </summary>
+                  <pre class="mt-2 whitespace-pre-wrap bg-red-50 border border-red-200 text-red-700 rounded-lg p-3">{{ job.message }}</pre>
+                </details>
+              {% else %}
+                <span class="text-gray-400">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="px-4 py-12 text-center text-gray-500">
+              No bulk jobs yet.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const search = document.getElementById("searchJobs");
+  const rows = document.querySelectorAll("#jobTableBody tr");
+
+  if (!search) return;
+
+  search.addEventListener("input", function () {
+    const term = this.value.toLowerCase();
+
+    rows.forEach(row => {
+      row.style.display = row.innerText.toLowerCase().includes(term) ? "" : "none";
+    });
+  });
+});
+</script>
+{% endblock %}

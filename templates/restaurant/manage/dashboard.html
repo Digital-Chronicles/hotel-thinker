@@ -2,156 +2,405 @@
 {% block title %}Restaurant Setup — Hotel Thinker{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto">
+<div class="space-y-6">
 
-  <div class="mb-6 flex items-start justify-between gap-4">
-    <div>
-      <h1 class="text-2xl font-bold text-slate-900">Restaurant Setup</h1>
-      <p class="text-sm text-slate-600 mt-1">Create areas, tables, categories, and menu items.</p>
-    </div>
-
-    <a href="{% url 'restaurant:order_list' %}"
-       class="px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50">
-      Back to Orders
-    </a>
-  </div>
-
-  <!-- Stats -->
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-    <div class="rounded-2xl border bg-white p-4">
-      <div class="text-xs text-slate-500">Areas</div>
-      <div class="text-xl font-bold text-slate-900">{{ areas_count }}</div>
-    </div>
-    <div class="rounded-2xl border bg-white p-4">
-      <div class="text-xs text-slate-500">Tables</div>
-      <div class="text-xl font-bold text-slate-900">{{ tables_count }}</div>
-    </div>
-    <div class="rounded-2xl border bg-white p-4">
-      <div class="text-xs text-slate-500">Categories</div>
-      <div class="text-xl font-bold text-slate-900">{{ categories_count }}</div>
-    </div>
-    <div class="rounded-2xl border bg-white p-4">
-      <div class="text-xs text-slate-500">Menu Items</div>
-      <div class="text-xl font-bold text-slate-900">{{ items_count }}</div>
+  <!-- Header Section with Gradient -->
+  <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 md:p-8">
+    <div class="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 left-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl"></div>
+    
+    <div class="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-3 mb-2">
+          <div class="h-10 w-10 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center">
+            <i class="fas fa-utensils text-white text-lg"></i>
+          </div>
+          <h1 class="text-2xl md:text-3xl font-bold text-white">Restaurant Setup</h1>
+        </div>
+        <p class="text-slate-300 text-sm md:text-base max-w-lg">
+          Configure your dining areas, tables, menu categories, and items in one centralized dashboard.
+        </p>
+      </div>
+      
+      <a href="{% url 'restaurant:order_list' %}"
+         class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 backdrop-blur border border-white/20 text-white font-semibold hover:bg-white/20 transition-all group">
+        <i class="fas fa-arrow-left text-sm group-hover:-translate-x-0.5 transition-transform"></i>
+        <span>Back to Orders</span>
+      </a>
     </div>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-    <!-- Quick add -->
-    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
-      <h2 class="text-lg font-bold text-slate-900">Quick Add</h2>
-      <p class="text-sm text-slate-600 mt-1">Add setup data quickly from one page.</p>
-
-      <div class="mt-6 space-y-6">
-
-        <form method="post">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="add_area" />
-          <div class="flex items-end gap-3">
-            <div class="flex-1">
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Dining Area</label>
-              {{ area_form.name }}
-            </div>
-            <button class="px-4 py-2 rounded-lg bg-slate-900 text-sm font-semibold text-white hover:bg-slate-950">
-              Add
-            </button>
+  <!-- Enhanced Stats Grid -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="group relative overflow-hidden rounded-2xl bg-white border border-slate-200 p-5 hover:shadow-xl hover:border-blue-200 transition-all duration-300">
+      <div class="absolute top-0 right-0 w-20 h-20 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition"></div>
+      <div class="relative">
+        <div class="flex items-center justify-between mb-3">
+          <div class="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
+            <i class="fas fa-map-marker-alt text-blue-600 text-lg"></i>
           </div>
-        </form>
-
-        <form method="post">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="add_table" />
-          <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-            <div class="md:col-span-5">
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Area</label>
-              {{ table_form.area }}
-            </div>
-            <div class="md:col-span-3">
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Table No.</label>
-              {{ table_form.number }}
-            </div>
-            <div class="md:col-span-2">
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Seats</label>
-              {{ table_form.seats }}
-            </div>
-            <div class="md:col-span-2">
-              <button class="w-full px-4 py-2 rounded-lg bg-slate-900 text-sm font-semibold text-white hover:bg-slate-950">
-                Add
-              </button>
-            </div>
-          </div>
-        </form>
-
-        <form method="post">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="add_category" />
-          <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-            <div class="md:col-span-8">
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Menu Category</label>
-              {{ category_form.name }}
-            </div>
-            <div class="md:col-span-4">
-              <button class="w-full px-4 py-2 rounded-lg bg-slate-900 text-sm font-semibold text-white hover:bg-slate-950">
-                Add
-              </button>
-            </div>
-          </div>
-        </form>
-
-        <form method="post">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="add_item" />
-          <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-            <div class="md:col-span-5">
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Category</label>
-              {{ item_form.category }}
-            </div>
-            <div class="md:col-span-4">
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Item Name</label>
-              {{ item_form.name }}
-            </div>
-            <div class="md:col-span-3">
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Price</label>
-              {{ item_form.price }}
-            </div>
-            <div class="md:col-span-12 flex justify-end">
-              <button class="px-4 py-2 rounded-lg bg-slate-900 text-sm font-semibold text-white hover:bg-slate-950">
-                Add Menu Item
-              </button>
-            </div>
-          </div>
-        </form>
-
+          <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">Total</span>
+        </div>
+        <div class="text-3xl font-bold text-slate-900 mb-1">{{ areas_count }}</div>
+        <div class="text-sm text-slate-600">Dining Areas</div>
+        <div class="mt-2 h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+          <div class="h-full bg-blue-500 rounded-full" style="width: {{ areas_percentage|default:'0' }}%"></div>
+        </div>
       </div>
     </div>
 
-    <!-- Links -->
-    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
-      <h2 class="text-lg font-bold text-slate-900">Manage Pages</h2>
-      <p class="text-sm text-slate-600 mt-1">View and edit setup data.</p>
-
-      <div class="mt-5 grid grid-cols-1 gap-3">
-        <a href="{% url 'restaurant:area_list' %}" class="p-4 rounded-xl border hover:bg-slate-50">
-          <div class="font-semibold text-slate-900">Dining Areas</div>
-          <div class="text-sm text-slate-600">List and edit all dining areas.</div>
-        </a>
-        <a href="{% url 'restaurant:table_list' %}" class="p-4 rounded-xl border hover:bg-slate-50">
-          <div class="font-semibold text-slate-900">Tables</div>
-          <div class="text-sm text-slate-600">Manage table numbers and seats.</div>
-        </a>
-        <a href="{% url 'restaurant:category_list' %}" class="p-4 rounded-xl border hover:bg-slate-50">
-          <div class="font-semibold text-slate-900">Menu Categories</div>
-          <div class="text-sm text-slate-600">Organize your menu into sections.</div>
-        </a>
-        <a href="{% url 'restaurant:item_list' %}" class="p-4 rounded-xl border hover:bg-slate-50">
-          <div class="font-semibold text-slate-900">Menu Items</div>
-          <div class="text-sm text-slate-600">Manage menu items and pricing.</div>
-        </a>
+    <div class="group relative overflow-hidden rounded-2xl bg-white border border-slate-200 p-5 hover:shadow-xl hover:border-emerald-200 transition-all duration-300">
+      <div class="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition"></div>
+      <div class="relative">
+        <div class="flex items-center justify-between mb-3">
+          <div class="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+            <i class="fas fa-chair text-emerald-600 text-lg"></i>
+          </div>
+          <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">Capacity</span>
+        </div>
+        <div class="text-3xl font-bold text-slate-900 mb-1">{{ tables_count }}</div>
+        <div class="text-sm text-slate-600">Tables Configured</div>
+        <div class="mt-2 h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+          <div class="h-full bg-emerald-500 rounded-full" style="width: {{ tables_percentage|default:'0' }}%"></div>
+        </div>
       </div>
     </div>
 
+    <div class="group relative overflow-hidden rounded-2xl bg-white border border-slate-200 p-5 hover:shadow-xl hover:border-purple-200 transition-all duration-300">
+      <div class="absolute top-0 right-0 w-20 h-20 bg-purple-500/5 rounded-full blur-2xl group-hover:bg-purple-500/10 transition"></div>
+      <div class="relative">
+        <div class="flex items-center justify-between mb-3">
+          <div class="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center">
+            <i class="fas fa-tag text-purple-600 text-lg"></i>
+          </div>
+          <span class="text-xs font-semibold text-purple-600 bg-purple-50 px-2 py-1 rounded-full">Sections</span>
+        </div>
+        <div class="text-3xl font-bold text-slate-900 mb-1">{{ categories_count }}</div>
+        <div class="text-sm text-slate-600">Menu Categories</div>
+        <div class="mt-2 h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+          <div class="h-full bg-purple-500 rounded-full" style="width: {{ categories_percentage|default:'0' }}%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="group relative overflow-hidden rounded-2xl bg-white border border-slate-200 p-5 hover:shadow-xl hover:border-amber-200 transition-all duration-300">
+      <div class="absolute top-0 right-0 w-20 h-20 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition"></div>
+      <div class="relative">
+        <div class="flex items-center justify-between mb-3">
+          <div class="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center">
+            <i class="fas fa-hamburger text-amber-600 text-lg"></i>
+          </div>
+          <span class="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-1 rounded-full">Menu</span>
+        </div>
+        <div class="text-3xl font-bold text-slate-900 mb-1">{{ items_count }}</div>
+        <div class="text-sm text-slate-600">Menu Items</div>
+        <div class="mt-2 h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+          <div class="h-full bg-amber-500 rounded-full" style="width: {{ items_percentage|default:'0' }}%"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
+  <!-- Main Content Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- Quick Add Section - Enhanced -->
+    <div class="lg:col-span-2">
+      <div class="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+        <div class="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white px-6 py-4">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
+              <i class="fas fa-bolt text-white text-sm"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Quick Setup</h2>
+              <p class="text-sm text-slate-600">Add items quickly without leaving this page</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 space-y-6">
+          <!-- Dining Area Quick Add -->
+          <form method="post" class="group">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_area" />
+            <div class="flex items-center justify-between mb-3">
+              <label class="flex items-center gap-2 text-sm font-bold text-slate-700">
+                <i class="fas fa-map-marker-alt text-blue-500 text-xs"></i>
+                <span>Add Dining Area</span>
+              </label>
+              <span class="text-xs text-slate-400">Required for table setup</span>
+            </div>
+            <div class="flex gap-3">
+              <div class="flex-1 relative">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                {{ area_form.name }}
+              </div>
+              <button class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm hover:shadow-md">
+                <i class="fas fa-plus mr-2 text-xs"></i>
+                Add Area
+              </button>
+            </div>
+          </form>
+
+          <!-- Table Quick Add -->
+          <form method="post" class="group">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_table" />
+            <div class="flex items-center justify-between mb-3">
+              <label class="flex items-center gap-2 text-sm font-bold text-slate-700">
+                <i class="fas fa-chair text-emerald-500 text-xs"></i>
+                <span>Add Table</span>
+              </label>
+              <span class="text-xs text-slate-400">Assign to a dining area</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+              <div class="md:col-span-5 relative">
+                <i class="fas fa-building absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                {{ table_form.area }}
+              </div>
+              <div class="md:col-span-3 relative">
+                <i class="fas fa-hashtag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                {{ table_form.number }}
+              </div>
+              <div class="md:col-span-2 relative">
+                <i class="fas fa-users absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                {{ table_form.seats }}
+              </div>
+              <div class="md:col-span-2">
+                <button class="w-full px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold hover:from-emerald-700 hover:to-teal-700 transition-all shadow-sm hover:shadow-md">
+                  <i class="fas fa-plus mr-2 text-xs"></i>
+                  Add Table
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <!-- Menu Category Quick Add -->
+          <form method="post" class="group">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_category" />
+            <div class="flex items-center justify-between mb-3">
+              <label class="flex items-center gap-2 text-sm font-bold text-slate-700">
+                <i class="fas fa-tag text-purple-500 text-xs"></i>
+                <span>Add Menu Category</span>
+              </label>
+              <span class="text-xs text-slate-400">Organize your menu items</span>
+            </div>
+            <div class="flex gap-3">
+              <div class="flex-1 relative">
+                <i class="fas fa-folder absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                {{ category_form.name }}
+              </div>
+              <button class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 transition-all shadow-sm hover:shadow-md">
+                <i class="fas fa-plus mr-2 text-xs"></i>
+                Add Category
+              </button>
+            </div>
+          </form>
+
+          <!-- Menu Item Quick Add -->
+          <form method="post" class="group">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_item" />
+            <div class="flex items-center justify-between mb-3">
+              <label class="flex items-center gap-2 text-sm font-bold text-slate-700">
+                <i class="fas fa-hamburger text-amber-500 text-xs"></i>
+                <span>Add Menu Item</span>
+              </label>
+              <span class="text-xs text-slate-400">Set price and category</span>
+            </div>
+            <div class="space-y-3">
+              <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                <div class="md:col-span-5 relative">
+                  <i class="fas fa-list absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                  {{ item_form.category }}
+                </div>
+                <div class="md:col-span-4 relative">
+                  <i class="fas fa-utensils absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                  {{ item_form.name }}
+                </div>
+                <div class="md:col-span-3 relative">
+                  <i class="fas fa-dollar-sign absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                  {{ item_form.price }}
+                </div>
+              </div>
+              <div class="flex justify-end">
+                <button class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 text-white font-semibold hover:from-amber-700 hover:to-orange-700 transition-all shadow-sm hover:shadow-md">
+                  <i class="fas fa-plus mr-2 text-xs"></i>
+                  Add Menu Item
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Management Links - Enhanced -->
+    <div class="space-y-6">
+      <!-- Quick Stats Card -->
+      <div class="rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 p-6">
+        <div class="flex items-start gap-3 mb-4">
+          <div class="h-12 w-12 rounded-xl bg-white shadow-sm flex items-center justify-center">
+            <i class="fas fa-chart-line text-blue-600 text-xl"></i>
+          </div>
+          <div class="flex-1">
+            <h3 class="text-sm font-bold text-slate-900">Setup Progress</h3>
+            <div class="mt-2">
+              <div class="flex justify-between text-xs text-slate-600 mb-1">
+                <span>Completion</span>
+                <span class="font-semibold text-blue-600">{{ completion_percentage|default:'0' }}%</span>
+              </div>
+              <div class="h-2 bg-white rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-500" style="width: {{ completion_percentage|default:'0' }}%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="text-xs text-slate-600">
+          <i class="fas fa-info-circle text-blue-500 mr-1"></i>
+          Add areas and categories to start building your menu
+        </div>
+      </div>
+
+      <!-- Management Links -->
+      <div class="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+        <div class="border-b border-slate-200 bg-slate-50/50 px-6 py-4">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-cog text-slate-600 text-sm"></i>
+            <h2 class="text-base font-bold text-slate-900">Management Hub</h2>
+          </div>
+          <p class="text-xs text-slate-600 mt-1">View, edit, and manage all restaurant data</p>
+        </div>
+
+        <div class="p-4 space-y-2">
+          <a href="{% url 'restaurant:area_list' %}" 
+             class="group flex items-center justify-between p-3 rounded-xl hover:bg-blue-50 transition-all duration-200">
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-lg bg-blue-100 group-hover:bg-blue-200 transition-colors flex items-center justify-center">
+                <i class="fas fa-map-marker-alt text-blue-600 text-sm"></i>
+              </div>
+              <div>
+                <div class="font-semibold text-slate-900 group-hover:text-blue-700">Dining Areas</div>
+                <div class="text-xs text-slate-500">{{ areas_count }} area{{ areas_count|pluralize }} configured</div>
+              </div>
+            </div>
+            <i class="fas fa-chevron-right text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all"></i>
+          </a>
+
+          <a href="{% url 'restaurant:table_list' %}" 
+             class="group flex items-center justify-between p-3 rounded-xl hover:bg-emerald-50 transition-all duration-200">
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-lg bg-emerald-100 group-hover:bg-emerald-200 transition-colors flex items-center justify-center">
+                <i class="fas fa-chair text-emerald-600 text-sm"></i>
+              </div>
+              <div>
+                <div class="font-semibold text-slate-900 group-hover:text-emerald-700">Tables</div>
+                <div class="text-xs text-slate-500">{{ tables_count }} table{{ tables_count|pluralize }} available</div>
+              </div>
+            </div>
+            <i class="fas fa-chevron-right text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all"></i>
+          </a>
+
+          <a href="{% url 'restaurant:category_list' %}" 
+             class="group flex items-center justify-between p-3 rounded-xl hover:bg-purple-50 transition-all duration-200">
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-lg bg-purple-100 group-hover:bg-purple-200 transition-colors flex items-center justify-center">
+                <i class="fas fa-tag text-purple-600 text-sm"></i>
+              </div>
+              <div>
+                <div class="font-semibold text-slate-900 group-hover:text-purple-700">Menu Categories</div>
+                <div class="text-xs text-slate-500">{{ categories_count }} categor{{ categories_count|pluralize:"y,ies" }} organized</div>
+              </div>
+            </div>
+            <i class="fas fa-chevron-right text-slate-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all"></i>
+          </a>
+
+          <a href="{% url 'restaurant:item_list' %}" 
+             class="group flex items-center justify-between p-3 rounded-xl hover:bg-amber-50 transition-all duration-200">
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-lg bg-amber-100 group-hover:bg-amber-200 transition-colors flex items-center justify-center">
+                <i class="fas fa-hamburger text-amber-600 text-sm"></i>
+              </div>
+              <div>
+                <div class="font-semibold text-slate-900 group-hover:text-amber-700">Menu Items</div>
+                <div class="text-xs text-slate-500">{{ items_count }} item{{ items_count|pluralize }} on menu</div>
+              </div>
+            </div>
+            <i class="fas fa-chevron-right text-slate-400 group-hover:text-amber-600 group-hover:translate-x-1 transition-all"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- Help Tip -->
+      <div class="rounded-2xl bg-gradient-to-r from-slate-800 to-slate-900 p-5 text-white">
+        <div class="flex items-start gap-3">
+          <div class="h-10 w-10 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-lightbulb text-amber-400 text-lg"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-sm mb-1">Pro Tip</h4>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Start by creating dining areas, then add tables. Next, organize your menu with categories before adding individual items with prices.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<script>
+// Add input icons dynamically
+document.addEventListener('DOMContentLoaded', function() {
+  // Style form inputs with consistent padding for icons
+  const inputs = document.querySelectorAll('input:not([type="hidden"]), select');
+  inputs.forEach(input => {
+    if (!input.closest('.relative') && input.parentElement?.classList.contains('relative')) {
+      // Already has icon container
+      return;
+    }
+    // Add padding for icons if needed
+    if (input.previousElementSibling?.classList.contains('absolute')) {
+      input.classList.add('pl-9');
+    }
+    input.classList.add('w-full', 'rounded-xl', 'border-slate-200', 'focus:border-blue-400', 
+                       'focus:ring', 'focus:ring-blue-200', 'focus:ring-opacity-50', 
+                       'transition', 'px-3', 'py-2.5', 'text-sm');
+  });
+});
+</script>
+
+<style>
+/* Custom animations */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.space-y-6 > * {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+.space-y-6 > *:nth-child(1) { animation-delay: 0s; }
+.space-y-6 > *:nth-child(2) { animation-delay: 0.05s; }
+.space-y-6 > *:nth-child(3) { animation-delay: 0.1s; }
+
+/* Hover effects */
+.group:hover .group-hover\:translate-x-1 {
+  transform: translateX(0.25rem);
+}
+
+/* Progress bar animation */
+.h-full.transition-all {
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+</style>
 {% endblock %}

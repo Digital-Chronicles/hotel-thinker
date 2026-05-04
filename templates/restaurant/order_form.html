@@ -126,13 +126,13 @@
 
               <div class="flex items-center gap-2">
                 <button type="button" id="btnDineIn"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border border-slate-300 bg-white hover:bg-slate-50 transition">
-                  <i class="fas fa-chair text-blue-500 text-xs"></i>
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border border-blue-600 bg-blue-600 text-white hover:bg-blue-700 transition">
+                  <i class="fas fa-chair text-white text-xs"></i>
                   <span>Dine-in</span>
                 </button>
                 <button type="button" id="btnWalkIn"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border border-slate-300 bg-white hover:bg-slate-50 transition">
-                  <i class="fas fa-walking text-blue-500 text-xs"></i>
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition">
+                  <i class="fas fa-walking text-slate-500 text-xs"></i>
                   <span>Walk-in</span>
                 </button>
               </div>
@@ -162,7 +162,9 @@
               <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
                 <i class="fas fa-tag text-xs mr-1"></i>Order Status
               </label>
-              {{ form.status }}
+              <div class="relative">
+                {{ form.status }}
+              </div>
               <p class="text-xs text-slate-500 mt-1">
                 <i class="fas fa-lightbulb text-amber-500 text-[10px] mr-1"></i>
                 Recommended: <span class="font-semibold text-blue-600">Open</span>. Moves to Kitchen when items are added.
@@ -197,13 +199,55 @@
               {% endif %}
             </div>
 
-            <!-- Discount -->
+            <!-- Customer Email -->
             <div>
               <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
-                <i class="fas fa-tags text-xs mr-1"></i>Discount Amount (UGX)
+                <i class="fas fa-envelope text-xs mr-1"></i>Customer Email (Optional)
+              </label>
+              {{ form.customer_email }}
+              <p class="text-xs text-slate-500 mt-1">
+                For digital receipts and order updates.
+              </p>
+              {% if form.customer_email.errors %}
+                <p class="text-sm text-rose-600 mt-1">{{ form.customer_email.errors.0 }}</p>
+              {% endif %}
+            </div>
+
+            <!-- Booking (Room Charge) -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+                <i class="fas fa-hotel text-xs mr-1"></i>Guest Booking (Optional)
+              </label>
+              {{ form.booking }}
+              <p class="text-xs text-slate-500 mt-1">
+                Link to hotel guest for room charge option.
+              </p>
+              {% if form.booking.errors %}
+                <p class="text-sm text-rose-600 mt-1">{{ form.booking.errors.0 }}</p>
+              {% endif %}
+            </div>
+
+            <!-- Room Charge Checkbox -->
+            <div>
+              <label class="flex items-center gap-2 cursor-pointer">
+                {{ form.room_charge }}
+                <span class="text-sm font-medium text-slate-700">Charge to guest's room</span>
+              </label>
+              <p class="text-xs text-slate-500 mt-1">
+                <i class="fas fa-receipt text-[10px] mr-1"></i>
+                Only available when a booking is selected.
+              </p>
+              {% if form.room_charge.errors %}
+                <p class="text-sm text-rose-600 mt-1">{{ form.room_charge.errors.0 }}</p>
+              {% endif %}
+            </div>
+
+            <!-- Discount Amount -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+                <i class="fas fa-tags text-xs mr-1"></i>Discount Amount
               </label>
               <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">UGX</span>
                 {{ form.discount }}
               </div>
               <p class="text-xs text-slate-500 mt-1">Enter 0 if no discount applied.</p>
@@ -212,13 +256,26 @@
               {% endif %}
             </div>
 
-            <!-- Tax -->
+            <!-- Discount Percentage -->
             <div>
               <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
-                <i class="fas fa-percent text-xs mr-1"></i>Tax Amount (UGX)
+                <i class="fas fa-percent text-xs mr-1"></i>Discount Percentage
               </label>
               <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">UGX</span>
+                {{ form.discount_percent }}
+              </div>
+              <p class="text-xs text-slate-500 mt-1">Overrides fixed discount.</p>
+              {% if form.discount_percent.errors %}
+                <p class="text-sm text-rose-600 mt-1">{{ form.discount_percent.errors.0 }}</p>
+              {% endif %}
+            </div>
+
+            <!-- Tax Amount -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+                <i class="fas fa-percent text-xs mr-1"></i>Tax Amount
+              </label>
+              <div class="relative">
                 {{ form.tax }}
               </div>
               <p class="text-xs text-slate-500 mt-1">Enter 0 if no tax applicable.</p>
@@ -226,6 +283,62 @@
                 <p class="text-sm text-rose-600 mt-1">{{ form.tax.errors.0 }}</p>
               {% endif %}
             </div>
+
+            <!-- Tax Percentage -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+                <i class="fas fa-percent text-xs mr-1"></i>Tax Percentage
+              </label>
+              <div class="relative">
+                {{ form.tax_percent }}
+              </div>
+              <p class="text-xs text-slate-500 mt-1">Overrides fixed tax.</p>
+              {% if form.tax_percent.errors %}
+                <p class="text-sm text-rose-600 mt-1">{{ form.tax_percent.errors.0 }}</p>
+              {% endif %}
+            </div>
+
+            <!-- Service Charge -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+                <i class="fas fa-hand-holding-usd text-xs mr-1"></i>Service Charge
+              </label>
+              <div class="relative">
+                {{ form.service_charge }}
+              </div>
+              <p class="text-xs text-slate-500 mt-1">Service fee (if applicable).</p>
+              {% if form.service_charge.errors %}
+                <p class="text-sm text-rose-600 mt-1">{{ form.service_charge.errors.0 }}</p>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Special Instructions -->
+          <div class="mt-5">
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+              <i class="fas fa-pen text-xs mr-1"></i>Special Instructions
+            </label>
+            {{ form.special_instructions }}
+            <p class="text-xs text-slate-500 mt-1">
+              Any special requests for the entire order (e.g., allergies, celebration notes).
+            </p>
+            {% if form.special_instructions.errors %}
+              <p class="text-sm text-rose-600 mt-1">{{ form.special_instructions.errors.0 }}</p>
+            {% endif %}
+          </div>
+
+          <!-- Kitchen Notes (Staff only) -->
+          <div class="mt-5">
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+              <i class="fas fa-kitchen-set text-xs mr-1"></i>Kitchen Notes (Staff Only)
+            </label>
+            {{ form.kitchen_notes }}
+            <p class="text-xs text-slate-500 mt-1">
+              Internal notes visible only to kitchen staff.
+            </p>
+            {% if form.kitchen_notes.errors %}
+              <p class="text-sm text-rose-600 mt-1">{{ form.kitchen_notes.errors.0 }}</p>
+            {% endif %}
           </div>
 
           <!-- Form Actions -->
@@ -277,11 +390,11 @@
             </li>
             <li class="flex gap-3">
               <div class="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold mt-0.5">3</div>
-              <div>After creating, add items and status moves to <span class="font-semibold text-blue-600">Kitchen</span>.</div>
+              <div><span class="font-semibold text-slate-800">Room Charge:</span> Link a booking to charge to guest's room.</div>
             </li>
             <li class="flex gap-3">
               <div class="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold mt-0.5">4</div>
-              <div>Use <span class="font-semibold text-slate-800">Bill</span> → <span class="font-semibold text-slate-800">Pay</span> → <span class="font-semibold text-slate-800">Print Receipt</span> to complete.</div>
+              <div>After creating, add items and status moves to <span class="font-semibold text-blue-600">Kitchen</span>.</div>
             </li>
           </ul>
         </div>
@@ -292,7 +405,7 @@
         <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/50">
           <div class="flex items-center gap-2">
             <i class="fas fa-chart-simple text-blue-600 text-sm"></i>
-            <h3 class="text-sm font-semibold text-slate-800">Recommended Defaults</h3>
+            <h3 class="text-sm font-semibold text-slate-800">Default Values</h3>
           </div>
         </div>
         
@@ -304,11 +417,15 @@
             </div>
             <div class="flex justify-between items-center py-2 border-b border-slate-100">
               <span class="text-sm text-slate-600">Discount</span>
-              <span class="text-sm font-semibold text-slate-800">UGX 0</span>
+              <span class="text-sm font-semibold text-slate-700">0.00</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-slate-100">
+              <span class="text-sm text-slate-600">Tax</span>
+              <span class="text-sm font-semibold text-slate-700">0.00</span>
             </div>
             <div class="flex justify-between items-center py-2">
-              <span class="text-sm text-slate-600">Tax</span>
-              <span class="text-sm font-semibold text-slate-800">UGX 0</span>
+              <span class="text-sm text-slate-600">Service Charge</span>
+              <span class="text-sm font-semibold text-slate-700">0.00</span>
             </div>
           </div>
           
@@ -349,16 +466,18 @@
   const statusSelect = document.querySelector("select[name='status']");
   const badge = document.getElementById("statusBadge");
   const tableSelect = document.querySelector("select[name='table']");
+  const bookingSelect = document.querySelector("select[name='booking']");
+  const roomChargeCheckbox = document.querySelector("input[name='room_charge']");
   const btnDineIn = document.getElementById("btnDineIn");
   const btnWalkIn = document.getElementById("btnWalkIn");
 
+  // Status badge update
   function updateStatusBadge() {
     if (!statusSelect || !badge) return;
 
     const val = statusSelect.value || "";
     const label = statusSelect.options[statusSelect.selectedIndex]?.text || "—";
 
-    // Status color mapping
     const statusConfig = {
       "paid": { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" },
       "billed": { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500" },
@@ -374,51 +493,89 @@
     badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${config.dot}"></span>Status: ${label}`;
   }
 
+  // Table state management
   function updateTableState(isWalkIn) {
     if (!tableSelect) return;
 
     if (isWalkIn) {
       tableSelect.value = "";
       tableSelect.disabled = true;
-      tableSelect.classList.add("bg-slate-100", "cursor-not-allowed");
-      if (btnWalkIn && btnDineIn) {
-        btnWalkIn.classList.add("bg-blue-600", "text-white", "border-blue-600");
-        btnWalkIn.classList.remove("bg-white", "text-slate-700");
-        btnDineIn.classList.remove("bg-blue-600", "text-white", "border-blue-600");
-        btnDineIn.classList.add("bg-white", "text-slate-700");
-      }
+      tableSelect.classList.add("bg-slate-100", "cursor-not-allowed", "opacity-75");
     } else {
       tableSelect.disabled = false;
-      tableSelect.classList.remove("bg-slate-100", "cursor-not-allowed");
-      if (btnWalkIn && btnDineIn) {
-        btnDineIn.classList.add("bg-blue-600", "text-white", "border-blue-600");
-        btnDineIn.classList.remove("bg-white", "text-slate-700");
-        btnWalkIn.classList.remove("bg-blue-600", "text-white", "border-blue-600");
-        btnWalkIn.classList.add("bg-white", "text-slate-700");
-      }
+      tableSelect.classList.remove("bg-slate-100", "cursor-not-allowed", "opacity-75");
     }
   }
 
-  // Initialize
-  updateStatusBadge();
-  
+  // Button styling
+  function updateButtonStyles(isDineIn) {
+    if (!btnDineIn || !btnWalkIn) return;
+
+    if (isDineIn) {
+      btnDineIn.classList.add("bg-blue-600", "text-white", "border-blue-600");
+      btnDineIn.classList.remove("bg-white", "text-slate-700", "border-slate-300");
+      btnWalkIn.classList.add("bg-white", "text-slate-700", "border-slate-300");
+      btnWalkIn.classList.remove("bg-blue-600", "text-white", "border-blue-600");
+    } else {
+      btnWalkIn.classList.add("bg-blue-600", "text-white", "border-blue-600");
+      btnWalkIn.classList.remove("bg-white", "text-slate-700", "border-slate-300");
+      btnDineIn.classList.add("bg-white", "text-slate-700", "border-slate-300");
+      btnDineIn.classList.remove("bg-blue-600", "text-white", "border-blue-600");
+    }
+  }
+
+  // Room charge checkbox state
+  function updateRoomChargeState() {
+    if (!roomChargeCheckbox || !bookingSelect) return;
+    
+    const hasBooking = bookingSelect.value && bookingSelect.value !== "";
+    
+    if (!hasBooking) {
+      roomChargeCheckbox.checked = false;
+      roomChargeCheckbox.disabled = true;
+      roomChargeCheckbox.closest('label')?.classList.add('opacity-50', 'cursor-not-allowed');
+    } else {
+      roomChargeCheckbox.disabled = false;
+      roomChargeCheckbox.closest('label')?.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+  }
+
+  // Event listeners
   if (statusSelect) {
     statusSelect.addEventListener("change", updateStatusBadge);
   }
 
-  if (btnWalkIn) {
-    btnWalkIn.addEventListener("click", () => updateTableState(true));
+  if (btnDineIn) {
+    btnDineIn.addEventListener("click", () => {
+      updateTableState(false);
+      updateButtonStyles(true);
+    });
   }
   
-  if (btnDineIn) {
-    btnDineIn.addEventListener("click", () => updateTableState(false));
+  if (btnWalkIn) {
+    btnWalkIn.addEventListener("click", () => {
+      updateTableState(true);
+      updateButtonStyles(false);
+    });
   }
 
-  // Check initial table value
-  if (tableSelect && !tableSelect.value) {
-    updateTableState(true);
-  } else if (tableSelect && tableSelect.value) {
-    updateTableState(false);
+  if (bookingSelect) {
+    bookingSelect.addEventListener("change", updateRoomChargeState);
+  }
+
+  // Initial state
+  updateStatusBadge();
+  updateRoomChargeState();
+
+  // Check initial table value and set appropriate styles
+  if (tableSelect) {
+    if (!tableSelect.value || tableSelect.value === "") {
+      updateTableState(true);
+      updateButtonStyles(false);
+    } else {
+      updateTableState(false);
+      updateButtonStyles(true);
+    }
   }
 })();
 </script>

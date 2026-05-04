@@ -1,78 +1,81 @@
+# finance/views.py
 from __future__ import annotations
 
-from datetime import datetime, time, timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
-from django.db.models import F, Q, Sum, Value
+from django.db import transaction
+from django.db.models import Q, Sum, F, Value, DecimalField
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.decorators import method_decorator
-from django.views.decorators.http import require_POST
-from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
+from django.views.decorators.http import require_http_methods, require_POST, require_GET
+from django.views.generic import (
+    CreateView, DetailView, ListView, TemplateView, UpdateView, DeleteView
+)
 
 from hotel_thinker.utils import get_active_hotel_for_user, require_hotel_role
 
-from .forms import ExpenseForm, PaymentForm
+from .forms import (
+    AccountForm, AssetForm, CashAccountForm, DateRangeForm, ExpenseForm,
+    FinancialPeriodForm, InvoiceForm, InvoiceLineItemForm, JournalEntryForm,
+    JournalLineForm, LiabilityForm, PaymentForm, TrialBalanceForm, VendorForm
+)
 from .models import (
-    Account,
-    Asset,
-    Expense,
-    FinancialPeriod,
-    Invoice,
-    JournalEntry,
-    JournalLine,
-    Liability,
-    Payment,
-    Vendor,
+    Account, Asset, CashAccount, CashMovement, Expense, ExpenseAuditLog,
+    FinancialPeriod, Invoice, InvoiceAuditLog, InvoiceLineItem,
+    JournalEntry, JournalLine, Liability, Payment, Refund, Vendor
 )
 
 D0 = Decimal("0.00")
-
-# Optional restaurant revenue integration
-try:
-    from restaurant.models import RestaurantPayment  # type: ignore
-except Exception:
-    RestaurantPayment = None
+D001 = Decimal("0.01")
 
 
-# ---------------------------------------------------------
+# =========================================================
 # Helpers
-# ---------------------------------------------------------
+# =========================================================
+
 def _hotel(request):
+    """Get active hotel for the current request"""
     return get_active_hotel_for_user(request.user, request=request)
 
 
 def _require_finance_access(user):
+    """Require finance access role"""
     require_hotel_role(user, {"admin", "accountant", "general_manager"})
 
 
 def _aware_datetime_from_date(d, end=False):
+    """Convert date to timezone-aware datetime"""
     tz = timezone.get_current_timezone()
     if end:
-        return timezone.make_aware(datetime.combine(d, time.max), tz)
-    return timezone.make_aware(datetime.combine(d, time.min), tz)
+        return timezone.make_aware(datetime.combine(d, datetime.max.time()), tz)
+    return timezone.make_aware(datetime.combine(d, datetime.min.time()), tz)
 
 
 class HotelScopedQuerysetMixin:
-    """
-    Restrict querysets to the active hotel.
-    """
+    """Restrict querysets to the active hotel."""
 
     def get_hotel(self):
         return get_active_hotel_for_user(self.request.user, request=self.request)
 
     def get_queryset(self):
-        return super().get_queryset().filter(hotel=self.get_hotel())
+        qs = super().get_queryset()
+        hotel = self.get_hotel()
+        if hotel and hasattr(qs, "filter"):
+            return qs.filter(hotel=hotel)
+        return qs
 
 
-# ---------------------------------------------------------
+# =========================================================
 # FINANCE DASHBOARD
-# ---------------------------------------------------------
+# =========================================================
+
 @method_decorator(login_required, name="dispatch")
 class DashboardView(TemplateView):
     template_name = "finance/dashboard.html"
@@ -114,27 +117,15 @@ class DashboardView(TemplateView):
             received_at__date__lte=last_month_end,
         ).aggregate(total=Coalesce(Sum("amount"), D0))["total"]
 
-        if RestaurantPayment is not None:
+        # Optional restaurant integration
+        try:
+            from restaurant.models import RestaurantPayment
             restaurant_qs = RestaurantPayment.objects.filter(hotel=hotel)
-
-            restaurant_today = restaurant_qs.filter(
-                received_at__date=today
-            ).aggregate(total=Coalesce(Sum("amount"), D0))["total"]
-
-            restaurant_yesterday = restaurant_qs.filter(
-                received_at__date=yesterday
-            ).aggregate(total=Coalesce(Sum("amount"), D0))["total"]
-
-            restaurant_monthly = restaurant_qs.filter(
-                received_at__date__gte=month_start,
-                received_at__date__lte=today,
-            ).aggregate(total=Coalesce(Sum("amount"), D0))["total"]
-
-            restaurant_last_month = restaurant_qs.filter(
-                received_at__date__gte=last_month_start,
-                received_at__date__lte=last_month_end,
-            ).aggregate(total=Coalesce(Sum("amount"), D0))["total"]
-        else:
+            restaurant_today = restaurant_qs.filter(received_at__date=today).aggregate(total=Coalesce(Sum("amount"), D0))["total"]
+            restaurant_yesterday = restaurant_qs.filter(received_at__date=yesterday).aggregate(total=Coalesce(Sum("amount"), D0))["total"]
+            restaurant_monthly = restaurant_qs.filter(received_at__date__gte=month_start, received_at__date__lte=today).aggregate(total=Coalesce(Sum("amount"), D0))["total"]
+            restaurant_last_month = restaurant_qs.filter(received_at__date__gte=last_month_start, received_at__date__lte=last_month_end).aggregate(total=Coalesce(Sum("amount"), D0))["total"]
+        except ImportError:
             restaurant_today = D0
             restaurant_yesterday = D0
             restaurant_monthly = D0
@@ -142,7 +133,6 @@ class DashboardView(TemplateView):
 
         total_today_revenue = today_revenue + restaurant_today
         total_monthly_revenue = monthly_revenue + restaurant_monthly
-
         yesterday_total = yesterday_revenue + restaurant_yesterday
         last_month_total = last_month_revenue + restaurant_last_month
 
@@ -216,11 +206,13 @@ class DashboardView(TemplateView):
                 received_at__date=day
             ).aggregate(total=Coalesce(Sum("amount"), D0))["total"]
 
-            if RestaurantPayment is not None:
+            try:
+                from restaurant.models import RestaurantPayment
                 day_revenue += RestaurantPayment.objects.filter(
-                    hotel=hotel,
-                    received_at__date=day,
+                    hotel=hotel, received_at__date=day
                 ).aggregate(total=Coalesce(Sum("amount"), D0))["total"]
+            except ImportError:
+                pass
 
             revenue_data.append(float(day_revenue))
 
@@ -277,7 +269,8 @@ class DashboardView(TemplateView):
                 "type": "Income",
             })
 
-        if RestaurantPayment is not None:
+        try:
+            from restaurant.models import RestaurantPayment
             recent_restaurant = RestaurantPayment.objects.filter(
                 hotel=hotel
             ).order_by("-received_at")[:10]
@@ -289,6 +282,8 @@ class DashboardView(TemplateView):
                     "amount": rp.amount,
                     "type": "Income",
                 })
+        except ImportError:
+            pass
 
         recent_expenses = expense_qs.filter(
             approval_status__in=[Expense.ApprovalStatus.PAID, Expense.ApprovalStatus.PARTIAL]
@@ -331,9 +326,10 @@ class DashboardView(TemplateView):
         return ctx
 
 
-# ---------------------------------------------------------
+# =========================================================
 # Invoices
-# ---------------------------------------------------------
+# =========================================================
+
 @method_decorator(login_required, name="dispatch")
 class InvoiceListView(HotelScopedQuerysetMixin, ListView):
     model = Invoice
@@ -366,34 +362,25 @@ class InvoiceListView(HotelScopedQuerysetMixin, ListView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         
-        # Get the filtered queryset for stats
-        filtered_qs = self.get_queryset()
-        
+        hotel = self.get_hotel()
+        all_invoices = Invoice.objects.filter(hotel=hotel)
         today = timezone.localdate()
         
-        # Calculate outstanding and overdue balances
-        total_outstanding = Decimal('0')
-        total_overdue = Decimal('0')
+        total_outstanding = D0
+        total_overdue = D0
         
-        for invoice in filtered_qs:
+        for invoice in all_invoices:
             balance = invoice.total_amount - invoice.amount_paid
-            
-            # Only count invoices that are not paid, voided, or credit notes
-            if balance > 0 and invoice.status not in ['paid', 'void', 'credit_note']:
+            if balance > D0 and invoice.status not in ['paid', 'void', 'credit_note']:
                 total_outstanding += balance
-                
-                # Check if overdue
                 if invoice.due_date and invoice.due_date < today:
                     total_overdue += balance
         
-        # Calculate paid this month
-        paid_this_month = filtered_qs.filter(
+        paid_this_month = all_invoices.filter(
             status='paid',
             paid_at__year=today.year,
             paid_at__month=today.month
-        ).aggregate(
-            total=Coalesce(Sum('total_amount'), Value(Decimal('0')))
-        )['total'] or Decimal('0')
+        ).aggregate(total=Coalesce(Sum('total_amount'), Value(D0)))['total'] or D0
         
         ctx['status_choices'] = Invoice.Status.choices
         ctx['total_outstanding'] = total_outstanding
@@ -418,16 +405,66 @@ class InvoiceDetailView(HotelScopedQuerysetMixin, DetailView):
             super()
             .get_queryset()
             .select_related(
-                "booking",
-                "hotel",
-                "created_by",
-                "voided_by",
-                "receivable_account",
-                "revenue_account",
-                "tax_account",
+                "booking", "hotel", "created_by", "voided_by",
+                "receivable_account", "revenue_account", "tax_account",
             )
             .prefetch_related("line_items", "payments", "audit_logs")
         )
+
+
+@method_decorator(login_required, name="dispatch")
+class InvoiceCreateView(CreateView):
+    model = Invoice
+    form_class = InvoiceForm
+    template_name = "finance/invoice_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        _require_finance_access(request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['hotel'] = _hotel(self.request)
+        return kwargs
+
+    def form_valid(self, form):
+        hotel = _hotel(self.request)
+        form.instance.hotel = hotel
+        form.instance.created_by = self.request.user
+        form.instance.status = Invoice.Status.DRAFT
+        
+        messages.success(self.request, f"Invoice {form.instance.invoice_number} created successfully.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("finance:invoice_detail", kwargs={"pk": self.object.pk})
+
+
+@method_decorator(login_required, name="dispatch")
+class InvoiceUpdateView(HotelScopedQuerysetMixin, UpdateView):
+    model = Invoice
+    form_class = InvoiceForm
+    template_name = "finance/invoice_form.html"
+    context_object_name = "invoice"
+
+    def dispatch(self, request, *args, **kwargs):
+        _require_finance_access(request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['hotel'] = self.get_hotel()
+        return kwargs
+
+    def get_queryset(self):
+        return super().get_queryset().exclude(status__in=[Invoice.Status.PAID, Invoice.Status.VOID])
+
+    def form_valid(self, form):
+        messages.success(self.request, f"Invoice {form.instance.invoice_number} updated successfully.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("finance:invoice_detail", kwargs={"pk": self.object.pk})
 
 
 @login_required
@@ -448,31 +485,57 @@ def invoice_issue(request, pk: int):
 
 @login_required
 @require_POST
-def invoice_mark_sent(request, pk: int):
+def invoice_send(request, pk: int):
     _require_finance_access(request.user)
     hotel = _hotel(request)
     invoice = get_object_or_404(Invoice, pk=pk, hotel=hotel)
 
     try:
-        # Check if mark_sent method exists, if not, just update status
-        if hasattr(invoice, 'mark_sent'):
-            invoice.mark_sent(request.user)
-        else:
-            invoice.status = Invoice.Status.SENT
-            invoice.save()
+        invoice.status = Invoice.Status.SENT
+        invoice.save()
+        InvoiceAuditLog.objects.create(
+            invoice=invoice,
+            action=InvoiceAuditLog.Action.SEND,
+            user=request.user,
+            description=f"Invoice marked as sent by {request.user.get_full_name() or request.user.username}",
+        )
         messages.success(request, "Invoice marked as sent.")
-    except ValidationError as e:
-        messages.error(request, ", ".join(getattr(e, "messages", [str(e)])))
+    except Exception as e:
+        messages.error(request, str(e))
 
     return redirect("finance:invoice_detail", pk=pk)
 
 
 @login_required
+@require_POST
+def invoice_void(request, pk: int):
+    _require_finance_access(request.user)
+    hotel = _hotel(request)
+    invoice = get_object_or_404(Invoice, pk=pk, hotel=hotel)
+
+    if invoice.status == Invoice.Status.PAID:
+        messages.error(request, "Cannot void a paid invoice.")
+        return redirect("finance:invoice_detail", pk=pk)
+
+    reason = request.POST.get("reason", "").strip()
+    invoice.status = Invoice.Status.VOID
+    invoice.voided_at = timezone.now()
+    invoice.voided_by = request.user
+    invoice.void_reason = reason
+    invoice.save()
+
+    InvoiceAuditLog.objects.create(
+        invoice=invoice,
+        action=InvoiceAuditLog.Action.VOID,
+        user=request.user,
+        description=f"Invoice voided. Reason: {reason}",
+    )
+    messages.success(request, "Invoice voided successfully.")
+    return redirect("finance:invoice_list")
+
+
+@login_required
 def invoice_record_payment(request, pk: int):
-    """
-    Record invoice payment through Invoice.record_payment().
-    Supports upgraded payment flow with optional cash account.
-    """
     _require_finance_access(request.user)
     hotel = _hotel(request)
     invoice = get_object_or_404(Invoice, pk=pk, hotel=hotel)
@@ -484,6 +547,7 @@ def invoice_record_payment(request, pk: int):
             method = form.cleaned_data["method"]
             reference = form.cleaned_data.get("reference")
             cash_account = form.cleaned_data.get("cash_account")
+            notes = form.cleaned_data.get("notes")
 
             try:
                 invoice.record_payment(
@@ -510,9 +574,10 @@ def invoice_record_payment(request, pk: int):
     )
 
 
-# ---------------------------------------------------------
+# =========================================================
 # Expenses
-# ---------------------------------------------------------
+# =========================================================
+
 @method_decorator(login_required, name="dispatch")
 class ExpenseListView(HotelScopedQuerysetMixin, ListView):
     model = Expense
@@ -526,18 +591,9 @@ class ExpenseListView(HotelScopedQuerysetMixin, ListView):
 
     def get_queryset(self):
         qs = super().get_queryset().select_related(
-            "hotel",
-            "vendor",
-            "cash_account",
-            "expense_account",
-            "payable_account",
-            "prepaid_account",
-            "asset_account",
-            "linked_asset",
-            "linked_liability",
-            "created_by",
-            "requested_by",
-            "approved_by",
+            "hotel", "vendor", "cash_account",
+            "expense_account", "payable_account",
+            "created_by", "requested_by", "approved_by",
         )
 
         q = (self.request.GET.get("q") or "").strip()
@@ -553,7 +609,6 @@ class ExpenseListView(HotelScopedQuerysetMixin, ListView):
                 | Q(payee__icontains=q)
                 | Q(vendor__name__icontains=q)
                 | Q(invoice_reference__icontains=q)
-                | Q(description__icontains=q)
             )
 
         if status:
@@ -572,27 +627,19 @@ class ExpenseListView(HotelScopedQuerysetMixin, ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        
-        # Get the filtered queryset for stats
         filtered_qs = self.get_queryset()
         
-        # Add status and category choices
         ctx['status_choices'] = Expense.ApprovalStatus.choices
         ctx['category_choices'] = Expense.Category.choices
-        
-        # Calculate stats using database aggregation
-        from django.db.models import Sum, Value, DecimalField
-        from django.db.models.functions import Coalesce
-        from decimal import Decimal
+        ctx['department_choices'] = Expense.Department.choices
         
         ctx['pending_count'] = filtered_qs.filter(approval_status='pending').count()
         ctx['approved_unpaid_count'] = filtered_qs.filter(approval_status='approved').count()
         
-        # Fix: Specify output_field for DecimalField to handle mixed types correctly
-        total_amount_result = filtered_qs.aggregate(
-            total=Coalesce(Sum('total_amount'), Value(Decimal('0'), output_field=DecimalField()))
-        )
-        ctx['total_amount'] = total_amount_result['total'] or Decimal('0')
+        total_amount = filtered_qs.aggregate(
+            total=Coalesce(Sum('total_amount'), Value(D0, output_field=DecimalField()))
+        )['total'] or D0
+        ctx['total_amount'] = total_amount
         
         return ctx
 
@@ -612,18 +659,11 @@ class ExpenseDetailView(HotelScopedQuerysetMixin, DetailView):
             super()
             .get_queryset()
             .select_related(
-                "hotel",
-                "vendor",
-                "cash_account",
-                "expense_account",
-                "payable_account",
-                "prepaid_account",
-                "asset_account",
-                "linked_asset",
-                "linked_liability",
-                "created_by",
-                "requested_by",
-                "approved_by",
+                "hotel", "vendor", "cash_account",
+                "expense_account", "payable_account",
+                "prepaid_account", "asset_account",
+                "linked_asset", "linked_liability",
+                "created_by", "requested_by", "approved_by",
             )
             .prefetch_related("audit_logs")
         )
@@ -644,14 +684,8 @@ class ExpenseCreateView(CreateView):
         hotel = _hotel(self.request)
 
         for field_name in [
-            "vendor",
-            "cash_account",
-            "expense_account",
-            "payable_account",
-            "prepaid_account",
-            "asset_account",
-            "linked_asset",
-            "linked_liability",
+            "vendor", "cash_account", "expense_account",
+            "payable_account", "prepaid_account", "asset_account",
         ]:
             if field_name in form.fields:
                 form.fields[field_name].queryset = form.fields[field_name].queryset.filter(hotel=hotel)
@@ -684,22 +718,19 @@ class ExpenseUpdateView(HotelScopedQuerysetMixin, UpdateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        hotel = _hotel(self.request)
+        hotel = self.get_hotel()
 
         for field_name in [
-            "vendor",
-            "cash_account",
-            "expense_account",
-            "payable_account",
-            "prepaid_account",
-            "asset_account",
-            "linked_asset",
-            "linked_liability",
+            "vendor", "cash_account", "expense_account",
+            "payable_account", "prepaid_account", "asset_account",
         ]:
             if field_name in form.fields:
                 form.fields[field_name].queryset = form.fields[field_name].queryset.filter(hotel=hotel)
 
         return form
+
+    def get_queryset(self):
+        return super().get_queryset().exclude(approval_status=Expense.ApprovalStatus.PAID)
 
     def form_valid(self, form):
         if self.object.approval_status == Expense.ApprovalStatus.PAID:
@@ -726,7 +757,7 @@ def expense_approve(request, pk: int):
     except ValidationError as e:
         messages.error(request, ", ".join(getattr(e, "messages", [str(e)])))
 
-    return redirect("finance:expense_list")
+    return redirect("finance:expense_detail", pk=pk)
 
 
 @login_required
@@ -766,10 +797,9 @@ def expense_mark_paid(request, pk: int):
     else:
         amount = None
 
-    if hasattr(expense, "cash_account") and request.POST.get("cash_account"):
+    if request.POST.get("cash_account"):
         cash_account_id = request.POST.get("cash_account")
         if cash_account_id:
-            from .models import CashAccount
             cash_account = get_object_or_404(CashAccount, pk=cash_account_id, hotel=hotel)
 
     try:
@@ -781,9 +811,10 @@ def expense_mark_paid(request, pk: int):
     return redirect("finance:expense_detail", pk=pk)
 
 
-# ---------------------------------------------------------
+# =========================================================
 # Financial Periods
-# ---------------------------------------------------------
+# =========================================================
+
 @method_decorator(login_required, name="dispatch")
 class PeriodListView(HotelScopedQuerysetMixin, ListView):
     model = FinancialPeriod
@@ -796,12 +827,32 @@ class PeriodListView(HotelScopedQuerysetMixin, ListView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .select_related("hotel", "closed_by")
-            .order_by("-start_date")
-        )
+        return super().get_queryset().select_related("hotel", "closed_by").order_by("-start_date")
+
+
+@method_decorator(login_required, name="dispatch")
+class PeriodCreateView(CreateView):
+    model = FinancialPeriod
+    form_class = FinancialPeriodForm
+    template_name = "finance/period_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        _require_finance_access(request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['hotel'] = _hotel(self.request)
+        return kwargs
+
+    def form_valid(self, form):
+        hotel = _hotel(self.request)
+        form.instance.hotel = hotel
+        messages.success(self.request, f"Period '{form.instance.name}' created successfully.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("finance:period_list")
 
 
 @method_decorator(login_required, name="dispatch")
@@ -831,9 +882,10 @@ def period_close(request, pk: int):
     return redirect("finance:period_detail", pk=pk)
 
 
-# ---------------------------------------------------------
-# Accounts
-# ---------------------------------------------------------
+# =========================================================
+# Accounts (Chart of Accounts)
+# =========================================================
+
 @method_decorator(login_required, name="dispatch")
 class AccountListView(HotelScopedQuerysetMixin, ListView):
     model = Account
@@ -874,6 +926,31 @@ class AccountListView(HotelScopedQuerysetMixin, ListView):
 
 
 @method_decorator(login_required, name="dispatch")
+class AccountCreateView(CreateView):
+    model = Account
+    form_class = AccountForm
+    template_name = "finance/account_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        _require_finance_access(request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['hotel'] = _hotel(self.request)
+        return kwargs
+
+    def form_valid(self, form):
+        hotel = _hotel(self.request)
+        form.instance.hotel = hotel
+        messages.success(self.request, f"Account '{form.instance.name}' created successfully.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("finance:account_list")
+
+
+@method_decorator(login_required, name="dispatch")
 class AccountDetailView(HotelScopedQuerysetMixin, DetailView):
     model = Account
     template_name = "finance/account_detail.html"
@@ -884,12 +961,7 @@ class AccountDetailView(HotelScopedQuerysetMixin, DetailView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .select_related("hotel", "parent")
-            .prefetch_related("journal_lines")
-        )
+        return super().get_queryset().select_related("hotel", "parent").prefetch_related("journal_lines")
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -900,9 +972,137 @@ class AccountDetailView(HotelScopedQuerysetMixin, DetailView):
         return ctx
 
 
-# ---------------------------------------------------------
+@method_decorator(login_required, name="dispatch")
+class AccountUpdateView(HotelScopedQuerysetMixin, UpdateView):
+    model = Account
+    form_class = AccountForm
+    template_name = "finance/account_form.html"
+    context_object_name = "account"
+
+    def dispatch(self, request, *args, **kwargs):
+        _require_finance_access(request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['hotel'] = self.get_hotel()
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(self.request, f"Account '{form.instance.name}' updated successfully.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("finance:account_list")
+
+
+@login_required
+@require_POST
+def account_delete(request, pk: int):
+    _require_finance_access(request.user)
+    hotel = _hotel(request)
+    account = get_object_or_404(Account, pk=pk, hotel=hotel)
+
+    if account.is_system:
+        messages.error(request, "Cannot delete a system account.")
+        return redirect("finance:account_detail", pk=pk)
+
+    if account.journal_lines.exists():
+        messages.error(request, "Cannot delete account with journal entries. Deactivate instead.")
+        return redirect("finance:account_detail", pk=pk)
+
+    account_name = account.name
+    account.delete()
+    messages.success(request, f"Account '{account_name}' deleted successfully.")
+    return redirect("finance:account_list")
+
+
+# =========================================================
+# Cash Accounts
+# =========================================================
+
+@method_decorator(login_required, name="dispatch")
+class CashAccountListView(HotelScopedQuerysetMixin, ListView):
+    model = CashAccount
+    template_name = "finance/cash_account_list.html"
+    context_object_name = "accounts"
+    paginate_by = 50
+
+    def dispatch(self, request, *args, **kwargs):
+        _require_finance_access(request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+
+@method_decorator(login_required, name="dispatch")
+class CashAccountCreateView(CreateView):
+    model = CashAccount
+    form_class = CashAccountForm
+    template_name = "finance/cash_account_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        _require_finance_access(request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['hotel'] = _hotel(self.request)
+        return kwargs
+
+    def form_valid(self, form):
+        hotel = _hotel(self.request)
+        form.instance.hotel = hotel
+        form.instance.current_balance = form.instance.opening_balance
+        messages.success(self.request, f"Cash account '{form.instance.name}' created successfully.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("finance:cash_account_list")
+
+
+@method_decorator(login_required, name="dispatch")
+class CashAccountUpdateView(HotelScopedQuerysetMixin, UpdateView):
+    model = CashAccount
+    form_class = CashAccountForm
+    template_name = "finance/cash_account_form.html"
+    context_object_name = "account"
+
+    def dispatch(self, request, *args, **kwargs):
+        _require_finance_access(request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['hotel'] = self.get_hotel()
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(self.request, f"Cash account '{form.instance.name}' updated successfully.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("finance:cash_account_list")
+
+
+@login_required
+@require_POST
+def cash_account_delete(request, pk: int):
+    _require_finance_access(request.user)
+    hotel = _hotel(request)
+    account = get_object_or_404(CashAccount, pk=pk, hotel=hotel)
+
+    if account.payments.exists() or account.expenses.exists() or account.movements.exists():
+        messages.error(request, "Cannot delete account with transactions. Deactivate instead.")
+        return redirect("finance:cash_account_detail", pk=pk)
+
+    account.delete()
+    messages.success(request, f"Cash account '{account.name}' deleted successfully.")
+    return redirect("finance:cash_account_list")
+
+
+# =========================================================
 # Vendors
-# ---------------------------------------------------------
+# =========================================================
+
 @method_decorator(login_required, name="dispatch")
 class VendorListView(HotelScopedQuerysetMixin, ListView):
     model = Vendor
@@ -938,6 +1138,44 @@ class VendorListView(HotelScopedQuerysetMixin, ListView):
 
 
 @method_decorator(login_required, name="dispatch")
+class VendorCreateView(CreateView):
+    model = Vendor
+    form_class = VendorForm
+    template_name = "finance/vendor_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        _require_finance_access(request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['hotel'] = _hotel(self.request)
+        return kwargs
+
+    def form_valid(self, form):
+        hotel = _hotel(self.request)
+        form.instance.hotel = hotel
+
+        if not form.instance.vendor_code:
+            last_vendor = Vendor.objects.filter(hotel=hotel).order_by("-id").first()
+            if last_vendor and last_vendor.vendor_code:
+                try:
+                    last_num = int(last_vendor.vendor_code.split("-")[-1])
+                    new_num = last_num + 1
+                except (ValueError, IndexError):
+                    new_num = 1
+            else:
+                new_num = 1
+            form.instance.vendor_code = f"VEN-{new_num:04d}"
+
+        messages.success(self.request, f"Vendor '{form.instance.name}' created successfully.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("finance:vendor_detail", kwargs={"pk": self.object.pk})
+
+
+@method_decorator(login_required, name="dispatch")
 class VendorDetailView(HotelScopedQuerysetMixin, DetailView):
     model = Vendor
     template_name = "finance/vendor_detail.html"
@@ -960,9 +1198,51 @@ class VendorDetailView(HotelScopedQuerysetMixin, DetailView):
         return ctx
 
 
-# ---------------------------------------------------------
+@method_decorator(login_required, name="dispatch")
+class VendorUpdateView(HotelScopedQuerysetMixin, UpdateView):
+    model = Vendor
+    form_class = VendorForm
+    template_name = "finance/vendor_form.html"
+    context_object_name = "vendor"
+
+    def dispatch(self, request, *args, **kwargs):
+        _require_finance_access(request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['hotel'] = self.get_hotel()
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(self.request, f"Vendor '{form.instance.name}' updated successfully.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("finance:vendor_detail", kwargs={"pk": self.object.pk})
+
+
+@login_required
+@require_POST
+def vendor_delete(request, pk: int):
+    _require_finance_access(request.user)
+    hotel = _hotel(request)
+    vendor = get_object_or_404(Vendor, pk=pk, hotel=hotel)
+
+    if vendor.expenses.exists() or vendor.liabilities.exists() or vendor.assets.exists():
+        messages.error(request, "Cannot delete vendor with existing expenses, liabilities, or assets. Deactivate instead.")
+        return redirect("finance:vendor_detail", pk=pk)
+
+    vendor_name = vendor.name
+    vendor.delete()
+    messages.success(request, f"Vendor '{vendor_name}' deleted successfully.")
+    return redirect("finance:vendor_list")
+
+
+# =========================================================
 # Assets
-# ---------------------------------------------------------
+# =========================================================
+
 @method_decorator(login_required, name="dispatch")
 class AssetListView(HotelScopedQuerysetMixin, ListView):
     model = Asset
@@ -976,11 +1256,8 @@ class AssetListView(HotelScopedQuerysetMixin, ListView):
 
     def get_queryset(self):
         qs = super().get_queryset().select_related(
-            "hotel",
-            "vendor",
-            "asset_account",
-            "depreciation_account",
-            "expense_account",
+            "hotel", "vendor", "asset_account",
+            "depreciation_account", "expense_account",
         )
 
         q = (self.request.GET.get("q") or "").strip()
@@ -1006,6 +1283,34 @@ class AssetListView(HotelScopedQuerysetMixin, ListView):
 
 
 @method_decorator(login_required, name="dispatch")
+class AssetCreateView(CreateView):
+    model = Asset
+    form_class = AssetForm
+    template_name = "finance/asset_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        _require_finance_access(request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['hotel'] = _hotel(self.request)
+        return kwargs
+
+    def form_valid(self, form):
+        hotel = _hotel(self.request)
+        form.instance.hotel = hotel
+        form.instance.created_by = self.request.user
+        form.instance.current_value = form.instance.purchase_cost
+
+        messages.success(self.request, f"Asset '{form.instance.name}' created successfully.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("finance:asset_detail", kwargs={"pk": self.object.pk})
+
+
+@method_decorator(login_required, name="dispatch")
 class AssetDetailView(HotelScopedQuerysetMixin, DetailView):
     model = Asset
     template_name = "finance/asset_detail.html"
@@ -1017,18 +1322,52 @@ class AssetDetailView(HotelScopedQuerysetMixin, DetailView):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            "hotel",
-            "vendor",
-            "asset_account",
-            "depreciation_account",
-            "expense_account",
-            "created_by",
+            "hotel", "vendor", "asset_account",
+            "depreciation_account", "expense_account", "created_by",
         )
 
 
-# ---------------------------------------------------------
+@method_decorator(login_required, name="dispatch")
+class AssetUpdateView(HotelScopedQuerysetMixin, UpdateView):
+    model = Asset
+    form_class = AssetForm
+    template_name = "finance/asset_form.html"
+    context_object_name = "asset"
+
+    def dispatch(self, request, *args, **kwargs):
+        _require_finance_access(request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['hotel'] = self.get_hotel()
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(self.request, f"Asset '{form.instance.name}' updated successfully.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("finance:asset_detail", kwargs={"pk": self.object.pk})
+
+
+@login_required
+@require_POST
+def asset_delete(request, pk: int):
+    _require_finance_access(request.user)
+    hotel = _hotel(request)
+    asset = get_object_or_404(Asset, pk=pk, hotel=hotel)
+
+    asset_name = asset.name
+    asset.delete()
+    messages.success(request, f"Asset '{asset_name}' deleted successfully.")
+    return redirect("finance:asset_list")
+
+
+# =========================================================
 # Liabilities
-# ---------------------------------------------------------
+# =========================================================
+
 @method_decorator(login_required, name="dispatch")
 class LiabilityListView(HotelScopedQuerysetMixin, ListView):
     model = Liability
@@ -1042,10 +1381,7 @@ class LiabilityListView(HotelScopedQuerysetMixin, ListView):
 
     def get_queryset(self):
         qs = super().get_queryset().select_related(
-            "hotel",
-            "vendor",
-            "payable_account",
-            "created_by",
+            "hotel", "vendor", "payable_account", "created_by",
         )
 
         q = (self.request.GET.get("q") or "").strip()
@@ -1070,6 +1406,34 @@ class LiabilityListView(HotelScopedQuerysetMixin, ListView):
 
 
 @method_decorator(login_required, name="dispatch")
+class LiabilityCreateView(CreateView):
+    model = Liability
+    form_class = LiabilityForm
+    template_name = "finance/liability_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        _require_finance_access(request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['hotel'] = _hotel(self.request)
+        return kwargs
+
+    def form_valid(self, form):
+        hotel = _hotel(self.request)
+        form.instance.hotel = hotel
+        form.instance.created_by = self.request.user
+        form.instance.balance = form.instance.original_amount
+
+        messages.success(self.request, f"Liability '{form.instance.name}' created successfully.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("finance:liability_detail", kwargs={"pk": self.object.pk})
+
+
+@method_decorator(login_required, name="dispatch")
 class LiabilityDetailView(HotelScopedQuerysetMixin, DetailView):
     model = Liability
     template_name = "finance/liability_detail.html"
@@ -1081,10 +1445,7 @@ class LiabilityDetailView(HotelScopedQuerysetMixin, DetailView):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            "hotel",
-            "vendor",
-            "payable_account",
-            "created_by",
+            "hotel", "vendor", "payable_account", "created_by",
         )
 
     def get_context_data(self, **kwargs):
@@ -1096,9 +1457,54 @@ class LiabilityDetailView(HotelScopedQuerysetMixin, DetailView):
         return ctx
 
 
-# ---------------------------------------------------------
-# Journals
-# ---------------------------------------------------------
+@method_decorator(login_required, name="dispatch")
+class LiabilityUpdateView(HotelScopedQuerysetMixin, UpdateView):
+    model = Liability
+    form_class = LiabilityForm
+    template_name = "finance/liability_form.html"
+    context_object_name = "liability"
+
+    def dispatch(self, request, *args, **kwargs):
+        _require_finance_access(request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['hotel'] = self.get_hotel()
+        return kwargs
+
+    def get_queryset(self):
+        return super().get_queryset().exclude(status=Liability.Status.SETTLED)
+
+    def form_valid(self, form):
+        messages.success(self.request, f"Liability '{form.instance.name}' updated successfully.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("finance:liability_detail", kwargs={"pk": self.object.pk})
+
+
+@login_required
+@require_POST
+def liability_delete(request, pk: int):
+    _require_finance_access(request.user)
+    hotel = _hotel(request)
+    liability = get_object_or_404(Liability, pk=pk, hotel=hotel)
+
+    if liability.status == Liability.Status.SETTLED:
+        messages.error(request, "Cannot delete a settled liability.")
+        return redirect("finance:liability_detail", pk=pk)
+
+    liability_name = liability.name
+    liability.delete()
+    messages.success(request, f"Liability '{liability_name}' deleted successfully.")
+    return redirect("finance:liability_list")
+
+
+# =========================================================
+# Journal Entries
+# =========================================================
+
 @method_decorator(login_required, name="dispatch")
 class JournalListView(HotelScopedQuerysetMixin, ListView):
     model = JournalEntry
@@ -1112,9 +1518,7 @@ class JournalListView(HotelScopedQuerysetMixin, ListView):
 
     def get_queryset(self):
         qs = super().get_queryset().select_related(
-            "hotel",
-            "created_by",
-            "approved_by",
+            "hotel", "created_by", "approved_by",
         ).prefetch_related("lines", "lines__account")
 
         q = (self.request.GET.get("q") or "").strip()
@@ -1138,6 +1542,34 @@ class JournalListView(HotelScopedQuerysetMixin, ListView):
 
 
 @method_decorator(login_required, name="dispatch")
+class JournalEntryCreateView(CreateView):
+    model = JournalEntry
+    form_class = JournalEntryForm
+    template_name = "finance/journal_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        _require_finance_access(request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['hotel'] = _hotel(self.request)
+        return kwargs
+
+    def form_valid(self, form):
+        hotel = _hotel(self.request)
+        form.instance.hotel = hotel
+        form.instance.created_by = self.request.user
+        form.instance.status = JournalEntry.Status.DRAFT
+
+        messages.success(self.request, "Journal entry created. Add lines to complete it.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("finance:journal_detail", kwargs={"pk": self.object.pk})
+
+
+@method_decorator(login_required, name="dispatch")
 class JournalDetailView(HotelScopedQuerysetMixin, DetailView):
     model = JournalEntry
     template_name = "finance/journal_detail.html"
@@ -1156,6 +1588,68 @@ class JournalDetailView(HotelScopedQuerysetMixin, DetailView):
         )
 
 
+@method_decorator(login_required, name="dispatch")
+class JournalEntryUpdateView(HotelScopedQuerysetMixin, UpdateView):
+    model = JournalEntry
+    form_class = JournalEntryForm
+    template_name = "finance/journal_form.html"
+    context_object_name = "journal"
+
+    def dispatch(self, request, *args, **kwargs):
+        _require_finance_access(request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return super().get_queryset().exclude(status=JournalEntry.Status.POSTED)
+
+    def form_valid(self, form):
+        messages.success(self.request, f"Journal {form.instance.entry_number} updated successfully.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("finance:journal_detail", kwargs={"pk": self.object.pk})
+
+
+@login_required
+@require_POST
+def journal_line_add(request, journal_pk: int):
+    _require_finance_access(request.user)
+    hotel = _hotel(request)
+    journal = get_object_or_404(JournalEntry, pk=journal_pk, hotel=hotel)
+
+    if journal.status != JournalEntry.Status.DRAFT:
+        messages.error(request, "Cannot add lines to a non-draft journal.")
+        return redirect("finance:journal_detail", pk=journal_pk)
+
+    form = JournalLineForm(request.POST, hotel=hotel)
+    if form.is_valid():
+        line = form.save(commit=False)
+        line.journal_entry = journal
+        line.save()
+        messages.success(request, "Journal line added.")
+    else:
+        for error in form.errors.values():
+            messages.error(request, ", ".join(error))
+
+    return redirect("finance:journal_detail", pk=journal_pk)
+
+
+@login_required
+@require_POST
+def journal_line_delete(request, line_pk: int):
+    _require_finance_access(request.user)
+    line = get_object_or_404(JournalLine, pk=line_pk)
+    journal = line.journal_entry
+
+    if journal.status != JournalEntry.Status.DRAFT:
+        messages.error(request, "Cannot delete lines from a non-draft journal.")
+        return redirect("finance:journal_detail", pk=journal.pk)
+
+    line.delete()
+    messages.success(request, "Journal line deleted.")
+    return redirect("finance:journal_detail", pk=journal.pk)
+
+
 @login_required
 @require_POST
 def journal_post(request, pk: int):
@@ -1172,9 +1666,26 @@ def journal_post(request, pk: int):
     return redirect("finance:journal_detail", pk=pk)
 
 
-# ---------------------------------------------------------
+@login_required
+@require_POST
+def journal_delete(request, pk: int):
+    _require_finance_access(request.user)
+    hotel = _hotel(request)
+    journal = get_object_or_404(JournalEntry, pk=pk, hotel=hotel)
+
+    if journal.status == JournalEntry.Status.POSTED:
+        messages.error(request, "Cannot delete a posted journal entry.")
+        return redirect("finance:journal_detail", pk=pk)
+
+    journal.delete()
+    messages.success(request, f"Journal {journal.entry_number} deleted successfully.")
+    return redirect("finance:journal_list")
+
+
+# =========================================================
 # Financial Reports
-# ---------------------------------------------------------
+# =========================================================
+
 @method_decorator(login_required, name="dispatch")
 class ProfitLossView(TemplateView):
     template_name = "finance/reports/profit_loss.html"
@@ -1283,10 +1794,7 @@ class CashFlowView(TemplateView):
         cash_accounts = Account.objects.filter(
             hotel=hotel,
             account_type=Account.AccountType.ASSET,
-            account_subtype__in=[
-                Account.SubType.CASH,
-                Account.SubType.BANK,
-            ],
+            account_subtype__in=[Account.SubType.CASH, Account.SubType.BANK],
             is_active=True,
         ).order_by("account_code")
 
@@ -1348,405 +1856,113 @@ class BalanceSheetView(TemplateView):
         })
         return ctx
 
-# =========================================================
-# VENDOR CREATE/UPDATE/DELETE
-# =========================================================
 
 @method_decorator(login_required, name="dispatch")
-class VendorCreateView(CreateView):
-    model = Vendor
-    template_name = "finance/vendor_form.html"
-    fields = [
-        "vendor_code", "name", "contact_person", "phone", "email",
-        "address", "tin_number", "opening_balance", "is_active", "notes"
-    ]
+class TrialBalanceView(TemplateView):
+    template_name = "finance/reports/trial_balance.html"
 
     def dispatch(self, request, *args, **kwargs):
         _require_finance_access(request.user)
         return super().dispatch(request, *args, **kwargs)
 
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        # Make vendor_code optional for auto-generation
-        if not form.instance.pk:
-            form.fields["vendor_code"].required = False
-        return form
-
-    def form_valid(self, form):
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
         hotel = _hotel(self.request)
-        form.instance.hotel = hotel
-        
-        # Auto-generate vendor code if not provided
-        if not form.instance.vendor_code:
-            last_vendor = Vendor.objects.filter(hotel=hotel).order_by("-id").first()
-            if last_vendor and last_vendor.vendor_code:
-                try:
-                    last_num = int(last_vendor.vendor_code.split("-")[-1])
-                    new_num = last_num + 1
-                except (ValueError, IndexError):
-                    new_num = 1
+
+        form = TrialBalanceForm(self.request.GET or None)
+
+        if form.is_valid():
+            start_date = form.cleaned_data.get("start_date")
+            end_date = form.cleaned_data.get("end_date")
+            account_type = form.cleaned_data.get("account_type")
+            include_zero = form.cleaned_data.get("include_zero_balances", False)
+        else:
+            today = timezone.localdate()
+            start_date = today.replace(day=1)
+            end_date = today
+            account_type = None
+            include_zero = False
+
+        accounts = Account.objects.filter(hotel=hotel, is_active=True)
+
+        if account_type:
+            accounts = accounts.filter(account_type=account_type)
+
+        if not include_zero:
+            accounts = accounts.filter(
+                Q(journal_lines__debit__gt=0) | Q(journal_lines__credit__gt=0)
+            ).distinct()
+
+        accounts = accounts.order_by("account_code")
+
+        trial_balance = []
+        total_debits = D0
+        total_credits = D0
+
+        for account in accounts:
+            if start_date and end_date:
+                # Filter journal lines by date range
+                lines = account.journal_lines.filter(
+                    journal_entry__status=JournalEntry.Status.POSTED,
+                    journal_entry__entry_date__gte=start_date,
+                    journal_entry__entry_date__lte=end_date,
+                )
+                debit_total = lines.aggregate(total=Sum("debit"))["total"] or D0
+                credit_total = lines.aggregate(total=Sum("credit"))["total"] or D0
+
+                if account.account_type in [Account.AccountType.ASSET, Account.AccountType.EXPENSE]:
+                    balance = debit_total - credit_total
+                else:
+                    balance = credit_total - debit_total
             else:
-                new_num = 1
-            form.instance.vendor_code = f"VEN-{new_num:04d}"
-        
-        messages.success(self.request, f"Vendor '{form.instance.name}' created successfully.")
-        return super().form_valid(form)
+                balance = account.balance
 
-    def get_success_url(self):
-        return reverse("finance:vendor_detail", kwargs={"pk": self.object.pk})
+            if include_zero or balance != D0:
+                trial_balance.append({
+                    "account_code": account.account_code,
+                    "account_name": account.name,
+                    "account_type": account.get_account_type_display(),
+                    "debit": balance if account.account_type in [Account.AccountType.ASSET, Account.AccountType.EXPENSE] else D0,
+                    "credit": balance if account.account_type in [Account.AccountType.LIABILITY, Account.AccountType.EQUITY, Account.AccountType.REVENUE] else D0,
+                })
 
+                if account.account_type in [Account.AccountType.ASSET, Account.AccountType.EXPENSE]:
+                    total_debits += balance
+                else:
+                    total_credits += balance
+
+        ctx.update({
+            "hotel": hotel,
+            "form": form,
+            "trial_balance": trial_balance,
+            "total_debits": total_debits,
+            "total_credits": total_credits,
+            "start_date": start_date,
+            "end_date": end_date,
+        })
+        return ctx
+
+
+# Add this to finance/views.py
 
 @method_decorator(login_required, name="dispatch")
-class VendorUpdateView(HotelScopedQuerysetMixin, UpdateView):
-    model = Vendor
-    template_name = "finance/vendor_form.html"
-    fields = [
-        "vendor_code", "name", "contact_person", "phone", "email",
-        "address", "tin_number", "opening_balance", "is_active", "notes"
-    ]
+class CashAccountDetailView(HotelScopedQuerysetMixin, DetailView):
+    model = CashAccount
+    template_name = "finance/cash_account_detail.html"
+    context_object_name = "account"
 
     def dispatch(self, request, *args, **kwargs):
         _require_finance_access(request.user)
         return super().dispatch(request, *args, **kwargs)
 
-    def form_valid(self, form):
-        messages.success(self.request, f"Vendor '{form.instance.name}' updated successfully.")
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse("finance:vendor_detail", kwargs={"pk": self.object.pk})
-
-
-@login_required
-@require_POST
-def vendor_delete(request, pk: int):
-    _require_finance_access(request.user)
-    hotel = _hotel(request)
-    vendor = get_object_or_404(Vendor, pk=pk, hotel=hotel)
-    
-    # Check if vendor has related records
-    if vendor.expenses.exists() or vendor.liabilities.exists() or vendor.assets.exists():
-        messages.error(request, "Cannot delete vendor with existing expenses, liabilities, or assets. Deactivate instead.")
-        return redirect("finance:vendor_detail", pk=pk)
-    
-    vendor_name = vendor.name
-    vendor.delete()
-    messages.success(request, f"Vendor '{vendor_name}' deleted successfully.")
-    return redirect("finance:vendor_list")
-
-
-# =========================================================
-# ASSET CREATE/UPDATE/DELETE
-# =========================================================
-
-@method_decorator(login_required, name="dispatch")
-class AssetCreateView(CreateView):
-    model = Asset
-    template_name = "finance/asset_form.html"
-    fields = [
-        "asset_type", "name", "description", "purchase_date", "purchase_cost",
-        "useful_life_months", "salvage_value", "depreciation_method", "status",
-        "location", "vendor", "asset_account", "depreciation_account", "expense_account"
-    ]
-
-    def dispatch(self, request, *args, **kwargs):
-        _require_finance_access(request.user)
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        hotel = _hotel(self.request)
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        account = self.object
         
-        # Filter foreign keys to current hotel
-        form.fields["vendor"].queryset = Vendor.objects.filter(hotel=hotel, is_active=True)
-        form.fields["asset_account"].queryset = Account.objects.filter(
-            hotel=hotel, 
-            account_type=Account.AccountType.ASSET,
-            is_active=True
-        )
-        form.fields["depreciation_account"].queryset = Account.objects.filter(
-            hotel=hotel,
-            account_type=Account.AccountType.EXPENSE,
-            is_active=True
-        )
-        form.fields["expense_account"].queryset = Account.objects.filter(
-            hotel=hotel,
-            account_type=Account.AccountType.EXPENSE,
-            is_active=True
-        )
-        return form
-
-    def form_valid(self, form):
-        hotel = _hotel(self.request)
-        form.instance.hotel = hotel
-        form.instance.created_by = self.request.user
-        form.instance.current_value = form.instance.purchase_cost
+        ctx["recent_payments"] = account.payments.select_related("invoice").order_by("-received_at")[:20]
+        ctx["recent_expenses"] = account.expenses.order_by("-expense_date", "-created_at")[:20]
+        ctx["recent_movements"] = account.movements.order_by("-created_at")[:20]
         
-        messages.success(self.request, f"Asset '{form.instance.name}' created successfully.")
-        return super().form_valid(form)
+        return ctx
 
-    def get_success_url(self):
-        return reverse("finance:asset_detail", kwargs={"pk": self.object.pk})
-
-
-@method_decorator(login_required, name="dispatch")
-class AssetUpdateView(HotelScopedQuerysetMixin, UpdateView):
-    model = Asset
-    template_name = "finance/asset_form.html"
-    fields = [
-        "asset_type", "name", "description", "purchase_date", "purchase_cost",
-        "useful_life_months", "salvage_value", "depreciation_method", "status",
-        "location", "vendor", "asset_account", "depreciation_account", "expense_account"
-    ]
-
-    def dispatch(self, request, *args, **kwargs):
-        _require_finance_access(request.user)
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        hotel = _hotel(self.request)
         
-        form.fields["vendor"].queryset = Vendor.objects.filter(hotel=hotel, is_active=True)
-        form.fields["asset_account"].queryset = Account.objects.filter(
-            hotel=hotel, account_type=Account.AccountType.ASSET, is_active=True
-        )
-        form.fields["depreciation_account"].queryset = Account.objects.filter(
-            hotel=hotel, account_type=Account.AccountType.EXPENSE, is_active=True
-        )
-        form.fields["expense_account"].queryset = Account.objects.filter(
-            hotel=hotel, account_type=Account.AccountType.EXPENSE, is_active=True
-        )
-        return form
-
-    def form_valid(self, form):
-        messages.success(self.request, f"Asset '{form.instance.name}' updated successfully.")
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse("finance:asset_detail", kwargs={"pk": self.object.pk})
-
-
-@login_required
-@require_POST
-def asset_delete(request, pk: int):
-    _require_finance_access(request.user)
-    hotel = _hotel(request)
-    asset = get_object_or_404(Asset, pk=pk, hotel=hotel)
-    
-    asset_name = asset.name
-    asset.delete()
-    messages.success(request, f"Asset '{asset_name}' deleted successfully.")
-    return redirect("finance:asset_list")
-
-
-# =========================================================
-# LIABILITY CREATE/UPDATE/DELETE
-# =========================================================
-
-@method_decorator(login_required, name="dispatch")
-class LiabilityCreateView(CreateView):
-    model = Liability
-    template_name = "finance/liability_form.html"
-    fields = [
-        "liability_type", "name", "reference", "vendor", "payable_account",
-        "original_amount", "start_date", "due_date", "notes"
-    ]
-
-    def dispatch(self, request, *args, **kwargs):
-        _require_finance_access(request.user)
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        hotel = _hotel(self.request)
-        
-        form.fields["vendor"].queryset = Vendor.objects.filter(hotel=hotel, is_active=True)
-        form.fields["payable_account"].queryset = Account.objects.filter(
-            hotel=hotel,
-            account_type=Account.AccountType.LIABILITY,
-            is_active=True
-        )
-        return form
-
-    def form_valid(self, form):
-        hotel = _hotel(self.request)
-        form.instance.hotel = hotel
-        form.instance.created_by = self.request.user
-        form.instance.balance = form.instance.original_amount
-        
-        messages.success(self.request, f"Liability '{form.instance.name}' created successfully.")
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse("finance:liability_detail", kwargs={"pk": self.object.pk})
-
-
-@method_decorator(login_required, name="dispatch")
-class LiabilityUpdateView(HotelScopedQuerysetMixin, UpdateView):
-    model = Liability
-    template_name = "finance/liability_form.html"
-    fields = [
-        "liability_type", "name", "reference", "vendor", "payable_account",
-        "original_amount", "start_date", "due_date", "notes"
-    ]
-
-    def dispatch(self, request, *args, **kwargs):
-        _require_finance_access(request.user)
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        hotel = _hotel(self.request)
-        
-        form.fields["vendor"].queryset = Vendor.objects.filter(hotel=hotel, is_active=True)
-        form.fields["payable_account"].queryset = Account.objects.filter(
-            hotel=hotel, account_type=Account.AccountType.LIABILITY, is_active=True
-        )
-        return form
-
-    def get_queryset(self):
-        # Prevent editing settled liabilities
-        return super().get_queryset().exclude(status=Liability.Status.SETTLED)
-
-    def form_valid(self, form):
-        messages.success(self.request, f"Liability '{form.instance.name}' updated successfully.")
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse("finance:liability_detail", kwargs={"pk": self.object.pk})
-
-
-@login_required
-@require_POST
-def liability_delete(request, pk: int):
-    _require_finance_access(request.user)
-    hotel = _hotel(request)
-    liability = get_object_or_404(Liability, pk=pk, hotel=hotel)
-    
-    if liability.status == Liability.Status.SETTLED:
-        messages.error(request, "Cannot delete a settled liability.")
-        return redirect("finance:liability_detail", pk=pk)
-    
-    liability_name = liability.name
-    liability.delete()
-    messages.success(request, f"Liability '{liability_name}' deleted successfully.")
-    return redirect("finance:liability_list")
-
-
-# =========================================================
-# JOURNAL ENTRY CREATE/UPDATE/DELETE
-# =========================================================
-
-@method_decorator(login_required, name="dispatch")
-class JournalEntryCreateView(CreateView):
-    model = JournalEntry
-    template_name = "finance/journal_form.html"
-    fields = ["entry_date", "description", "reference_type", "reference_id"]
-
-    def dispatch(self, request, *args, **kwargs):
-        _require_finance_access(request.user)
-        return super().dispatch(request, *args, **kwargs)
-
-    def form_valid(self, form):
-        hotel = _hotel(self.request)
-        form.instance.hotel = hotel
-        form.instance.created_by = self.request.user
-        form.instance.status = JournalEntry.Status.DRAFT
-        
-        messages.success(self.request, "Journal entry created. Add lines to complete it.")
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse("finance:journal_detail", kwargs={"pk": self.object.pk})
-
-
-@method_decorator(login_required, name="dispatch")
-class JournalEntryUpdateView(HotelScopedQuerysetMixin, UpdateView):
-    model = JournalEntry
-    template_name = "finance/journal_form.html"
-    fields = ["entry_date", "description", "reference_type", "reference_id"]
-
-    def dispatch(self, request, *args, **kwargs):
-        _require_finance_access(request.user)
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_queryset(self):
-        # Prevent editing posted journals
-        return super().get_queryset().exclude(status=JournalEntry.Status.POSTED)
-
-    def form_valid(self, form):
-        messages.success(self.request, f"Journal {form.instance.entry_number} updated successfully.")
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse("finance:journal_detail", kwargs={"pk": self.object.pk})
-
-
-@login_required
-@require_POST
-def journal_line_add(request, journal_pk: int):
-    """Add a line to a journal entry"""
-    _require_finance_access(request.user)
-    hotel = _hotel(request)
-    journal = get_object_or_404(JournalEntry, pk=journal_pk, hotel=hotel)
-    
-    if journal.status != JournalEntry.Status.DRAFT:
-        messages.error(request, "Cannot add lines to a non-draft journal.")
-        return redirect("finance:journal_detail", pk=journal_pk)
-    
-    account_id = request.POST.get("account")
-    description = request.POST.get("description", "")
-    debit = request.POST.get("debit", "0")
-    credit = request.POST.get("credit", "0")
-    
-    try:
-        account = Account.objects.get(pk=account_id, hotel=hotel)
-        debit = Decimal(debit or "0")
-        credit = Decimal(credit or "0")
-        
-        JournalLine.objects.create(
-            journal_entry=journal,
-            account=account,
-            description=description,
-            debit=debit,
-            credit=credit,
-        )
-        messages.success(request, "Journal line added.")
-    except (Account.DoesNotExist, ValidationError) as e:
-        messages.error(request, str(e))
-    
-    return redirect("finance:journal_detail", pk=journal_pk)
-
-
-@login_required
-@require_POST
-def journal_line_delete(request, line_pk: int):
-    """Delete a line from a journal entry"""
-    _require_finance_access(request.user)
-    line = get_object_or_404(JournalLine, pk=line_pk)
-    journal = line.journal_entry
-    
-    if journal.status != JournalEntry.Status.DRAFT:
-        messages.error(request, "Cannot delete lines from a non-draft journal.")
-        return redirect("finance:journal_detail", pk=journal.pk)
-    
-    line.delete()
-    messages.success(request, "Journal line deleted.")
-    return redirect("finance:journal_detail", pk=journal.pk)
-
-
-@login_required
-@require_POST
-def journal_delete(request, pk: int):
-    _require_finance_access(request.user)
-    hotel = _hotel(request)
-    journal = get_object_or_404(JournalEntry, pk=pk, hotel=hotel)
-    
-    if journal.status == JournalEntry.Status.POSTED:
-        messages.error(request, "Cannot delete a posted journal entry.")
-        return redirect("finance:journal_detail", pk=pk)
-    
-    journal.delete()
-    messages.success(request, f"Journal {journal.entry_number} deleted successfully.")
-    return redirect("finance:journal_list")

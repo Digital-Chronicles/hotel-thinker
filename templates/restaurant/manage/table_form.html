@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block title %}{% if form.instance.pk %}Edit Table{% else %}Add New Table{% endif %} - Restaurant Setup{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <!-- Header -->
+  <div class="mb-6">
+    <div class="flex items-center gap-3 mb-2">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 flex items-center justify-center">
+        <i class="fas fa-chair text-white text-lg"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">
+          {% if form.instance.pk %}Edit Table{% else %}Add New Table{% endif %}
+        </h1>
+        <p class="text-sm text-slate-500 mt-1">Configure table details and seating capacity</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Card -->
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <form method="post" class="p-6">
+      {% csrf_token %}
+      
+      {% if form.non_field_errors %}
+      <div class="mb-6 rounded-xl bg-rose-50 border border-rose-200 px-4 py-3">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-exclamation-triangle text-rose-600"></i>
+          <p class="text-sm text-rose-800">{{ form.non_field_errors.0 }}</p>
+        </div>
+      </div>
+      {% endif %}
+      
+      <div class="space-y-5">
+        <!-- Area Field -->
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-2">
+            <i class="fas fa-map-marker-alt text-emerald-500 mr-2"></i>
+            Dining Area <span class="text-rose-500">*</span>
+          </label>
+          {{ form.area }}
+          {% if form.area.errors %}
+          <p class="text-sm text-rose-600 mt-1">{{ form.area.errors.0 }}</p>
+          {% endif %}
+          <p class="text-xs text-slate-500 mt-1">Select which dining area this table belongs to</p>
+        </div>
+        
+        <!-- Table Number -->
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-2">
+            <i class="fas fa-hashtag text-emerald-500 mr-2"></i>
+            Table Number <span class="text-rose-500">*</span>
+          </label>
+          {{ form.number }}
+          {% if form.number.errors %}
+          <p class="text-sm text-rose-600 mt-1">{{ form.number.errors.0 }}</p>
+          {% endif %}
+          <p class="text-xs text-slate-500 mt-1">Example: 1, 2, 3, or A1, B2 for custom numbering</p>
+        </div>
+        
+        <!-- Seats -->
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-2">
+            <i class="fas fa-users text-emerald-500 mr-2"></i>
+            Number of Seats <span class="text-rose-500">*</span>
+          </label>
+          {{ form.seats }}
+          {% if form.seats.errors %}
+          <p class="text-sm text-rose-600 mt-1">{{ form.seats.errors.0 }}</p>
+          {% endif %}
+          <p class="text-xs text-slate-500 mt-1">How many people can sit at this table?</p>
+        </div>
+        
+        <!-- Optional QR Code Section (if you have QR functionality) -->
+        {% if form.instance.pk %}
+        <div class="rounded-xl bg-slate-50 p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <label class="text-sm font-bold text-slate-700">
+                <i class="fas fa-qrcode text-emerald-500 mr-2"></i>
+                QR Code
+              </label>
+              <p class="text-xs text-slate-500 mt-1">Customers can scan to view menu and order</p>
+            </div>
+            <button type="button" 
+                    onclick="generateQRCode({{ form.instance.pk }})"
+                    class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition">
+              <i class="fas fa-download mr-1"></i>
+              Generate QR
+            </button>
+          </div>
+          <div id="qrCodeContainer" class="mt-3 hidden">
+            <img id="qrCodeImg" src="" alt="QR Code" class="w-32 h-32 mx-auto">
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      
+      <!-- Form Actions -->
+      <div class="flex gap-3 justify-end pt-6 mt-6 border-t border-slate-200">
+        <a href="{% url 'restaurant:table_list' %}" 
+           class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition font-medium">
+          <i class="fas fa-times mr-2"></i>
+          Cancel
+        </a>
+        <button type="submit" 
+                class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold hover:shadow-lg transition-all">
+          <i class="fas fa-save mr-2"></i>
+          {% if form.instance.pk %}Update Table{% else %}Create Table{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Help Section -->
+  <div class="mt-6 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl border border-emerald-100 p-5">
+    <div class="flex items-start gap-3">
+      <div class="h-10 w-10 rounded-xl bg-white flex items-center justify-center flex-shrink-0">
+        <i class="fas fa-lightbulb text-emerald-600 text-lg"></i>
+      </div>
+      <div>
+        <h3 class="text-sm font-bold text-slate-800 mb-1">Table Setup Tips</h3>
+        <ul class="text-xs text-slate-600 space-y-1">
+          <li>• <span class="font-semibold">Consistent numbering:</span> Use a logical system (e.g., Floor 1: 101-120, Floor 2: 201-220)</li>
+          <li>• <span class="font-semibold">Seating capacity:</span> Consider table size and comfort when setting seat numbers</li>
+          <li>• <span class="font-semibold">Area grouping:</span> Group tables by area for better organization and floor plan visualization</li>
+          <li>• <span class="font-semibold">QR Codes:</span> Generate QR codes for contactless ordering (optional)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  input, select, textarea {
+    width: 100%;
+    padding: 0.625rem 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s;
+    font-size: 0.875rem;
+  }
+  
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  }
+  
+  /* Number input spinner styling */
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+  
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    opacity: 0.5;
+  }
+</style>
+
+<script>
+function generateQRCode(tableId) {
+  // If you have QR code generation endpoint
+  const qrUrl = `/restaurant/tables/${tableId}/generate-qr/`;
+  
+  fetch(qrUrl)
+    .then(response => response.json())
+    .then(data => {
+      if (data.qr_code_url) {
+        const container = document.getElementById('qrCodeContainer');
+        const img = document.getElementById('qrCodeImg');
+        img.src = data.qr_code_url;
+        container.classList.remove('hidden');
+        
+        // Show success message
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-4 right-4 bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-slide-up';
+        toast.innerHTML = '<i class="fas fa-check-circle mr-2"></i>QR Code generated successfully!';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+      }
+    })
+    .catch(error => {
+      console.error('Error generating QR code:', error);
+      alert('Failed to generate QR code. Please try again.');
+    });
+}
+
+// Add keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+  // Ctrl/Cmd + Enter to submit form
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    const form = document.querySelector('form');
+    if (form) form.submit();
+  }
+  
+  // Escape to cancel
+  if (e.key === 'Escape') {
+    const cancelBtn = document.querySelector('a[href="{% url "restaurant:table_list" %}"]');
+    if (cancelBtn) window.location.href = cancelBtn.href;
+  }
+});
+
+// Add input validation
+document.querySelector('input[name="number"]')?.addEventListener('input', function(e) {
+  // Allow alphanumeric and basic special chars
+  this.value = this.value.replace(/[^a-zA-Z0-9\s-]/g, '');
+});
+
+document.querySelector('input[name="seats"]')?.addEventListener('change', function(e) {
+  let value = parseInt(this.value);
+  if (value < 1) this.value = 1;
+  if (value > 50) this.value = 50;
+});
+</script>
+
+<style>
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+</style>
+{% endblock %}

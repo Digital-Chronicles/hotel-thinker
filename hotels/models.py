@@ -6,6 +6,8 @@ from django.utils.translation import gettext_lazy as _
 from django.core.validators import URLValidator, MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 import uuid
 
 
@@ -29,9 +31,24 @@ class HotelChain(models.Model):
         verbose_name_plural = _("Hotel Chains")
     
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name)
+        if not self.slug or self._state.adding:
+            self.slug = self.generate_unique_slug()
+        elif self.pk:
+            # Check if name changed
+            original = HotelChain.objects.get(pk=self.pk)
+            if original.name != self.name:
+                self.slug = self.generate_unique_slug()
         super().save(*args, **kwargs)
+    
+    def generate_unique_slug(self):
+        """Generate unique slug for hotel chain"""
+        base_slug = slugify(self.name)
+        slug = base_slug
+        counter = 1
+        while HotelChain.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+        return slug
     
     def __str__(self):
         return self.name
@@ -52,8 +69,13 @@ class HotelCategory(models.Model):
         ordering = ['name']
     
     def save(self, *args, **kwargs):
-        if not self.slug:
+        if not self.slug or self._state.adding:
             self.slug = slugify(self.name)
+        elif self.pk:
+            # Check if name changed
+            original = HotelCategory.objects.get(pk=self.pk)
+            if original.name != self.name:
+                self.slug = slugify(self.name)
         super().save(*args, **kwargs)
     
     def __str__(self):
@@ -228,15 +250,39 @@ class Hotel(models.Model):
         verbose_name_plural = _("Hotels")
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            base = slugify(self.name) or "hotel"
-            slug = base
-            counter = 1
-            while Hotel.objects.filter(slug=slug).exclude(pk=self.pk).exists():
-                counter += 1
-                slug = f"{base}-{counter}"
-            self.slug = slug
+        # Check if this is a new instance or if name has changed
+        if self._state.adding:
+            # New hotel, generate slug
+            self.slug = self.generate_unique_slug()
+        else:
+            # Existing hotel, check if name changed
+            try:
+                original = Hotel.objects.get(pk=self.pk)
+                if original.name != self.name:
+                    # Name changed, generate new slug
+                    self.slug = self.generate_unique_slug()
+                    # Optionally: Store old slug for redirect handling
+                    self._old_slug = original.slug
+            except Hotel.DoesNotExist:
+                # This shouldn't happen, but just in case
+                self.slug = self.generate_unique_slug()
+        
         super().save(*args, **kwargs)
+
+    def generate_unique_slug(self):
+        """Generate unique slug for hotel"""
+        base_slug = slugify(self.name) or "hotel"
+        slug = base_slug
+        counter = 1
+        # Keep the slug under 255 characters
+        while Hotel.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+            suffix = f"-{counter}"
+            # Truncate base slug if needed to keep total length under 255
+            max_base_length = 255 - len(suffix)
+            truncated_base = base_slug[:max_base_length]
+            slug = f"{truncated_base}{suffix}"
+            counter += 1
+        return slug
 
     def __str__(self):
         return self.name
@@ -260,6 +306,20 @@ class Hotel(models.Model):
         if self.star_rating:
             return int(self.star_rating)
         return 0
+
+
+# Signal to handle slug updates and create redirects
+@receiver(pre_save, sender=Hotel)
+def hotel_pre_save_handler(sender, instance, **kwargs):
+    """Handle slug changes and store old slug for redirects"""
+    if not instance._state.adding and instance.pk:
+        try:
+            old_instance = sender.objects.get(pk=instance.pk)
+            if old_instance.slug != instance.slug:
+                # You can store this in a Redirect model if you have one
+                instance._old_slug = old_instance.slug
+        except sender.DoesNotExist:
+            pass
 
 
 class HotelAmenity(models.Model):
@@ -295,8 +355,13 @@ class HotelAmenity(models.Model):
         ordering = ['category', 'name']
     
     def save(self, *args, **kwargs):
-        if not self.slug:
+        if not self.slug or self._state.adding:
             self.slug = slugify(self.name)
+        elif self.pk:
+            # Check if name changed
+            original = HotelAmenity.objects.get(pk=self.pk)
+            if original.name != self.name:
+                self.slug = slugify(self.name)
         super().save(*args, **kwargs)
     
     def __str__(self):

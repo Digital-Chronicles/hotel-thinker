@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   
   <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   
   <style>
     * {
@@ -23,7 +23,7 @@
     }
     
     body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
     }
     
     /* Animated gradient background */
@@ -34,31 +34,31 @@
     }
     
     .animated-bg {
-      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 25%, #1e40af 50%, #1e3a5f 75%, #0f172a 100%);
+      background: linear-gradient(135deg, #0a0f2a 0%, #1a2a4f 25%, #1e3a8a 50%, #1a2a4f 75%, #0a0f2a 100%);
       background-size: 200% 200%;
-      animation: gradientShift 20s ease infinite;
+      animation: gradientShift 15s ease infinite;
     }
     
     /* Floating animations */
     @keyframes float {
       0%, 100% { transform: translateY(0px) translateX(0px); }
-      50% { transform: translateY(-15px) translateX(5px); }
+      50% { transform: translateY(-12px) translateX(6px); }
     }
     
     @keyframes floatSlow {
       0%, 100% { transform: translateY(0px) translateX(0px); }
-      50% { transform: translateY(-10px) translateX(-5px); }
+      50% { transform: translateY(-8px) translateX(-4px); }
     }
     
-    @keyframes pulse {
-      0%, 100% { opacity: 0.3; transform: scale(1); }
-      50% { opacity: 0.6; transform: scale(1.05); }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.08); }
     }
     
     @keyframes fadeInUp {
       from {
         opacity: 0;
-        transform: translateY(30px);
+        transform: translateY(35px);
       }
       to {
         opacity: 1;
@@ -74,12 +74,17 @@
     @keyframes slideInRight {
       from {
         opacity: 0;
-        transform: translateX(30px);
+        transform: translateX(40px);
       }
       to {
         opacity: 1;
         transform: translateX(0);
       }
+    }
+    
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
     }
     
     .animate-float {
@@ -91,31 +96,39 @@
     }
     
     .animate-fade-in-up {
-      animation: fadeInUp 0.7s ease-out forwards;
+      animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     
     .animate-fade-in {
-      animation: fadeIn 0.5s ease-out forwards;
+      animation: fadeIn 0.6s ease-out forwards;
     }
     
     .animate-slide-in-right {
-      animation: slideInRight 0.7s ease-out forwards;
+      animation: slideInRight 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     
     .delay-100 { animation-delay: 0.1s; }
     .delay-200 { animation-delay: 0.2s; }
     .delay-300 { animation-delay: 0.3s; }
+    .delay-400 { animation-delay: 0.4s; }
+    .delay-500 { animation-delay: 0.5s; }
     
     /* Glass morphism */
     .glass-card {
       background: rgba(255, 255, 255, 0.98);
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(12px);
     }
     
     .glass-effect {
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+    
+    .glass-effect-light {
+      background: rgba(255, 255, 255, 0.08);
       backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.15);
     }
     
     /* Input field styling */
@@ -124,30 +137,49 @@
     }
     
     .input-field:focus {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.15);
     }
     
-    /* Button effect */
+    /* Button effects */
     .btn-submit {
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       overflow: hidden;
     }
     
-    .btn-submit:active {
-      transform: scale(0.98);
+    .btn-submit::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.5s, height 0.5s;
     }
     
-    /* Stats card */
+    .btn-submit:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+    
+    .btn-submit:active {
+      transform: scale(0.97);
+    }
+    
+    /* Stat card hover effect */
     .stat-card {
-      transition: all 0.3s ease;
+      transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
     }
     
     @media (hover: hover) {
       .stat-card:hover {
-        transform: translateY(-3px);
-        background: rgba(255, 255, 255, 0.12);
+        transform: translateY(-4px);
+        background: rgba(255, 255, 255, 0.18);
+        backdrop-filter: blur(12px);
       }
     }
     
@@ -158,176 +190,222 @@
     
     /* Better touch targets on mobile */
     @media (max-width: 640px) {
-      button, a, [role="button"] {
-        min-height: 44px;
+      button, a, [role="button"], .touch-target {
+        min-height: 48px;
       }
     }
     
-    /* Fix for mobile panel */
+    /* Hide scrollbar while keeping functionality */
     @media (max-width: 1023px) {
-      #infoPanel.fixed {
-        display: flex !important;
+      .hide-scrollbar::-webkit-scrollbar {
+        display: none;
       }
+      .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    }
+    
+    /* Loader animation */
+    .loader {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
 
-<body class="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200">
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
   
-  <!-- Mobile Menu Toggle -->
-  <div class="lg:hidden fixed top-4 left-4 z-50">
-    <button id="mobileInfoToggle" class="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-lg flex items-center justify-center text-blue-800 border border-slate-200">
-      <i class="fas fa-info-circle text-lg"></i>
+  <!-- Mobile Menu Toggle Button -->
+  <div class="lg:hidden fixed top-5 left-5 z-50">
+    <button id="mobileInfoToggle" class="w-12 h-12 rounded-2xl bg-white/90 backdrop-blur-md shadow-lg flex items-center justify-center text-blue-700 border border-slate-200/50 transition-all hover:shadow-xl hover:scale-105">
+      <i class="fas fa-hotel text-xl"></i>
     </button>
   </div>
 
   <div class="min-h-screen flex flex-col lg:flex-row">
     
-    <!-- Left Panel - Brand Info -->
+    <!-- LEFT PANEL - Brand Info & Features (Enhanced) -->
     <div id="infoPanel" class="hidden lg:flex lg:w-1/2 relative overflow-hidden animated-bg text-white">
       
       <!-- Mobile close button -->
-      <button id="closeInfoPanel" class="lg:hidden absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+      <button id="closeInfoPanel" class="lg:hidden absolute top-5 right-5 z-20 w-11 h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-all">
         <i class="fas fa-times text-white text-lg"></i>
       </button>
       
       <!-- Decorative elements -->
-      <div class="absolute inset-0 opacity-30"
-           style="background-image: radial-gradient(circle at 20% 10%, rgba(255,255,255,.4), transparent 50%),
-                                   radial-gradient(circle at 80% 40%, rgba(255,255,255,.3), transparent 50%),
-                                   radial-gradient(circle at 50% 85%, rgba(255,255,255,.3), transparent 55%),
-                                   repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0px, rgba(255,255,255,.05) 2px, transparent 2px, transparent 8px);">
+      <div class="absolute inset-0 opacity-25"
+           style="background-image: radial-gradient(circle at 20% 10%, rgba(255,255,255,0.4), transparent 50%),
+                                   radial-gradient(circle at 80% 70%, rgba(255,255,255,0.3), transparent 55%),
+                                   radial-gradient(circle at 40% 90%, rgba(255,255,255,0.25), transparent 50%),
+                                   repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 2px, transparent 2px, transparent 10px);">
       </div>
       
       <!-- Floating shapes -->
-      <div class="absolute top-20 left-10 w-32 h-32 bg-white/5 rounded-full blur-3xl animate-float"></div>
-      <div class="absolute bottom-20 right-10 w-48 h-48 bg-white/5 rounded-full blur-3xl animate-float-slow"></div>
-      <div class="absolute top-1/2 left-1/2 w-80 h-80 bg-blue-400/5 rounded-full blur-3xl"></div>
+      <div class="absolute top-24 left-10 w-40 h-40 bg-white/5 rounded-full blur-3xl animate-float"></div>
+      <div class="absolute bottom-16 right-12 w-56 h-56 bg-blue-400/8 rounded-full blur-3xl animate-float-slow"></div>
+      <div class="absolute top-1/2 left-1/3 w-72 h-72 bg-indigo-400/5 rounded-full blur-3xl"></div>
       
-      <!-- Content -->
-      <div class="relative flex flex-col justify-between w-full h-full p-6 sm:p-8 md:p-10 z-10 overflow-y-auto">
+      <!-- Particles (decorative) -->
+      <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-1/4 left-1/4 w-1 h-1 bg-white/20 rounded-full"></div>
+        <div class="absolute top-2/3 right-1/3 w-1.5 h-1.5 bg-white/15 rounded-full"></div>
+        <div class="absolute bottom-1/3 left-2/3 w-1 h-1 bg-white/25 rounded-full"></div>
+      </div>
+      
+      <!-- Content Container -->
+      <div class="relative flex flex-col justify-between w-full h-full p-6 sm:p-8 lg:p-10 xl:p-12 z-10 overflow-y-auto">
         
         <!-- Brand Header -->
         <div class="animate-fade-in-up">
-          <div class="inline-flex items-center gap-3">
-            <div class="h-12 w-12 rounded-2xl glass-effect flex items-center justify-center shadow-xl">
-              <span class="text-2xl font-black bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">HT</span>
+          <div class="inline-flex items-center gap-3.5 group cursor-pointer">
+            <div class="h-14 w-14 rounded-2xl glass-effect flex items-center justify-center shadow-2xl group-hover:scale-105 transition-transform duration-300">
+              <i class="fas fa-crown text-2xl text-blue-200"></i>
             </div>
             <div>
-              <div class="text-xl md:text-2xl font-bold tracking-tight">Hotel Thinker</div>
-              <div class="text-xs md:text-sm text-blue-100">Smart Hotel ERP Platform</div>
+              <div class="text-2xl font-bold tracking-tight bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">Hotel Thinker</div>
+              <div class="text-xs text-blue-200/80 mt-0.5">Enterprise Hotel Management Platform</div>
             </div>
           </div>
         </div>
         
-        <!-- Main Message -->
-        <div class="mt-8 md:mt-12 max-w-md animate-fade-in-up delay-100">
-          <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold leading-tight tracking-tight">
-            Welcome back.
+        <!-- Hero Message Section -->
+        <div class="mt-10 lg:mt-14 max-w-md animate-fade-in-up delay-100">
+          <div class="inline-flex items-center gap-2 rounded-full glass-effect-light px-3 py-1.5 mb-5">
+            <span class="relative flex h-2.5 w-2.5">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <span class="text-xs font-medium">Live • Operational Excellence</span>
+          </div>
+          
+          <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">
+            Welcome back,
+            <span class="bg-gradient-to-r from-blue-200 to-white bg-clip-text text-transparent">Team Leader.</span>
           </h2>
-          <p class="mt-3 md:mt-4 text-sm md:text-base text-blue-100 leading-relaxed">
-            Streamline your hotel operations — manage rooms, bookings, restaurant orders, bar inventory, and financial analytics all from a single, intelligent dashboard.
+          <p class="mt-4 text-sm lg:text-base text-blue-100/90 leading-relaxed">
+            Access your command center to streamline hotel operations — manage reservations, optimize inventory, track revenue, and lead your team to excellence.
           </p>
           
-          <!-- Feature list -->
-          <div class="mt-6 md:mt-8 space-y-2 md:space-y-3">
-            <div class="flex items-center gap-3 text-xs md:text-sm text-blue-50">
-              <i class="fas fa-check-circle text-blue-300 text-sm"></i>
-              <span>Real-time room availability tracking</span>
+          <!-- Feature Grid -->
+          <div class="mt-8 grid grid-cols-2 gap-3">
+            <div class="flex items-center gap-2.5 text-xs text-blue-50">
+              <div class="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center">
+                <i class="fas fa-bed text-[11px] text-blue-200"></i>
+              </div>
+              <span>Room Management</span>
             </div>
-            <div class="flex items-center gap-3 text-xs md:text-sm text-blue-50">
-              <i class="fas fa-check-circle text-blue-300 text-sm"></i>
-              <span>Integrated POS for restaurant & bar</span>
+            <div class="flex items-center gap-2.5 text-xs text-blue-50">
+              <div class="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center">
+                <i class="fas fa-utensils text-[11px] text-blue-200"></i>
+              </div>
+              <span>Food & Beverage</span>
             </div>
-            <div class="flex items-center gap-3 text-xs md:text-sm text-blue-50">
-              <i class="fas fa-check-circle text-blue-300 text-sm"></i>
-              <span>Advanced financial reporting & analytics</span>
+            <div class="flex items-center gap-2.5 text-xs text-blue-50">
+              <div class="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center">
+                <i class="fas fa-chart-line text-[11px] text-blue-200"></i>
+              </div>
+              <span>Analytics Hub</span>
             </div>
-            <div class="flex items-center gap-3 text-xs md:text-sm text-blue-50">
-              <i class="fas fa-check-circle text-blue-300 text-sm"></i>
-              <span>24/7 dedicated support team</span>
+            <div class="flex items-center gap-2.5 text-xs text-blue-50">
+              <div class="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center">
+                <i class="fas fa-users text-[11px] text-blue-200"></i>
+              </div>
+              <span>Staff Portal</span>
             </div>
           </div>
           
-          <!-- Security badge -->
-          <div class="mt-6 md:mt-8 inline-flex items-center gap-2 rounded-full glass-effect px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm">
-            <span class="relative flex h-2 w-2">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span>Enterprise-grade security</span>
+          <!-- Security Badge -->
+          <div class="mt-6 inline-flex items-center gap-2 rounded-full glass-effect-light px-3.5 py-2 text-xs">
+            <i class="fas fa-shield-alt text-emerald-300"></i>
+            <span>Enterprise-grade encryption • SOC 2 Type II</span>
           </div>
         </div>
         
-        <!-- Stats Section -->
-        <div class="mt-8 md:mt-12 pt-6 md:pt-8 border-t border-white/10 animate-fade-in-up delay-200">
-          <div class="grid grid-cols-3 gap-2 sm:gap-4">
-            <div class="stat-card rounded-xl p-2 md:p-3 text-center">
-              <div class="text-lg sm:text-xl md:text-2xl font-bold">500+</div>
-              <div class="text-xs text-blue-100 mt-0.5 md:mt-1">Hotels Trust Us</div>
+        <!-- Stats Section - Animated Counters -->
+        <div class="mt-10 lg:mt-14 pt-6 border-t border-white/10 animate-fade-in-up delay-200">
+          <div class="grid grid-cols-3 gap-3">
+            <div class="stat-card rounded-2xl p-3 text-center">
+              <div class="text-xl sm:text-2xl lg:text-3xl font-bold" data-count="500">500+</div>
+              <div class="text-[11px] text-blue-100 mt-1">Hotels Worldwide</div>
             </div>
-            <div class="stat-card rounded-xl p-2 md:p-3 text-center">
-              <div class="text-lg sm:text-xl md:text-2xl font-bold">50K+</div>
-              <div class="text-xs text-blue-100 mt-0.5 md:mt-1">Daily Bookings</div>
+            <div class="stat-card rounded-2xl p-3 text-center">
+              <div class="text-xl sm:text-2xl lg:text-3xl font-bold" data-count="50">50K+</div>
+              <div class="text-[11px] text-blue-100 mt-1">Daily Bookings</div>
             </div>
-            <div class="stat-card rounded-xl p-2 md:p-3 text-center">
-              <div class="text-lg sm:text-xl md:text-2xl font-bold">99.9%</div>
-              <div class="text-xs text-blue-100 mt-0.5 md:mt-1">Uptime SLA</div>
+            <div class="stat-card rounded-2xl p-3 text-center">
+              <div class="text-xl sm:text-2xl lg:text-3xl font-bold" data-count="99.9">99.9%</div>
+              <div class="text-[11px] text-blue-100 mt-1">Uptime SLA</div>
             </div>
           </div>
         </div>
         
         <!-- Footer -->
-        <div class="mt-6 md:mt-8 text-xs text-blue-100/80">
-          © {% now "Y" %} Hotel Thinker • Enterprise Edition
+        <div class="mt-6 text-[11px] text-blue-100/60 flex items-center justify-between">
+          <span>© {% now "Y" %} Hotel Thinker</span>
+          <span class="flex items-center gap-1"><i class="fas fa-globe-americas text-[10px]"></i> v4.0 Enterprise</span>
         </div>
       </div>
     </div>
     
-    <!-- Right Panel - Login Form -->
-    <div class="flex-1 flex items-center justify-center p-4 sm:p-6 md:p-8 min-h-screen">
+    <!-- RIGHT PANEL - Login Form (Enhanced) -->
+    <div class="flex-1 flex items-center justify-center p-5 sm:p-8 lg:p-10 min-h-screen">
       <div class="w-full max-w-md animate-slide-in-right">
         
-        <!-- Mobile Brand -->
-        <div id="mobileBrand" class="lg:hidden text-center mb-6 md:mb-8 animate-fade-in">
+        <!-- Mobile Brand Header -->
+        <div id="mobileBrand" class="lg:hidden text-center mb-8 animate-fade-in">
           <div class="inline-flex items-center gap-3">
-            <div class="h-12 w-12 rounded-2xl bg-gradient-to-br from-blue-800 to-blue-600 text-white flex items-center justify-center shadow-lg">
-              <span class="text-xl font-black">HT</span>
+            <div class="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-800 via-blue-700 to-indigo-700 text-white flex items-center justify-center shadow-xl">
+              <i class="fas fa-crown text-xl"></i>
             </div>
             <div class="text-left">
               <div class="text-xl font-bold text-gray-900 tracking-tight">Hotel Thinker</div>
-              <div class="text-xs text-gray-500">Smart Hotel ERP Platform</div>
+              <div class="text-xs text-gray-500">Enterprise Login</div>
             </div>
           </div>
         </div>
         
-        <!-- Login Card -->
-        <div class="rounded-2xl bg-white shadow-xl border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-2xl">
+        <!-- Login Card - Premium Design -->
+        <div class="rounded-3xl bg-white/90 backdrop-blur-sm shadow-2xl border border-white/50 overflow-hidden transition-all duration-500 hover:shadow-3xl">
           
-          <!-- Card Header -->
-          <div class="relative px-5 py-5 sm:px-6 sm:py-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-800 via-blue-600 to-blue-800"></div>
-            <div class="flex items-center justify-between flex-wrap gap-3">
+          <!-- Card Header Gradient Bar -->
+          <div class="relative">
+            <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-700"></div>
+          </div>
+          
+          <!-- Card Header Content -->
+          <div class="px-6 py-6 sm:px-7 sm:py-7 border-b border-gray-100 bg-gradient-to-br from-white to-gray-50/50">
+            <div class="flex items-center justify-between">
               <div>
-                <h1 class="text-lg sm:text-xl font-bold text-gray-900">Sign in</h1>
-                <p class="text-xs sm:text-sm text-gray-500 mt-1">Access your staff dashboard</p>
+                <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Sign in</h1>
+                <p class="text-sm text-gray-500 mt-1">Access your management dashboard</p>
               </div>
-              <div class="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                <i class="fas fa-key text-blue-600"></i>
+              <div class="h-11 w-11 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center shadow-inner">
+                <i class="fas fa-key text-blue-600 text-lg"></i>
               </div>
             </div>
           </div>
           
           <!-- Card Body -->
-          <div class="p-5 sm:p-6 md:p-8">
+          <div class="p-6 sm:p-7 md:p-8">
             
-            <!-- Error Messages -->
+            <!-- Error Alert Messages -->
             {% if form.errors %}
-              <div class="mb-5 sm:mb-6 rounded-xl border-l-4 border-rose-500 bg-rose-50 p-3 sm:p-4 animate-fade-in">
+              <div class="mb-6 rounded-xl border-l-4 border-rose-500 bg-rose-50/80 p-4 animate-fade-in backdrop-blur-sm">
                 <div class="flex items-start gap-3">
-                  <i class="fas fa-exclamation-triangle text-rose-500 mt-0.5 text-sm"></i>
+                  <div class="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-rose-500 text-sm"></i>
+                  </div>
                   <div class="flex-1">
-                    <div class="font-semibold text-rose-800 text-sm">Authentication failed</div>
+                    <div class="font-semibold text-rose-800 text-sm">Authentication Failed</div>
                     <div class="text-rose-700 text-xs sm:text-sm mt-1">Invalid username or password. Please try again.</div>
                   </div>
                 </div>
@@ -335,28 +413,30 @@
             {% endif %}
             
             {% if next %}
-              <div class="mb-5 sm:mb-6 rounded-xl border-l-4 border-amber-500 bg-amber-50 p-3 sm:p-4 animate-fade-in">
+              <div class="mb-6 rounded-xl border-l-4 border-amber-500 bg-amber-50/80 p-4 animate-fade-in">
                 <div class="flex items-start gap-3">
-                  <i class="fas fa-lock text-amber-500 mt-0.5 text-sm"></i>
+                  <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                    <i class="fas fa-lock text-amber-500 text-sm"></i>
+                  </div>
                   <div class="flex-1">
-                    <div class="font-semibold text-amber-800 text-sm">Session required</div>
-                    <div class="text-amber-700 text-xs sm:text-sm mt-1">Please sign in to access the requested page.</div>
+                    <div class="font-semibold text-amber-800 text-sm">Session Required</div>
+                    <div class="text-amber-700 text-xs sm:text-sm mt-1">Please sign in to continue to the requested page.</div>
                   </div>
                 </div>
               </div>
             {% endif %}
             
             <!-- Login Form -->
-            <form method="post" action="{% url 'login' %}" class="space-y-4 sm:space-y-5">
+            <form method="post" action="{% url 'login' %}" class="space-y-5" id="loginForm">
               {% csrf_token %}
               
               <!-- Username Field -->
               <div>
-                <label for="id_username" class="block text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
-                  <i class="fas fa-user text-gray-400 mr-2"></i>
+                <label for="id_username" class="block text-sm font-semibold text-gray-700 mb-2">
+                  <i class="fas fa-user-circle text-gray-400 mr-2"></i>
                   Username
                 </label>
-                <div class="relative">
+                <div class="relative group">
                   <input type="text"
                          name="username"
                          id="id_username"
@@ -364,47 +444,41 @@
                          required
                          placeholder="Enter your username"
                          value="{{ form.username.value|default:'' }}"
-                         class="input-field w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 sm:py-3 text-sm text-gray-900 placeholder-gray-400 
-                                focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all" />
-                  <i class="fas fa-user-circle absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 text-base sm:text-lg pointer-events-none"></i>
+                         class="input-field w-full rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 
+                                focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all pr-12" />
+                  <i class="fas fa-user absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none group-focus-within:text-blue-400 transition-colors"></i>
                 </div>
-                {% if form.username.errors %}
-                  <p class="mt-1 text-xs text-rose-600">{{ form.username.errors.0 }}</p>
-                {% endif %}
               </div>
               
               <!-- Password Field -->
               <div>
-                <label for="id_password" class="block text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
-                  <i class="fas fa-lock text-gray-400 mr-2"></i>
+                <label for="id_password" class="block text-sm font-semibold text-gray-700 mb-2">
+                  <i class="fas fa-key text-gray-400 mr-2"></i>
                   Password
                 </label>
-                <div class="relative">
+                <div class="relative group">
                   <input type="password"
                          name="password"
                          id="id_password"
                          required
                          placeholder="Enter your password"
-                         class="input-field w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 sm:py-3 text-sm text-gray-900 placeholder-gray-400 
+                         class="input-field w-full rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 
                                 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all pr-12" />
                   <button type="button"
                           id="togglePassword"
-                          class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none">
-                    <i class="fas fa-eye-slash text-base sm:text-lg"></i>
+                          class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none">
+                    <i class="fas fa-eye-slash text-base"></i>
                   </button>
                 </div>
-                {% if form.password.errors %}
-                  <p class="mt-1 text-xs text-rose-600">{{ form.password.errors.0 }}</p>
-                {% endif %}
               </div>
               
-              <!-- Remember Me & Forgot Password -->
+              <!-- Remember Me & Forgot Password Row -->
               <div class="flex items-center justify-between flex-wrap gap-3 pt-1">
-                <label class="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" name="remember" id="rememberCheckbox" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                  <span class="text-sm text-gray-600">Remember me</span>
+                <label class="flex items-center gap-2.5 cursor-pointer group">
+                  <input type="checkbox" name="remember" id="rememberCheckbox" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 cursor-pointer" />
+                  <span class="text-sm text-gray-600 group-hover:text-gray-800 transition-colors">Remember me</span>
                 </label>
-                <a href="{% url 'password_reset' %}" class="text-sm text-blue-600 hover:text-blue-800 hover:underline transition-colors">
+                <a href="{% url 'password_reset' %}" class="text-sm text-blue-600 hover:text-blue-800 hover:underline transition-colors font-medium">
                   Forgot password?
                 </a>
               </div>
@@ -413,34 +487,36 @@
                 <input type="hidden" name="next" value="{{ next }}">
               {% endif %}
               
-              <!-- Submit Button -->
-              <button type="submit" class="btn-submit w-full rounded-xl bg-gradient-to-r from-blue-800 to-blue-700 hover:from-blue-900 hover:to-blue-800 text-white py-2.5 sm:py-3 text-sm sm:text-base font-semibold shadow-md hover:shadow-lg transition-all duration-200 mt-2">
-                <span class="flex items-center justify-center gap-2">
-                  <i class="fas fa-sign-in-alt"></i>
-                  Sign in to Dashboard
-                </span>
+              <!-- Submit Button with Loading State -->
+              <button type="submit" id="submitBtn" class="btn-submit w-full rounded-xl bg-gradient-to-r from-blue-700 via-blue-800 to-indigo-800 hover:from-blue-800 hover:via-blue-900 hover:to-indigo-900 text-white py-3.5 text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 mt-4 flex items-center justify-center gap-2">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>Sign in to Dashboard</span>
               </button>
               
-              <!-- Demo Credentials (for testing only - remove in production) -->
+              <!-- Demo Credentials (Development Only) -->
               {% if debug %}
-              <div class="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <p class="text-xs text-gray-500 text-center mb-2">Demo Credentials (Development Only)</p>
+              <div class="mt-5 p-3.5 bg-gradient-to-r from-gray-50 to-blue-50/30 rounded-xl border border-gray-100">
+                <p class="text-xs text-gray-500 text-center mb-2 flex items-center justify-center gap-2">
+                  <i class="fas fa-flask"></i> Development Demo Credentials
+                </p>
                 <div class="grid grid-cols-2 gap-2 text-xs">
-                  <div class="text-gray-600">Admin:</div>
-                  <div class="text-gray-800 font-mono">admin / admin123</div>
-                  <div class="text-gray-600">Staff:</div>
-                  <div class="text-gray-800 font-mono">staff / staff123</div>
+                  <div class="text-gray-600 font-medium">Admin:</div>
+                  <div class="text-gray-800 font-mono text-xs">admin / admin123</div>
+                  <div class="text-gray-600 font-medium">Staff:</div>
+                  <div class="text-gray-800 font-mono text-xs">staff / staff123</div>
                 </div>
               </div>
               {% endif %}
               
               <!-- Security Notice -->
-              <div class="mt-5 pt-3 border-t border-gray-100">
-                <div class="text-center text-xs text-gray-400 flex items-center justify-center gap-2 flex-wrap">
-                  <i class="fas fa-shield-alt"></i>
-                  <span>256-bit SSL encrypted session</span>
-                  <span class="hidden xs:inline">•</span>
-                  <span>GDPR compliant</span>
+              <div class="mt-6 pt-4 border-t border-gray-100">
+                <div class="text-center text-xs text-gray-400 flex items-center justify-center gap-3 flex-wrap">
+                  <i class="fas fa-shield-alt text-green-500"></i>
+                  <span>256-bit SSL Encryption</span>
+                  <span class="hidden xs:inline text-gray-300">•</span>
+                  <span>GDPR Compliant</span>
+                  <span class="hidden xs:inline text-gray-300">•</span>
+                  <span>24/7 Support</span>
                 </div>
               </div>
             </form>
@@ -448,28 +524,30 @@
         </div>
         
         <!-- Footer Links -->
-        <div class="mt-6 text-center">
-          <div class="flex items-center justify-center gap-3 sm:gap-4 text-xs text-gray-400 flex-wrap">
-            <a href="#" class="hover:text-gray-600 transition-colors">Privacy Policy</a>
+        <div class="mt-8 text-center animate-fade-in delay-300">
+          <div class="flex items-center justify-center gap-4 text-xs text-gray-400 flex-wrap">
+            <a href="#" class="hover:text-gray-600 transition-colors">Privacy</a>
             <span class="text-gray-300">•</span>
-            <a href="#" class="hover:text-gray-600 transition-colors">Terms of Service</a>
+            <a href="#" class="hover:text-gray-600 transition-colors">Terms</a>
             <span class="text-gray-300">•</span>
-            <a href="#" class="hover:text-gray-600 transition-colors">Contact Support</a>
+            <a href="#" class="hover:text-gray-600 transition-colors">Support</a>
+            <span class="text-gray-300">•</span>
+            <a href="#" class="hover:text-gray-600 transition-colors">Status</a>
           </div>
-          <div class="mt-3 text-xs text-gray-400">
-            Powered by Django • Tailwind CSS
+          <div class="mt-3 text-xs text-gray-400 flex items-center justify-center gap-2">
+            <i class="fas fa-django"></i>
+            <span>Powered by Django • Tailwind CSS</span>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- JavaScript for interactivity -->
+  <!-- Enhanced JavaScript -->
   <script>
     (function() {
       'use strict';
       
-      // Wait for DOM to be ready
       function domReady(fn) {
         if (document.readyState === 'loading') {
           document.addEventListener('DOMContentLoaded', fn);
@@ -479,39 +557,44 @@
       }
       
       domReady(function() {
-        // Mobile Info Panel Toggle
+        // ==================== MOBILE PANEL TOGGLE ====================
         const infoPanel = document.getElementById('infoPanel');
         const mobileToggle = document.getElementById('mobileInfoToggle');
         const closePanel = document.getElementById('closeInfoPanel');
         
-        if (mobileToggle && infoPanel) {
-          mobileToggle.addEventListener('click', function(e) {
-            e.preventDefault();
+        function openMobilePanel() {
+          if (infoPanel && window.innerWidth < 1024) {
             infoPanel.classList.remove('hidden');
             infoPanel.classList.add('flex', 'fixed', 'inset-0', 'z-50');
             document.body.style.overflow = 'hidden';
-          });
-          
-          if (closePanel) {
-            closePanel.addEventListener('click', function(e) {
-              e.preventDefault();
-              infoPanel.classList.add('hidden');
-              infoPanel.classList.remove('flex', 'fixed', 'inset-0', 'z-50');
-              document.body.style.overflow = '';
-            });
           }
-          
-          // Close on backdrop click for mobile
+        }
+        
+        function closeMobilePanel() {
+          if (infoPanel) {
+            infoPanel.classList.add('hidden');
+            infoPanel.classList.remove('flex', 'fixed', 'inset-0', 'z-50');
+            document.body.style.overflow = '';
+          }
+        }
+        
+        if (mobileToggle) {
+          mobileToggle.addEventListener('click', openMobilePanel);
+        }
+        
+        if (closePanel) {
+          closePanel.addEventListener('click', closeMobilePanel);
+        }
+        
+        if (infoPanel) {
           infoPanel.addEventListener('click', function(e) {
             if (window.innerWidth < 1024 && e.target === infoPanel) {
-              infoPanel.classList.add('hidden');
-              infoPanel.classList.remove('flex', 'fixed', 'inset-0', 'z-50');
-              document.body.style.overflow = '';
+              closeMobilePanel();
             }
           });
         }
         
-        // Password visibility toggle
+        // ==================== PASSWORD VISIBILITY TOGGLE ====================
         const togglePassword = document.getElementById('togglePassword');
         const passwordInput = document.getElementById('id_password');
         
@@ -528,23 +611,19 @@
           });
         }
         
-        // Remember Me functionality
+        // ==================== REMEMBER ME FUNCTIONALITY ====================
         const rememberCheckbox = document.getElementById('rememberCheckbox');
         const usernameInput = document.getElementById('id_username');
         
         if (rememberCheckbox && usernameInput) {
-          // Load remembered username
           try {
             const rememberedUsername = localStorage.getItem('hotelThinkerUsername');
             if (rememberedUsername) {
               usernameInput.value = rememberedUsername;
               rememberCheckbox.checked = true;
             }
-          } catch(e) {
-            console.warn('LocalStorage not available');
-          }
+          } catch(e) {}
           
-          // Save username when checkbox changes
           rememberCheckbox.addEventListener('change', function() {
             if (this.checked && usernameInput.value.trim()) {
               try {
@@ -557,10 +636,9 @@
             }
           });
           
-          // Also save when form is submitted
-          const form = document.querySelector('form');
-          if (form) {
-            form.addEventListener('submit', function() {
+          const loginForm = document.getElementById('loginForm');
+          if (loginForm) {
+            loginForm.addEventListener('submit', function() {
               if (rememberCheckbox.checked && usernameInput.value.trim()) {
                 try {
                   localStorage.setItem('hotelThinkerUsername', usernameInput.value.trim());
@@ -574,18 +652,48 @@
           }
         }
         
-        // Input focus effects
+        // ==================== SUBMIT BUTTON LOADING STATE ====================
+        const submitBtn = document.getElementById('submitBtn');
+        const loginFormSubmit = document.getElementById('loginForm');
+        
+        if (submitBtn && loginFormSubmit) {
+          loginFormSubmit.addEventListener('submit', function(e) {
+            if (submitBtn) {
+              const originalHtml = submitBtn.innerHTML;
+              submitBtn.disabled = true;
+              submitBtn.innerHTML = '<div class="loader"></div><span>Signing in...</span>';
+              submitBtn.style.opacity = '0.8';
+              
+              // Re-enable after timeout in case of network issues (prevents stuck state)
+              setTimeout(function() {
+                if (submitBtn.disabled) {
+                  submitBtn.disabled = false;
+                  submitBtn.innerHTML = originalHtml;
+                  submitBtn.style.opacity = '1';
+                }
+              }, 10000);
+            }
+          });
+        }
+        
+        // ==================== INPUT FOCUS EFFECTS ====================
         const inputs = document.querySelectorAll('input:not([type="checkbox"])');
         inputs.forEach(input => {
           input.addEventListener('focus', function() {
-            this.parentElement?.classList.add('ring-2', 'ring-blue-100', 'rounded-xl');
+            const parent = this.parentElement;
+            if (parent) {
+              parent.classList.add('ring-2', 'ring-blue-100', 'rounded-xl');
+            }
           });
           input.addEventListener('blur', function() {
-            this.parentElement?.classList.remove('ring-2', 'ring-blue-100');
+            const parent = this.parentElement;
+            if (parent) {
+              parent.classList.remove('ring-2', 'ring-blue-100');
+            }
           });
         });
         
-        // Handle window resize
+        // ==================== RESPONSIVE RESIZE HANDLER ====================
         let resizeTimer;
         window.addEventListener('resize', function() {
           clearTimeout(resizeTimer);
@@ -594,33 +702,60 @@
               infoPanel.classList.remove('fixed', 'inset-0', 'z-50', 'hidden');
               infoPanel.classList.add('lg:flex');
               document.body.style.overflow = '';
-            } else if (window.innerWidth < 1024 && infoPanel && !infoPanel.classList.contains('lg:flex')) {
+            } else if (window.innerWidth < 1024 && infoPanel && infoPanel.classList.contains('lg:flex')) {
               infoPanel.classList.add('hidden');
               infoPanel.classList.remove('flex', 'fixed', 'inset-0', 'z-50');
             }
-          }, 250);
+          }, 200);
         });
         
-        // Add touch-friendly feedback for buttons
-        const buttons = document.querySelectorAll('button, .btn-submit, a');
-        buttons.forEach(button => {
+        // ==================== TOUCH FEEDBACK FOR BUTTONS ====================
+        const allButtons = document.querySelectorAll('button, .btn-submit, a');
+        allButtons.forEach(button => {
           button.addEventListener('touchstart', function() {
             this.style.opacity = '0.7';
           });
           button.addEventListener('touchend', function() {
             this.style.opacity = '';
           });
-          button.addEventListener('touchcancel', function() {
-            this.style.opacity = '';
-          });
         });
         
-        // Auto-fill demo credentials (development only)
-        const isDebug = {{ debug|yesno:"true,false" }};
-        if (isDebug && usernameInput && passwordInput) {
-          // Optional: auto-fill for faster testing - remove in production
-          // usernameInput.value = 'admin';
-          // passwordInput.value = 'admin123';
+        // ==================== STATS COUNTER ANIMATION ====================
+        const statNumbers = document.querySelectorAll('[data-count]');
+        if (statNumbers.length > 0) {
+          const animateNumber = (element) => {
+            const target = element.getAttribute('data-count');
+            const targetNum = parseFloat(target);
+            if (isNaN(targetNum)) return;
+            
+            let current = 0;
+            const increment = targetNum / 50;
+            const updateCounter = () => {
+              current += increment;
+              if (current < targetNum) {
+                if (target.includes('.')) {
+                  element.textContent = current.toFixed(1) + (target.includes('%') ? '%' : '+');
+                } else {
+                  element.textContent = Math.floor(current) + (target.includes('%') ? '%' : '+');
+                }
+                requestAnimationFrame(updateCounter);
+              } else {
+                element.textContent = target;
+              }
+            };
+            updateCounter();
+          };
+          
+          const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+              if (entry.isIntersecting) {
+                animateNumber(entry.target);
+                observer.unobserve(entry.target);
+              }
+            });
+          }, { threshold: 0.5 });
+          
+          statNumbers.forEach(stat => observer.observe(stat));
         }
       });
     })();

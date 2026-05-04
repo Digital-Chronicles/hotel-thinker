@@ -193,6 +193,8 @@ class Asset(models.Model):
         FIXED_ASSET = "fixed_asset", _("Fixed Asset")
         PREPAID = "prepaid", _("Prepaid Expense")
         INVENTORY = "inventory", _("Inventory")
+        EQUIPMENT = "equipment", _("Equipment")
+        SOFTWARE = "software", _("Software")
         DEPOSIT = "deposit", _("Deposit")
         OTHER = "other", _("Other")
 
@@ -1353,3 +1355,47 @@ class FinancialPeriod(models.Model):
         self.closed_by = user
         self.closed_at = timezone.now()
         self.save()
+
+
+class CashMovement(models.Model):
+    class Direction(models.TextChoices):
+        CASH_IN = "cash_in", _("Cash In")
+        CASH_OUT = "cash_out", _("Cash Out")
+
+    hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name="cash_movements")
+    cash_account = models.ForeignKey(
+        CashAccount,
+        on_delete=models.PROTECT,
+        related_name="movements",
+        null=True,
+        blank=True,
+    )
+
+    direction = models.CharField(max_length=20, choices=Direction.choices, db_index=True)
+    amount = models.DecimalField(max_digits=14, decimal_places=2, validators=[MinValueValidator(D001)])
+    balance_after = models.DecimalField(max_digits=14, decimal_places=2, default=D0)
+
+    source_type = models.CharField(max_length=60, db_index=True)
+    source_id = models.PositiveBigIntegerField(db_index=True)
+    reference = models.CharField(max_length=120, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["hotel", "source_type", "source_id"],
+                name="uniq_cash_movement_source_per_hotel",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["hotel", "direction", "created_at"]),
+            models.Index(fields=["hotel", "source_type", "source_id"]),
+            models.Index(fields=["cash_account", "created_at"]),
+        ]
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.get_direction_display()} - {self.amount}"

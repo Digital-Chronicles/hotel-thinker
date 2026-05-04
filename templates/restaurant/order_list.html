@@ -41,7 +41,7 @@
       <div class="flex items-start justify-between">
         <div>
           <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Active Orders</p>
-          <p class="text-2xl font-bold text-slate-800 mt-2">{{ active_orders|default:0 }}</p>
+          <p class="text-2xl font-bold text-slate-800 mt-2">{{ stats.active_orders|default:0 }}</p>
         </div>
         <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
           <i class="fas fa-clock text-blue-600"></i>
@@ -53,7 +53,7 @@
       <div class="flex items-start justify-between">
         <div>
           <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">In Kitchen</p>
-          <p class="text-2xl font-bold text-amber-600 mt-2">{{ kitchen_orders|default:0 }}</p>
+          <p class="text-2xl font-bold text-amber-600 mt-2">{{ stats.kitchen_orders|default:0 }}</p>
         </div>
         <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
           <i class="fas fa-fire text-amber-600"></i>
@@ -65,7 +65,7 @@
       <div class="flex items-start justify-between">
         <div>
           <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Ready to Serve</p>
-          <p class="text-2xl font-bold text-emerald-600 mt-2">{{ ready_orders|default:0 }}</p>
+          <p class="text-2xl font-bold text-emerald-600 mt-2">{{ stats.ready_orders|default:0 }}</p>
         </div>
         <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
           <i class="fas fa-bell text-emerald-600"></i>
@@ -77,7 +77,7 @@
       <div class="flex items-start justify-between">
         <div>
           <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Today's Revenue</p>
-          <p class="text-2xl font-bold text-purple-600 mt-2">UGX {{ today_revenue|default:0|intcomma }}</p>
+          <p class="text-2xl font-bold text-purple-600 mt-2">UGX {{ stats.today_revenue|default:0|intcomma }}</p>
         </div>
         <div class="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
           <i class="fas fa-chart-line text-purple-600"></i>
@@ -124,8 +124,8 @@
         <select name="status"
                 class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-300 bg-white">
           <option value="">All Statuses</option>
-          {% for v, label in status_choices %}
-            <option value="{{ v }}" {% if request.GET.status == v %}selected{% endif %}>{{ label }}</option>
+          {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
       </div>
@@ -169,27 +169,27 @@
         </thead>
 
         <tbody class="divide-y divide-slate-100">
-          {% for o in orders %}
+          {% for order in orders %}
             <tr class="hover:bg-slate-50 transition cursor-pointer"
-                onclick="window.location='{% url 'restaurant:order_detail' o.pk %}'">
+                onclick="window.location='{% url 'restaurant:order_detail' order.pk %}'">
               <td class="px-5 py-4">
                 <div class="flex items-center gap-3">
                   <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
                     <i class="fas fa-receipt text-blue-500 text-sm"></i>
                   </div>
                   <div>
-                    <p class="font-semibold text-blue-700">{{ o.order_number|default:o.id }}</p>
-                    <p class="text-xs text-slate-400">Order #{{ o.id }}</p>
+                    <p class="font-semibold text-blue-700">{{ order.order_number|default:order.id }}</p>
+                    <p class="text-xs text-slate-400">Order #{{ order.id }}</p>
                   </div>
                 </div>
               </td>
 
               <td class="px-5 py-4">
                 <div>
-                  {% if o.table %}
+                  {% if order.table %}
                     <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium">
                       <i class="fas fa-chair text-[10px]"></i>
-                      Table {{ o.table.number }}
+                      Table {{ order.table.number }}
                     </span>
                   {% else %}
                     <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100 text-slate-500 text-xs">
@@ -197,96 +197,100 @@
                       Walk-in
                     </span>
                   {% endif %}
-                  <p class="font-medium text-slate-800 mt-1.5">{{ o.customer_name|default:"Guest" }}</p>
-                  {% if o.customer_phone %}
-                    <p class="text-xs text-slate-400 mt-0.5">{{ o.customer_phone }}</p>
+                  <p class="font-medium text-slate-800 mt-1.5">{{ order.customer_name|default:"Guest" }}</p>
+                  {% if order.customer_phone %}
+                    <p class="text-xs text-slate-400 mt-0.5">{{ order.customer_phone }}</p>
                   {% endif %}
                 </div>
               </td>
 
               <td class="px-5 py-4">
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
-                  {% if o.status == 'paid' %}bg-emerald-50 text-emerald-700 border border-emerald-200
-                  {% elif o.status == 'billed' %}bg-amber-50 text-amber-700 border border-amber-200
-                  {% elif o.status == 'kitchen' %}bg-blue-50 text-blue-700 border border-blue-200
-                  {% elif o.status == 'served' %}bg-indigo-50 text-indigo-700 border border-indigo-200
-                  {% elif o.status == 'cancelled' %}bg-rose-50 text-rose-700 border border-rose-200
+                  {% if order.status == 'paid' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+                  {% elif order.status == 'billed' %}bg-amber-50 text-amber-700 border border-amber-200
+                  {% elif order.status == 'kitchen' %}bg-blue-50 text-blue-700 border border-blue-200
+                  {% elif order.status == 'served' %}bg-indigo-50 text-indigo-700 border border-indigo-200
+                  {% elif order.status == 'cancelled' %}bg-rose-50 text-rose-700 border border-rose-200
                   {% else %}bg-slate-100 text-slate-600 border border-slate-200{% endif %}">
                   <span class="w-1.5 h-1.5 rounded-full
-                    {% if o.status == 'paid' %}bg-emerald-500
-                    {% elif o.status == 'billed' %}bg-amber-500
-                    {% elif o.status == 'kitchen' %}bg-blue-500
-                    {% elif o.status == 'served' %}bg-indigo-500
-                    {% elif o.status == 'cancelled' %}bg-rose-500
+                    {% if order.status == 'paid' %}bg-emerald-500
+                    {% elif order.status == 'billed' %}bg-amber-500
+                    {% elif order.status == 'kitchen' %}bg-blue-500
+                    {% elif order.status == 'served' %}bg-indigo-500
+                    {% elif order.status == 'cancelled' %}bg-rose-500
                     {% else %}bg-slate-400{% endif %}"></span>
-                  {{ o.get_status_display }}
+                  {{ order.get_status_display }}
                 </span>
                 
-                {% if o.status == 'kitchen' %}
+                {% if order.status == 'kitchen' %}
                   <div class="mt-1">
                     <span class="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">Cooking</span>
                   </div>
-                {% elif o.status == 'served' %}
+                {% elif order.status == 'served' %}
                   <div class="mt-1">
                     <span class="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Completed</span>
                   </div>
                 {% endif %}
-              </td>
+               </td>
 
               <td class="px-5 py-4">
                 <div>
-                  <p class="text-slate-700 font-medium">{{ o.items_count|default:0 }} item{{ o.items_count|pluralize }}</p>
-                  <p class="text-xs text-slate-400 mt-0.5">{{ o.unique_items|default:0 }} unique</p>
+                  <p class="text-slate-700 font-medium">{{ order.items.count }} item{{ order.items.count|pluralize }}</p>
+                  <p class="text-xs text-slate-400 mt-0.5">{{ order.items.values|length }} unique</p>
                 </div>
-              </td>
+               </td>
 
               <td class="px-5 py-4 text-right">
-                <p class="font-bold text-emerald-600">UGX {{ o.total|intcomma }}</p>
-                {% if o.payment_status == 'partial' %}
-                  <p class="text-xs text-amber-600 mt-0.5">Partial payment</p>
-                {% elif o.payment_status == 'paid' %}
+                <p class="font-bold text-emerald-600">UGX {{ order.total|intcomma }}</p>
+                {% if order.status == 'paid' %}
                   <p class="text-xs text-emerald-600 mt-0.5">Paid in full</p>
+                {% elif order.status == 'billed' %}
+                  <p class="text-xs text-amber-600 mt-0.5">Awaiting payment</p>
                 {% else %}
-                  <p class="text-xs text-slate-400 mt-0.5">Unpaid</p>
+                  <p class="text-xs text-slate-400 mt-0.5">Pending</p>
                 {% endif %}
-              </td>
+               </td>
 
               <td class="px-5 py-4 text-slate-600">
                 <div>
-                  <p class="text-slate-700">{{ o.created_at|date:"d M Y" }}</p>
-                  <p class="text-xs text-slate-400">{{ o.created_at|time:"H:i" }}</p>
+                  <p class="text-slate-700">{{ order.created_at|date:"d M Y" }}</p>
+                  <p class="text-xs text-slate-400">{{ order.created_at|time:"H:i" }}</p>
                 </div>
-              </td>
+               </td>
 
               <td class="px-5 py-4 text-right">
                 <div class="flex items-center justify-end gap-2">
-                  {% if o.status != 'paid' and o.status != 'cancelled' %}
-                    <a href="{% url 'restaurant:order_set_status' o.pk %}"
-                       onclick="event.stopPropagation()"
-                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-600 hover:bg-slate-50 transition">
+                  {% if order.status != 'paid' and order.status != 'cancelled' %}
+                    <button onclick="event.stopPropagation(); document.getElementById('status-form-{{ order.id }}').submit();"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-600 hover:bg-slate-50 transition">
                       <i class="fas fa-sync-alt text-[10px]"></i>
                       <span>Update</span>
-                    </a>
+                    </button>
+                    <form id="status-form-{{ order.id }}" method="post" action="{% url 'restaurant:order_set_status' order.pk %}" style="display: none;">
+                      {% csrf_token %}
+                      <input type="hidden" name="status" value="kitchen">
+                    </form>
                   {% endif %}
                   
-                  {% if o.status == 'paid' %}
-                    <a href="{% url 'restaurant:receipt_print' o.pk %}"
+                  {% if order.status == 'paid' %}
+                    <a href="{% url 'restaurant:receipt_print' order.pk %}"
                        onclick="event.stopPropagation()"
+                       target="_blank"
                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-medium transition">
                       <i class="fas fa-print text-[10px]"></i>
                       <span>Receipt</span>
                     </a>
                   {% endif %}
                   
-                  <a href="{% url 'restaurant:order_detail' o.pk %}"
+                  <a href="{% url 'restaurant:order_detail' order.pk %}"
                      onclick="event.stopPropagation()"
                      class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition shadow-sm">
                     <i class="fas fa-eye text-[10px]"></i>
                     <span>View</span>
                   </a>
                 </div>
-              </td>
-            </tr>
+               </td>
+             </tr>
           {% empty %}
             <tr>
               <td colspan="7" class="px-6 py-14 text-center">
@@ -324,23 +328,23 @@
 
   <!-- Mobile Cards -->
   <div class="lg:hidden space-y-4">
-    {% for o in orders %}
-      <a href="{% url 'restaurant:order_detail' o.pk %}"
+    {% for order in orders %}
+      <a href="{% url 'restaurant:order_detail' order.pk %}"
          class="block bg-white rounded-2xl border border-slate-200 shadow-sm p-4 hover:border-blue-300 transition">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <p class="font-semibold text-blue-700">{{ o.order_number|default:o.id }}</p>
-            <p class="text-xs text-slate-400 mt-1">{{ o.created_at|date:"d M Y, H:i" }}</p>
+            <p class="font-semibold text-blue-700">{{ order.order_number|default:order.id }}</p>
+            <p class="text-xs text-slate-400 mt-1">{{ order.created_at|date:"d M Y, H:i" }}</p>
           </div>
 
           <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold
-            {% if o.status == 'paid' %}bg-emerald-50 text-emerald-700 border border-emerald-200
-            {% elif o.status == 'billed' %}bg-amber-50 text-amber-700 border border-amber-200
-            {% elif o.status == 'kitchen' %}bg-blue-50 text-blue-700 border border-blue-200
-            {% elif o.status == 'served' %}bg-indigo-50 text-indigo-700 border border-indigo-200
-            {% elif o.status == 'cancelled' %}bg-rose-50 text-rose-700 border border-rose-200
+            {% if order.status == 'paid' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+            {% elif order.status == 'billed' %}bg-amber-50 text-amber-700 border border-amber-200
+            {% elif order.status == 'kitchen' %}bg-blue-50 text-blue-700 border border-blue-200
+            {% elif order.status == 'served' %}bg-indigo-50 text-indigo-700 border border-indigo-200
+            {% elif order.status == 'cancelled' %}bg-rose-50 text-rose-700 border border-rose-200
             {% else %}bg-slate-100 text-slate-600 border border-slate-200{% endif %}">
-            {{ o.get_status_display }}
+            {{ order.get_status_display }}
           </span>
         </div>
 
@@ -348,20 +352,20 @@
           <div>
             <p class="text-slate-400 text-xs">Table</p>
             <p class="font-medium text-slate-800">
-              {% if o.table %}Table {{ o.table.number }}{% else %}Walk-in{% endif %}
+              {% if order.table %}Table {{ order.table.number }}{% else %}Walk-in{% endif %}
             </p>
           </div>
           <div>
             <p class="text-slate-400 text-xs">Customer</p>
-            <p class="font-medium text-slate-800">{{ o.customer_name|default:"Guest" }}</p>
+            <p class="font-medium text-slate-800">{{ order.customer_name|default:"Guest" }}</p>
           </div>
           <div>
             <p class="text-slate-400 text-xs">Items</p>
-            <p class="font-medium text-slate-800">{{ o.items_count|default:0 }} items</p>
+            <p class="font-medium text-slate-800">{{ order.items.count }} items</p>
           </div>
           <div>
             <p class="text-slate-400 text-xs">Total</p>
-            <p class="font-bold text-emerald-600">UGX {{ o.total|intcomma }}</p>
+            <p class="font-bold text-emerald-600">UGX {{ order.total|intcomma }}</p>
           </div>
         </div>
 
@@ -369,13 +373,14 @@
           <div class="flex items-center gap-2">
             <i class="fas fa-credit-card text-slate-400 text-xs"></i>
             <span class="text-xs text-slate-600">
-              {% if o.payment_status == 'paid' %}Paid{% elif o.payment_status == 'partial' %}Partial{% else %}Pending{% endif %}
+              {% if order.status == 'paid' %}Paid{% elif order.status == 'billed' %}Billed{% else %}Pending{% endif %}
             </span>
           </div>
           <div class="flex gap-2">
-            {% if o.status == 'paid' %}
-              <a href="{% url 'restaurant:receipt_print' o.pk %}"
+            {% if order.status == 'paid' %}
+              <a href="{% url 'restaurant:receipt_print' order.pk %}"
                  onclick="event.stopPropagation()"
+                 target="_blank"
                  class="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-medium">
                 <i class="fas fa-print text-[10px]"></i>
                 <span>Print</span>

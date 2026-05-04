@@ -29,6 +29,10 @@ urlpatterns = [
 
     # Reports
     path("reports/", include("reports.urls", namespace="reports")),
+    path("bulk/", include("bulk.urls", namespace="bulk")),
+
+    # Mobile API
+    path("api/mobile/", include("mobile_api.urls", namespace="mobile_api")),
 ]
 
 # Media files during development

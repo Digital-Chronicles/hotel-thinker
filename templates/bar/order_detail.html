@@ -1,281 +1,631 @@
 {% extends "base.html" %}
-{% load humanize %}
+{% load static %}
 
-{% block title %}Bar Order {{ order.order_number }} | Hotel Thinker{% endblock %}
+{% block title %}Bar Order #{{ order.order_number }} | Bar Management{% endblock %}
+
+{% block breadcrumb %}
+<li class="flex items-center">
+  <span class="mx-2 text-slate-400"><i class="fas fa-chevron-right text-xs"></i></span>
+  <a href="{% url 'bar:order_list' %}" class="text-slate-500 hover:text-blue-600 transition-colors">Bar Orders</a>
+</li>
+<li class="flex items-center">
+  <span class="mx-2 text-slate-400"><i class="fas fa-chevron-right text-xs"></i></span>
+  <span class="text-slate-600 font-medium">Order #{{ order.order_number }}</span>
+</li>
+{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
-
-  <!-- Header -->
-  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-    <div>
-      <div class="flex items-center gap-3">
-        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-sm">
-          <i class="fas fa-receipt text-white text-lg"></i>
-        </div>
-        <div>
-          <h1 class="text-2xl font-bold text-slate-800">Bar Order {{ order.order_number }}</h1>
-          <div class="flex items-center gap-2 mt-1">
-            <p class="text-sm text-slate-500">
-              {% if order.guest_name %}
-                <i class="fas fa-user text-blue-500 text-xs mr-1"></i>{{ order.guest_name }}
-              {% else %}
-                <i class="fas fa-walking text-blue-500 text-xs mr-1"></i>Walk-in Guest
-              {% endif %}
-            </p>
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
-              {% if order.status == 'paid' %}bg-emerald-50 text-emerald-700 border border-emerald-200
-              {% elif order.status == 'billed' %}bg-amber-50 text-amber-700 border border-amber-200
-              {% elif order.status == 'served' %}bg-indigo-50 text-indigo-700 border border-indigo-200
-              {% elif order.status == 'open' %}bg-blue-50 text-blue-700 border border-blue-200
-              {% elif order.status == 'cancelled' %}bg-rose-50 text-rose-700 border border-rose-200
-              {% else %}bg-slate-100 text-slate-600 border border-slate-200{% endif %}">
-              <span class="w-1.5 h-1.5 rounded-full
-                {% if order.status == 'paid' %}bg-emerald-500
-                {% elif order.status == 'billed' %}bg-amber-500
-                {% elif order.status == 'served' %}bg-indigo-500
-                {% elif order.status == 'open' %}bg-blue-500
-                {% elif order.status == 'cancelled' %}bg-rose-500
-                {% else %}bg-slate-400{% endif %}"></span>
-              {{ order.get_status_display }}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="flex flex-wrap items-center gap-3">
-      <a href="{% url 'bar:order_list' %}"
-         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition">
-        <i class="fas fa-arrow-left text-blue-500 text-sm"></i>
-        <span>Back to Orders</span>
-      </a>
-
-      {% if order.status == 'open' %}
-        <a href="{% url 'bar:order_update' order.pk %}"
-           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition">
-          <i class="fas fa-edit text-blue-500 text-sm"></i>
-          <span>Edit Order</span>
-        </a>
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+  <div class="max-w-full mx-auto px-4 py-6">
     
-    <!-- Left Column - Order Items -->
-    <div class="lg:col-span-2 space-y-6">
-      <!-- Order Items Table -->
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/50">
-          <div class="flex items-center gap-2">
-            <i class="fas fa-list-ul text-blue-600 text-sm"></i>
-            <h2 class="text-base font-semibold text-slate-800">Order Items</h2>
-            <span class="ml-auto text-xs text-slate-500">
-              <i class="fas fa-wine-glass-alt mr-1"></i>{{ order.items.count }} item(s)
-            </span>
-          </div>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-slate-50 border-b border-slate-200">
-              <tr class="text-left text-slate-600">
-                <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Item</th>
-                <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider text-center">Qty</th>
-                <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider text-right">Unit Price</th>
-                <th class="px-5 py-3 font-semibold text-xs uppercase tracking-wider text-right">Total</th>
-               </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100">
-              {% for item in order.items.all %}
-                <tr>
-                  <td class="px-5 py-4">
-                    <div class="flex items-center gap-3">
-                      <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                        <i class="fas fa-wine-bottle text-blue-500 text-xs"></i>
-                      </div>
-                      <div>
-                        <p class="font-medium text-slate-800">{{ item.item.name }}</p>
-                        {% if item.note %}
-                          <p class="text-xs text-slate-400 mt-0.5">{{ item.note }}</p>
-                        {% endif %}
-                      </div>
-                    </div>
-                   </td>
-                  <td class="px-5 py-4 text-center font-medium text-slate-700">{{ item.qty }}</td>
-                  <td class="px-5 py-4 text-right text-slate-700">UGX {{ item.unit_price|floatformat:0|intcomma }}</td>
-                  <td class="px-5 py-4 text-right font-semibold text-emerald-600">UGX {{ item.line_total|floatformat:0|intcomma }}</td>
-                </tr>
-              {% empty %}
-                <tr>
-                  <td colspan="4" class="px-6 py-14 text-center text-slate-400">
-                    <i class="fas fa-box-open text-2xl mb-2"></i>
-                    <p class="text-sm">No items added to this order yet.</p>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- Right Column - Summary & Actions -->
-    <div class="space-y-6">
-      
-      <!-- Order Summary Card -->
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden sticky top-6">
-        <div class="px-5 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100">
-          <div class="flex items-center gap-2">
-            <i class="fas fa-calculator text-blue-600 text-sm"></i>
-            <h3 class="text-base font-semibold text-slate-800">Order Summary</h3>
-          </div>
-        </div>
-
-        <div class="p-5">
-          <div class="space-y-3 text-sm">
-            <div class="flex justify-between items-center">
-              <span class="text-slate-600">Subtotal</span>
-              <span class="font-semibold text-slate-800">UGX {{ order.subtotal|floatformat:0|intcomma }}</span>
+    <!-- Header Section -->
+    <div class="mb-6 animate-fade-in-up">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div class="relative">
+            <div class="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
+              <i class="fas fa-wine-glass-alt text-white text-xl"></i>
             </div>
-            
-            {% if order.discount > 0 %}
-              <div class="flex justify-between items-center">
-                <span class="text-slate-600">Discount</span>
-                <span class="font-semibold text-emerald-600">- UGX {{ order.discount|floatformat:0|intcomma }}</span>
-              </div>
-            {% endif %}
-            
-            {% if order.tax > 0 %}
-              <div class="flex justify-between items-center">
-                <span class="text-slate-600">Tax</span>
-                <span class="font-semibold text-slate-800">UGX {{ order.tax|floatformat:0|intcomma }}</span>
-              </div>
-            {% endif %}
-
-            <div class="border-t border-slate-200 pt-3 mt-2">
-              <div class="flex justify-between items-center">
-                <span class="text-base font-bold text-slate-900">TOTAL</span>
-                <span class="text-xl font-bold text-emerald-600">UGX {{ order.total|floatformat:0|intcomma }}</span>
-              </div>
+            <div class="absolute -top-1 -right-1 h-5 w-5 rounded-full {% if order.status == 'paid' %}bg-emerald-500{% elif order.status == 'served' %}bg-indigo-500{% elif order.status == 'open' %}bg-blue-500{% else %}bg-slate-400{% endif %} border-2 border-white flex items-center justify-center">
+              <i class="fas fa-check text-white text-[8px]"></i>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Workflow Actions Card -->
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="px-5 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100">
-          <div class="flex items-center gap-2">
-            <i class="fas fa-tasks text-blue-600 text-sm"></i>
-            <h3 class="text-base font-semibold text-slate-800">Workflow Actions</h3>
-          </div>
-        </div>
-
-        <div class="p-5 space-y-3">
-          {% if order.status == 'open' %}
-            <form method="post" action="{% url 'bar:order_mark_served' order.pk %}">
-              {% csrf_token %}
-              <button type="submit"
-                      class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition shadow-sm">
-                <i class="fas fa-check-circle text-sm"></i>
-                <span>Mark as Served</span>
-              </button>
-            </form>
-          {% endif %}
-
-          {% if order.status == 'served' %}
-            <a href="{% url 'bar:order_update' order.pk %}"
-               class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold transition shadow-sm">
-              <i class="fas fa-receipt text-sm"></i>
-              <span>Add Bill / Apply Discount</span>
-            </a>
-          {% endif %}
-
-          {% if order.status == 'billed' %}
-            <form method="post" action="{% url 'bar:order_mark_paid' order.pk %}">
-              {% csrf_token %}
-              <button type="submit"
-                      class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition shadow-sm">
-                <i class="fas fa-credit-card text-sm"></i>
-                <span>Mark as Paid</span>
-              </button>
-            </form>
-          {% endif %}
-
-          {% if order.status != 'paid' and order.status != 'cancelled' %}
-            <form method="post" action="{% url 'bar:order_cancel' order.pk %}"
-                  onsubmit="return confirm('Are you sure you want to cancel this order? This action cannot be undone.')">
-              {% csrf_token %}
-              <button type="submit"
-                      class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-sm font-semibold transition">
-                <i class="fas fa-ban text-sm"></i>
-                <span>Cancel Order</span>
-              </button>
-            </form>
-          {% endif %}
-
-          {% if order.status == 'paid' %}
-            <div class="rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-center">
-              <i class="fas fa-check-circle text-emerald-600 text-sm"></i>
-              <p class="text-xs text-emerald-800 mt-1">This order has been paid and completed.</p>
+          <div>
+            <h1 class="text-2xl font-bold text-slate-800">Bar Order #{{ order.order_number }}</h1>
+            <div class="flex items-center gap-3 mt-1">
+              <span class="text-sm text-slate-500">
+                <i class="far fa-calendar-alt mr-1"></i>{{ order.created_at|date:"M d, Y H:i" }}
+              </span>
+              <span class="text-sm text-slate-500">
+                <i class="fas fa-user mr-1"></i>
+                {{ order.display_name }}
+              </span>
             </div>
-          {% endif %}
-
-          {% if order.status == 'cancelled' %}
-            <div class="rounded-xl bg-rose-50 border border-rose-200 p-3 text-center">
-              <i class="fas fa-ban text-rose-600 text-sm"></i>
-              <p class="text-xs text-rose-800 mt-1">This order has been cancelled.</p>
-            </div>
-          {% endif %}
-        </div>
-      </div>
-
-      <!-- Order Info Card -->
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/50">
-          <div class="flex items-center gap-2">
-            <i class="fas fa-info-circle text-blue-600 text-sm"></i>
-            <h3 class="text-sm font-semibold text-slate-800">Order Information</h3>
           </div>
         </div>
         
-        <div class="p-5 space-y-2 text-sm">
-          <div class="flex justify-between">
-            <span class="text-slate-600">Order Number</span>
-            <span class="font-medium text-slate-800">{{ order.order_number }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-slate-600">Created</span>
-            <span class="text-slate-700">{{ order.created_at|date:"d M Y, H:i" }}</span>
-          </div>
-          {% if order.closed_at %}
-            <div class="flex justify-between">
-              <span class="text-slate-600">Closed</span>
-              <span class="text-slate-700">{{ order.closed_at|date:"d M Y, H:i" }}</span>
-            </div>
-          {% endif %}
-          <div class="flex justify-between">
-            <span class="text-slate-600">Created By</span>
-            <span class="text-slate-700">{{ order.created_by.get_full_name|default:order.created_by.username|default:"System" }}</span>
-          </div>
-          {% if order.booking %}
-            <div class="flex justify-between">
-              <span class="text-slate-600">Booking</span>
-              <span class="text-blue-600 font-medium">#{{ order.booking.id }}</span>
-            </div>
-          {% endif %}
-          {% if order.room_charge %}
-            <div class="mt-2 rounded-lg bg-purple-50 p-2 text-center">
-              <span class="text-xs font-medium text-purple-700">
-                <i class="fas fa-hotel mr-1"></i>This order will be charged to room
-              </span>
-            </div>
+        <div class="flex items-center gap-2">
+          <!-- Status Badge -->
+          <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold
+            {% if order.status == 'paid' %}bg-emerald-100 text-emerald-700
+            {% elif order.status == 'billed' %}bg-amber-100 text-amber-700
+            {% elif order.status == 'served' %}bg-indigo-100 text-indigo-700
+            {% elif order.status == 'open' %}bg-blue-100 text-blue-700
+            {% elif order.status == 'cancelled' %}bg-rose-100 text-rose-700
+            {% else %}bg-slate-100 text-slate-700{% endif %}">
+            <span class="w-1.5 h-1.5 rounded-full 
+              {% if order.status == 'paid' %}bg-emerald-500
+              {% elif order.status == 'billed' %}bg-amber-500
+              {% elif order.status == 'served' %}bg-indigo-500
+              {% elif order.status == 'open' %}bg-blue-500
+              {% elif order.status == 'cancelled' %}bg-rose-500
+              {% else %}bg-slate-500{% endif %}"></span>
+            {{ order.get_status_display|upper }}
+          </span>
+          
+          {% if can_edit %}
+          <a href="{% url 'bar:order_update' order.pk %}" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-sm transition">
+            <i class="fas fa-edit text-xs mr-1"></i>Edit
+          </a>
           {% endif %}
         </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    {% if can_mark_served or can_mark_billed or can_mark_paid or can_cancel %}
+    <div class="mb-6 flex flex-wrap gap-3">
+      {% if can_mark_served %}
+      <form method="post" action="{% url 'bar:order_mark_served' order.pk %}" class="inline">
+        {% csrf_token %}
+        <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition shadow-sm">
+          <i class="fas fa-check-circle"></i>
+          <span>Mark as Served</span>
+        </button>
+      </form>
+      {% endif %}
+      
+      {% if can_mark_billed %}
+      <form method="post" action="{% url 'bar:order_mark_billed' order.pk %}" class="inline">
+        {% csrf_token %}
+        <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold transition shadow-sm">
+          <i class="fas fa-receipt"></i>
+          <span>Generate Bill</span>
+        </button>
+      </form>
+      {% endif %}
+      
+      {% if can_mark_paid %}
+      <form method="post" action="{% url 'bar:order_mark_paid' order.pk %}" class="inline">
+        {% csrf_token %}
+        <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition shadow-sm">
+          <i class="fas fa-money-bill-wave"></i>
+          <span>Mark as Paid</span>
+        </button>
+      </form>
+      {% endif %}
+      
+      {% if can_cancel %}
+      <form method="post" action="{% url 'bar:order_cancel' order.pk %}" class="inline" onsubmit="return confirm('Are you sure you want to cancel this order?')">
+        {% csrf_token %}
+        <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold transition shadow-sm">
+          <i class="fas fa-times-circle"></i>
+          <span>Cancel Order</span>
+        </button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Left Column - Items Section -->
+      <div class="lg:col-span-2 space-y-6">
+        
+        <!-- Order Items Card -->
+        <div class="bg-white rounded-2xl border border-slate-200/60 shadow-lg overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50/50 to-white">
+            <div class="flex items-center gap-2">
+              <div class="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                <i class="fas fa-shopping-cart text-purple-600 text-sm"></i>
+              </div>
+              <h2 class="text-base font-semibold text-slate-800">Order Items</h2>
+              <span class="ml-auto text-xs text-slate-500" id="itemCount">{{ order.items.count }} items</span>
+            </div>
+          </div>
+          
+          <div id="orderItemsContainer" class="p-6">
+            {% include "bar/partials/order_items_table.html" with order=order items=order.items.all %}
+          </div>
+        </div>
+        
+        <!-- Add Items Section (if order is open) -->
+        {% if can_add_items %}
+        <div class="bg-white rounded-2xl border border-slate-200/60 shadow-lg overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div class="flex items-center gap-2">
+              <div class="h-8 w-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <i class="fas fa-plus-circle text-emerald-600 text-sm"></i>
+              </div>
+              <h2 class="text-base font-semibold text-slate-800">Add Items</h2>
+            </div>
+          </div>
+          
+          <div class="p-6">
+            <!-- Search Bar -->
+            <div class="relative mb-4">
+              <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm"></i>
+              <input type="text" id="itemSearchInput" placeholder="Search by name or category..." 
+                     class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-200 transition-all text-sm">
+            </div>
+            
+            <!-- Items Grid -->
+            <div id="itemsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+              {% for item in available_items %}
+              <div class="item-card p-3 rounded-xl border-2 border-slate-200 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer group"
+                   data-item-id="{{ item.id }}"
+                   data-item-name="{{ item.name }}"
+                   data-item-price="{{ item.selling_price }}"
+                   data-item-category="{{ item.category.name|lower }}"
+                   data-item-stock="{{ item.stock_qty }}"
+                   data-track-stock="{{ item.track_stock|lower }}">
+                <div class="flex items-center justify-between">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2">
+                      <div class="h-8 w-8 rounded-lg bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center transition-colors">
+                        <i class="fas fa-wine-bottle text-blue-600 text-sm"></i>
+                      </div>
+                      <div>
+                        <p class="text-sm font-semibold text-slate-800">{{ item.name }}</p>
+                        <p class="text-xs text-slate-500">{{ item.category.name }}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-sm font-bold text-blue-600">UGX {{ item.selling_price|floatformat:0 }}</p>
+                    {% if item.track_stock %}
+                      <p class="text-xs {% if item.stock_qty <= item.reorder_level %}text-rose-500{% else %}text-slate-400{% endif %}">
+                        Stock: {{ item.stock_qty }}
+                      </p>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              {% empty %}
+              <div class="col-span-full text-center py-8">
+                <i class="fas fa-box-open text-slate-300 text-4xl mb-2"></i>
+                <p class="text-slate-500">No bar items available</p>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        
+      </div>
+      
+      <!-- Right Column - Order Summary -->
+      <div class="space-y-6">
+        
+        <!-- Order Summary Card -->
+        <div class="bg-white rounded-2xl border border-slate-200/60 shadow-lg overflow-hidden sticky top-6">
+          <div class="px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <h3 class="text-sm font-semibold text-slate-800">
+              <i class="fas fa-calculator text-blue-600 mr-2"></i>Order Summary
+            </h3>
+          </div>
+          
+          <div class="p-5 space-y-3">
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-500">Subtotal</span>
+              <span id="summarySubtotal" class="font-semibold text-slate-700">UGX 0</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-500">Discount</span>
+              <span id="summaryDiscount" class="text-emerald-600">- UGX 0</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-500">Tax</span>
+              <span id="summaryTax" class="text-amber-600">+ UGX 0</span>
+            </div>
+            <div class="border-t border-slate-200 my-3"></div>
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-slate-800">Total</span>
+              <span id="summaryTotal" class="text-xl font-bold text-blue-600">UGX 0</span>
+            </div>
+            
+            <div class="mt-4 pt-3 border-t border-slate-100">
+              <div class="flex justify-between text-xs">
+                <span class="text-slate-500">Order Number</span>
+                <span class="font-mono text-slate-700">{{ order.order_number }}</span>
+              </div>
+              <div class="flex justify-between text-xs mt-1">
+                <span class="text-slate-500">Created By</span>
+                <span class="text-slate-700">{{ order.created_by.get_full_name|default:order.created_by.username }}</span>
+              </div>
+              {% if order.guest_name %}
+              <div class="flex justify-between text-xs mt-1">
+                <span class="text-slate-500">Guest</span>
+                <span class="text-slate-700">{{ order.guest_name }}</span>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Info Card -->
+        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-4 border border-blue-100">
+          <div class="flex items-start gap-2">
+            <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+            <div>
+              <p class="text-xs font-semibold text-slate-700 mb-1">Order Status Guide</p>
+              <ul class="text-xs text-slate-600 space-y-1">
+                <li><i class="fas fa-circle text-blue-500 text-[6px] mr-1"></i> <strong>Open</strong> - Add items to order</li>
+                <li><i class="fas fa-circle text-indigo-500 text-[6px] mr-1"></i> <strong>Served</strong> - Items delivered</li>
+                <li><i class="fas fa-circle text-amber-500 text-[6px] mr-1"></i> <strong>Billed</strong> - Ready for payment</li>
+                <li><i class="fas fa-circle text-emerald-500 text-[6px] mr-1"></i> <strong>Paid</strong> - Payment completed</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        
       </div>
     </div>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const itemsGrid = document.getElementById('itemsGrid');
+  const searchInput = document.getElementById('itemSearchInput');
+  const orderId = {{ order.id }};
+  
+  // Get CSRF token from cookie
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  
+  const csrfToken = getCookie('csrftoken');
+  
+  // Helper: Update order totals from API
+  function refreshOrderItems() {
+    fetch(`/bar/${orderId}/items/refresh/`, {
+      headers: { 
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.ok) {
+        document.getElementById('orderItemsContainer').innerHTML = data.items_html;
+        document.getElementById('summarySubtotal').innerHTML = `UGX ${parseFloat(data.subtotal).toLocaleString()}`;
+        document.getElementById('summaryTotal').innerHTML = `UGX ${parseFloat(data.total).toLocaleString()}`;
+        if (document.getElementById('itemCount')) {
+          document.getElementById('itemCount').innerHTML = `${data.item_count} items`;
+        }
+        attachItemEventHandlers();
+      }
+    })
+    .catch(error => console.error('Error:', error));
+  }
+  
+  // Add item to order
+  function addItemToCart(itemId, itemName) {
+      // Disable the clicked item briefly to prevent double submission
+      const itemCard = document.querySelector(`.item-card[data-item-id="${itemId}"]`);
+      if (itemCard) {
+          itemCard.style.opacity = '0.5';
+          itemCard.style.pointerEvents = 'none';
+      }
+      
+      console.log("Adding item:", itemId, itemName); // Debug log
+      
+      fetch(`/bar/${orderId}/items/add/`, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'X-CSRFToken': csrfToken,
+              'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: new URLSearchParams({
+              'item_id': itemId,  // Changed from 'item' to 'item_id'
+              'qty': '1'
+          })
+      })
+      .then(response => {
+          console.log("Response status:", response.status); // Debug log
+          if (!response.ok) {
+              return response.json().then(err => { throw err; });
+          }
+          return response.json();
+      })
+      .then(data => {
+          // Re-enable the clicked item
+          if (itemCard) {
+              itemCard.style.opacity = '';
+              itemCard.style.pointerEvents = '';
+          }
+          
+          if (data.ok) {
+              // Show success notification
+              showNotification(data.message || `${itemName} added to order!`, 'success');
+              // Refresh the page to show updated items
+              location.reload();
+          } else {
+              showNotification(data.error || data.message || 'Error adding item', 'error');
+          }
+      })
+      .catch(error => {
+          if (itemCard) {
+              itemCard.style.opacity = '';
+              itemCard.style.pointerEvents = '';
+          }
+          console.error('Error:', error);
+          showNotification(error.error || 'Network error. Please try again.', 'error');
+      });
+  }
+  
+  
+  // Remove item from order
+  function removeItem(itemId, itemName) {
+    if (!confirm(`Remove ${itemName} from order?`)) return;
+    
+    fetch(`/bar/${orderId}/items/${itemId}/remove/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrfToken,
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.ok) {
+        document.getElementById('orderItemsContainer').innerHTML = data.items_html;
+        document.getElementById('summarySubtotal').innerHTML = `UGX ${parseFloat(data.subtotal).toLocaleString()}`;
+        document.getElementById('summaryTotal').innerHTML = `UGX ${parseFloat(data.total).toLocaleString()}`;
+        if (document.getElementById('itemCount')) {
+          document.getElementById('itemCount').innerHTML = `${data.item_count} items`;
+        }
+        showNotification(`${itemName} removed`, 'info');
+        attachItemEventHandlers();
+      } else {
+        showNotification(data.error || 'Error removing item', 'error');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      showNotification('Network error. Please try again.', 'error');
+    });
+  }
+  
+  // Update item quantity
+  function updateQuantity(itemId, qty, itemName) {
+    fetch(`/bar/${orderId}/items/${itemId}/update-qty/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': csrfToken,
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: new URLSearchParams({ 'qty': qty })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.ok) {
+        document.getElementById('orderItemsContainer').innerHTML = data.items_html;
+        document.getElementById('summarySubtotal').innerHTML = `UGX ${parseFloat(data.subtotal).toLocaleString()}`;
+        document.getElementById('summaryTotal').innerHTML = `UGX ${parseFloat(data.total).toLocaleString()}`;
+        if (document.getElementById('itemCount')) {
+          document.getElementById('itemCount').innerHTML = `${data.item_count} items`;
+        }
+        attachItemEventHandlers();
+      } else {
+        showNotification(data.error || 'Error updating quantity', 'error');
+        refreshOrderItems(); // Refresh to show correct quantity
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      showNotification('Network error. Please try again.', 'error');
+    });
+  }
+  
+  // Show notification
+  function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    const colors = {
+      success: 'bg-emerald-500',
+      error: 'bg-rose-500',
+      info: 'bg-blue-500',
+      warning: 'bg-amber-500'
+    };
+    const icons = {
+      success: 'fa-check-circle',
+      error: 'fa-exclamation-circle',
+      info: 'fa-info-circle',
+      warning: 'fa-exclamation-triangle'
+    };
+    
+    notification.className = `fixed bottom-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg ${colors[type]} text-white text-sm font-medium animate-slide-in flex items-center gap-2`;
+    notification.innerHTML = `<i class="fas ${icons[type]}"></i>${message}`;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      notification.classList.add('animate-fade-out');
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
+  }
+  
+  // Attach event handlers to dynamic elements
+  function attachItemEventHandlers() {
+    // Decrease quantity buttons
+    document.querySelectorAll('.decrease-qty-btn').forEach(btn => {
+      btn.removeEventListener('click', handleDecreaseClick);
+      btn.addEventListener('click', handleDecreaseClick);
+    });
+    
+    // Increase quantity buttons
+    document.querySelectorAll('.increase-qty-btn').forEach(btn => {
+      btn.removeEventListener('click', handleIncreaseClick);
+      btn.addEventListener('click', handleIncreaseClick);
+    });
+    
+    // Quantity input change
+    document.querySelectorAll('.item-qty-input').forEach(input => {
+      input.removeEventListener('change', handleQtyChange);
+      input.addEventListener('change', handleQtyChange);
+    });
+    
+    // Remove buttons
+    document.querySelectorAll('.remove-item-btn').forEach(btn => {
+      btn.removeEventListener('click', handleRemoveClick);
+      btn.addEventListener('click', handleRemoveClick);
+    });
+  }
+  
+  function handleDecreaseClick(e) {
+    const btn = e.currentTarget;
+    const itemId = btn.dataset.itemId;
+    const itemName = btn.dataset.itemName;
+    const input = document.querySelector(`.item-qty-input[data-item-id="${itemId}"]`);
+    if (input) {
+      const currentQty = parseInt(input.value);
+      if (currentQty > 1) {
+        updateQuantity(itemId, currentQty - 1, itemName);
+      }
+    }
+  }
+  
+  function handleIncreaseClick(e) {
+    const btn = e.currentTarget;
+    const itemId = btn.dataset.itemId;
+    const itemName = btn.dataset.itemName;
+    const input = document.querySelector(`.item-qty-input[data-item-id="${itemId}"]`);
+    if (input) {
+      const currentQty = parseInt(input.value);
+      updateQuantity(itemId, currentQty + 1, itemName);
+    }
+  }
+  
+  function handleQtyChange(e) {
+    const input = e.currentTarget;
+    const itemId = input.dataset.itemId;
+    const itemName = input.dataset.itemName;
+    let newQty = parseInt(input.value);
+    if (isNaN(newQty) || newQty < 1) {
+      newQty = 1;
+      input.value = 1;
+    }
+    updateQuantity(itemId, newQty, itemName);
+  }
+  
+  function handleRemoveClick(e) {
+    const btn = e.currentTarget;
+    const itemId = btn.dataset.itemId;
+    const itemName = btn.dataset.itemName;
+    if (confirm(`Remove ${itemName} from order?`)) {
+      removeItem(itemId, itemName);
+    }
+  }
+  
+  // Search filter
+  if (searchInput) {
+    searchInput.addEventListener('input', function(e) {
+      const searchTerm = e.target.value.toLowerCase();
+      const items = document.querySelectorAll('.item-card');
+      let visibleCount = 0;
+      
+      items.forEach(item => {
+        const name = item.dataset.itemName?.toLowerCase() || '';
+        const category = item.dataset.itemCategory?.toLowerCase() || '';
+        
+        if (name.includes(searchTerm) || category.includes(searchTerm)) {
+          item.style.display = '';
+          visibleCount++;
+        } else {
+          item.style.display = 'none';
+        }
+      });
+      
+      const noResults = document.getElementById('noResults');
+      if (visibleCount === 0 && items.length > 0) {
+        if (!noResults) {
+          const msg = document.createElement('div');
+          msg.id = 'noResults';
+          msg.className = 'text-center py-8 col-span-full';
+          msg.innerHTML = '<i class="fas fa-search text-slate-300 text-4xl mb-2"></i><p class="text-slate-500">No items found</p>';
+          itemsGrid?.appendChild(msg);
+        }
+      } else if (noResults) {
+        noResults.remove();
+      }
+    });
+  }
+  
+  // Item click handler
+  if (itemsGrid) {
+    itemsGrid.addEventListener('click', function(e) {
+      const itemCard = e.target.closest('.item-card');
+      if (itemCard && !itemCard.style.pointerEvents) {
+        const itemId = itemCard.dataset.itemId;
+        const itemName = itemCard.dataset.itemName;
+        
+        // Check stock for tracked items
+        const trackStock = itemCard.dataset.trackStock === 'true';
+        const stockQty = parseInt(itemCard.dataset.itemStock);
+        
+        if (trackStock && stockQty <= 0) {
+          showNotification(`${itemName} is out of stock!`, 'error');
+          return;
+        }
+        
+        addItemToCart(itemId, itemName);
+        
+        // Visual feedback
+        itemCard.style.transform = 'scale(0.98)';
+        setTimeout(() => {
+          itemCard.style.transform = '';
+        }, 200);
+      }
+    });
+  }
+  
+  // Initial attachment of event handlers
+  attachItemEventHandlers();
+});
+
+// Add animation styles
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+  .animate-slide-in { animation: slideIn 0.3s ease-out; }
+  .animate-fade-out { animation: fadeOut 0.3s ease-out forwards; }
+  .item-card {
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  .item-card:hover {
+    transform: translateY(-2px);
+  }
+`;
+document.head.appendChild(style);
+</script>
 {% endblock %}

@@ -1,4 +1,5 @@
 # hotels/admin.py
+from django import forms
 from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
@@ -8,6 +9,26 @@ from .models import (
     HotelContactPerson, HotelBankDetail, HotelAmenity,
     HotelAmenityMapping
 )
+
+
+# Custom forms with HTML5 color picker widgets
+class HotelAdminForm(forms.ModelForm):
+    class Meta:
+        model = Hotel
+        fields = '__all__'
+        widgets = {
+            'brand_color_primary': forms.TextInput(attrs={'type': 'color', 'style': 'width: 60px; height: 40px; cursor: pointer;'}),
+            'brand_color_secondary': forms.TextInput(attrs={'type': 'color', 'style': 'width: 60px; height: 40px; cursor: pointer;'}),
+        }
+
+
+class HotelSettingAdminForm(forms.ModelForm):
+    class Meta:
+        model = HotelSetting
+        fields = '__all__'
+        widgets = {
+            'brand_color': forms.TextInput(attrs={'type': 'color', 'style': 'width: 60px; height: 40px; cursor: pointer;'}),
+        }
 
 
 @admin.register(HotelChain)
@@ -84,12 +105,12 @@ class HotelCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Hotel)
 class HotelAdmin(admin.ModelAdmin):
+    form = HotelAdminForm
     list_display = ("name", "slug", "hotel_chain_display", "city", "country", 
                    "star_rating_display", "is_active", "is_verified", "is_featured", "total_rooms")
     list_filter = ("is_active", "is_verified", "is_featured", "is_published", 
                   "country", "city", "star_rating", "hotel_chain", "category")
     search_fields = ("name", "slug", "email", "phone", "city", "country", "address_line1")
-    prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("created_at", "updated_at", "slug")
     ordering = ("name",)
     list_editable = ("is_active", "is_verified", "is_featured")
@@ -97,7 +118,7 @@ class HotelAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ("Basic Information", {
-            "fields": ("name", "slug", "hotel_chain", "category", "star_rating", 
+            "fields": ("name", "hotel_chain", "category", "star_rating", 
                       "total_rooms", "total_floors")
         }),
         ("Contact Information", {
@@ -143,9 +164,8 @@ class HotelAdmin(admin.ModelAdmin):
     
     def hotel_chain_display(self, obj):
         if obj.hotel_chain:
-            return format_html('<a href="{}">{}</a>', 
-                             reverse("admin:hotels_hotelchain_change", args=[obj.hotel_chain.id]),
-                             obj.hotel_chain.name)
+            url = reverse("admin:hotels_hotelchain_change", args=[obj.hotel_chain.id])
+            return format_html('<a href="{}">{}</a>', url, obj.hotel_chain.name)
         return "-"
     hotel_chain_display.short_description = "Hotel Chain"
     
@@ -188,6 +208,7 @@ class HotelAdmin(admin.ModelAdmin):
 
 @admin.register(HotelSetting)
 class HotelSettingAdmin(admin.ModelAdmin):
+    form = HotelSettingAdminForm
     list_display = ("hotel_link", "phone_number", "email", "currency", 
                    "enable_online_booking", "updated_at")
     search_fields = ("hotel__name", "phone_number", "email", "address")

@@ -1,334 +1,766 @@
 # finance/signals.py
-from __future__ import annotations
-
 from decimal import Decimal
+import logging
 
 from django.db import transaction
 from django.db.models import Sum
-from django.db.models.signals import post_delete, post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
 
-from bookings.models import AdditionalCharge, Booking
-from finance.models import Expense, ExpenseAuditLog, Invoice, InvoiceLineItem, Payment
+from bookings.models import Booking, AdditionalCharge
+from finance.models import Invoice, InvoiceLineItem, Payment, Expense, ExpenseAuditLog, CashMovement, Account, JournalEntry, JournalLine
+from restaurant.models import RestaurantInvoice, RestaurantPayment
+from bar.models import BarOrder
+from services.models import ServiceBooking, ServiceBookingExtra, ServicePayment
+from store.models import StoreSale, StoreGoodsReceipt
+
+# Set up logging
+logger = logging.getLogger(__name__)
+
+D0 = Decimal("0.00")
 
 
-D0 = Decimal("0")
+def money(value):
+    """Safely convert value to Decimal"""
+    try:
+        return Decimal(str(value or 0))
+    except Exception:
+        return D0
 
 
-# -----------------------------
-# Helpers
-# -----------------------------
+def invoice_status(invoice):
+    """Determine invoice status based on paid amount"""
+    total = money(invoice.total_amount)
+    paid = money(invoice.amount_paid)
 
-def _recalc_invoice_from_lines(invoice: Invoice) -> None:
-    """
-    Recalculate invoice subtotal/tax/total from linked line items.
-    Keeps Invoice.calculate_totals() as the source of truth.
-    """
-    subtotal = invoice.line_items.aggregate(s=Sum("total"))["s"] or D0
-    invoice.subtotal = Decimal(subtotal or D0)
-    invoice.calculate_totals()
-
-    update_fields = ["subtotal", "tax_amount", "total_amount", "updated_at"]
-
-    # Keep invoice status sensible after line recalculation
-    if invoice.amount_paid >= invoice.total_amount and invoice.total_amount > D0:
-        invoice.status = Invoice.Status.PAID
-        if not invoice.paid_at:
-            invoice.paid_at = timezone.now()
-        update_fields.extend(["status", "paid_at"])
-    elif invoice.amount_paid > D0:
-        invoice.status = Invoice.Status.PARTIALLY_PAID
-        invoice.paid_at = None
-        update_fields.extend(["status", "paid_at"])
-    elif invoice.status not in [Invoice.Status.DRAFT, Invoice.Status.PROFORMA, Invoice.Status.VOID, Invoice.Status.CREDIT_NOTE]:
-        invoice.status = Invoice.Status.ISSUED
-        invoice.paid_at = None
-        update_fields.extend(["status", "paid_at"])
-
-    invoice.save(update_fields=list(dict.fromkeys(update_fields)))
+    if total > D0 and paid >= total:
+        return Invoice.Status.PAID
+    if paid > D0:
+        return Invoice.Status.PARTIALLY_PAID
+    return Invoice.Status.ISSUED
 
 
-def _get_booking_guest_name(booking: Booking) -> str:
-    guest = getattr(booking, "guest", None)
-    if guest:
-        full_name = getattr(guest, "full_name", None)
-        if full_name:
-            return full_name
-        first_name = getattr(guest, "first_name", "") or ""
-        last_name = getattr(guest, "last_name", "") or ""
-        combined = f"{first_name} {last_name}".strip()
-        if combined:
-            return combined
-    return f"Booking #{booking.pk}"
+def recalc_invoice(invoice):
+    """Recalculate invoice totals from line items"""
+    try:
+        subtotal = invoice.line_items.aggregate(total=Sum("total"))["total"] or D0
+        invoice.subtotal = money(subtotal)
+        invoice.calculate_totals()
+        invoice.status = invoice_status(invoice)
+
+        if invoice.status == Invoice.Status.PAID:
+            invoice.paid_at = invoice.paid_at or timezone.now()
+
+        invoice.save(update_fields=[
+            "subtotal",
+            "tax_amount",
+            "total_amount",
+            "status",
+            "paid_at",
+            "updated_at",
+        ])
+    except Exception as e:
+        logger.error(f"Error recalculating invoice {invoice.id}: {e}")
 
 
-def _ensure_booking_invoice(booking: Booking) -> Invoice:
-    """
-    Create or update invoice linked to booking.
-    """
-    inv = getattr(booking, "invoice", None)
-
-    guest = getattr(booking, "guest", None)
-    customer_name = _get_booking_guest_name(booking)
-    customer_email = getattr(guest, "email", None) if guest else None
-    customer_phone = getattr(guest, "phone", None) if guest else None
-
-    booking_tax_rate = Decimal(getattr(booking, "tax_rate", D0) or D0)
-    booking_discount = Decimal(getattr(booking, "discount", D0) or D0)
-    booking_discount_type = getattr(booking, "discount_type", "fixed") or "fixed"
-
-    if inv is None:
-        inv = Invoice.objects.create(
-            hotel=booking.hotel,
-            booking=booking,
-            customer_name=customer_name,
-            customer_email=customer_email,
-            customer_phone=customer_phone,
-            invoice_date=timezone.localdate(),
-            due_date=timezone.localdate() + timezone.timedelta(days=30),
-            status=Invoice.Status.ISSUED,
-            currency="USD",
-            tax_rate=booking_tax_rate,
-            subtotal=D0,
-            discount=booking_discount,
-            discount_type=booking_discount_type,
+def upsert_line(invoice, description, quantity, unit_price):
+    """Create or update invoice line item"""
+    try:
+        line, created = InvoiceLineItem.objects.get_or_create(
+            invoice=invoice,
+            description=description,
         )
-    else:
-        inv.customer_name = customer_name
-        inv.customer_email = customer_email
-        inv.customer_phone = customer_phone
-        inv.tax_rate = booking_tax_rate
-        inv.discount = booking_discount
-        inv.discount_type = booking_discount_type
-        inv.save(
-            update_fields=[
-                "customer_name",
-                "customer_email",
-                "customer_phone",
-                "tax_rate",
-                "discount",
-                "discount_type",
-                "updated_at",
-            ]
-        )
-
-    return inv
+        line.quantity = max(int(money(quantity)), 1)
+        line.unit_price = money(unit_price)
+        line.discount = D0
+        line.tax_rate = D0
+        line.save()
+        return line
+    except Exception as e:
+        logger.error(f"Error upserting line for invoice {invoice.id}: {e}")
+        return None
 
 
-def _upsert_room_nights_line(inv: Invoice, booking: Booking) -> None:
-    """
-    Maintain one room-night line item per booking invoice.
-    """
-    nights = int(getattr(booking, "nights", 0) or 0)
-    quantity = nights if nights > 0 else 1
-    unit_price = Decimal(getattr(booking, "nightly_rate", D0) or D0)
+def sync_cash_movement(
+    *,
+    hotel,
+    source_type,
+    source_id,
+    direction,
+    amount,
+    reference="",
+    description="",
+    cash_account=None,
+    user=None,
+):
+    """Synchronize cash movement with accounting"""
+    amount = money(amount)
 
-    li, created = InvoiceLineItem.objects.get_or_create(
-        invoice=inv,
-        booking=booking,
-        charge=None,
-        description__startswith="Room nights",
-        defaults={
-            "description": f"Room nights ({quantity} night(s))",
-            "quantity": quantity,
-            "unit_price": unit_price,
-            "discount": D0,
-            "tax_rate": inv.tax_rate or D0,
-        },
-    )
+    if amount <= D0:
+        return None
 
-    if not created:
-        li.description = f"Room nights ({quantity} night(s))"
-        li.quantity = quantity
-        li.unit_price = unit_price
-        li.discount = D0
-        li.tax_rate = inv.tax_rate or D0
+    try:
+        with transaction.atomic():
+            movement = CashMovement.objects.filter(
+                hotel=hotel,
+                source_type=source_type,
+                source_id=source_id,
+            ).first()
 
-    li.save()
+            old_amount = money(movement.amount) if movement else D0
+            old_direction = movement.direction if movement else None
+            old_cash_account = movement.cash_account if movement else None
+
+            if movement is None:
+                movement = CashMovement(
+                    hotel=hotel,
+                    source_type=source_type,
+                    source_id=source_id,
+                )
+
+            movement.direction = direction
+            movement.amount = amount
+            movement.reference = reference
+            movement.description = description
+            movement.cash_account = cash_account
+            movement.created_by = user
+
+            if cash_account:
+                if old_cash_account and old_amount > D0:
+                    old_cash_account.adjust_balance(
+                        old_amount,
+                        increase=(old_direction == CashMovement.Direction.CASH_OUT),
+                    )
+
+                cash_account.adjust_balance(
+                    amount,
+                    increase=(direction == CashMovement.Direction.CASH_IN),
+                )
+                movement.balance_after = cash_account.current_balance
+
+            movement.save()
+            return movement
+    except Exception as e:
+        logger.error(f"Error syncing cash movement for {source_type}#{source_id}: {e}")
+        return None
 
 
-def _upsert_extra_bed_line(inv: Invoice, booking: Booking) -> None:
-    """
-    Maintain optional extra bed line.
-    """
-    extra_bed_charge = Decimal(getattr(booking, "extra_bed_charge", D0) or D0)
+def create_journal_entry_for_invoice(invoice):
+    """Create journal entry for invoice"""
+    try:
+        if invoice.status != Invoice.Status.PAID:
+            return None
 
-    existing = InvoiceLineItem.objects.filter(
-        invoice=inv,
-        booking=booking,
-        charge=None,
-        description="Extra bed charge",
-    ).first()
+        # Check if journal entry already exists
+        if JournalEntry.objects.filter(reference_type="invoice", reference_id=invoice.id).exists():
+            return None
 
-    if extra_bed_charge > D0:
-        if existing is None:
-            existing = InvoiceLineItem(
-                invoice=inv,
-                booking=booking,
-                charge=None,
-                description="Extra bed charge",
+        # Get accounts
+        receivable_account = invoice.receivable_account or Account.objects.filter(
+            hotel=invoice.hotel,
+            account_type=Account.AccountType.ASSET,
+            account_subtype=Account.SubType.RECEIVABLE,
+        ).first()
+
+        revenue_account = invoice.revenue_account or Account.objects.filter(
+            hotel=invoice.hotel,
+            account_type=Account.AccountType.REVENUE,
+            account_subtype=Account.SubType.SALES,
+        ).first()
+
+        if not receivable_account or not revenue_account:
+            logger.warning(f"Missing accounts for invoice {invoice.id}")
+            return None
+
+        with transaction.atomic():
+            journal = JournalEntry.objects.create(
+                hotel=invoice.hotel,
+                entry_date=invoice.paid_at or timezone.now(),
+                reference_type="invoice",
+                reference_id=invoice.id,
+                description=f"Invoice {invoice.invoice_number} payment",
+                status=JournalEntry.Status.POSTED,
+                posted_at=timezone.now(),
             )
 
-        existing.quantity = 1
-        existing.unit_price = extra_bed_charge
-        existing.discount = D0
-        existing.tax_rate = inv.tax_rate or D0
-        existing.save()
-    elif existing:
-        existing.delete()
+            # Debit: Accounts Receivable
+            JournalLine.objects.create(
+                journal_entry=journal,
+                account=receivable_account,
+                description=f"Invoice {invoice.invoice_number}",
+                debit=invoice.total_amount,
+                credit=D0,
+            )
+
+            # Credit: Revenue (or appropriate account)
+            JournalLine.objects.create(
+                journal_entry=journal,
+                account=revenue_account,
+                description=f"Revenue from invoice {invoice.invoice_number}",
+                debit=D0,
+                credit=invoice.total_amount,
+            )
+
+            return journal
+
+    except Exception as e:
+        logger.error(f"Error creating journal entry for invoice {invoice.id}: {e}")
+        return None
 
 
-# -----------------------------
-# Booking -> Invoice sync
-# -----------------------------
+# =========================
+# BOOKING → INVOICE
+# =========================
 
 @receiver(post_save, sender=Booking)
-def booking_auto_invoice(sender, instance: Booking, created: bool, **kwargs):
-    """
-    Ensure booking has an invoice and core booking lines stay in sync.
-    """
-    with transaction.atomic():
-        inv = _ensure_booking_invoice(instance)
-        _upsert_room_nights_line(inv, instance)
-        _upsert_extra_bed_line(inv, instance)
-        _recalc_invoice_from_lines(inv)
+def booking_to_invoice(sender, instance, created, raw=False, **kwargs):
+    """Create invoice when booking is created or updated"""
+    if raw:
+        return
 
+    try:
+        if instance.status in [Booking.Status.CANCELLED, Booking.Status.NO_SHOW]:
+            invoice = getattr(instance, "invoice", None)
+            if invoice and invoice.status != Invoice.Status.PAID:
+                invoice.status = Invoice.Status.VOID
+                invoice.voided_at = timezone.now()
+                invoice.void_reason = f"Booking {instance.get_status_display()}"
+                invoice.save()
+                logger.info(f"Invoice {invoice.invoice_number} voided for cancelled booking {instance.booking_number}")
+            return
 
-# -----------------------------
-# AdditionalCharge -> InvoiceLineItem sync
-# -----------------------------
+        guest = getattr(instance, "guest", None)
 
-@receiver(post_save, sender=AdditionalCharge)
-def charge_to_invoice_line(sender, instance: AdditionalCharge, created: bool, **kwargs):
-    """
-    Sync additional charges into invoice line items.
-    """
-    booking = instance.booking
-    inv = getattr(booking, "invoice", None)
-    if inv is None:
-        inv = _ensure_booking_invoice(booking)
-
-    with transaction.atomic():
-        li, _ = InvoiceLineItem.objects.get_or_create(
-            invoice=inv,
-            charge=instance,
+        invoice, created = Invoice.objects.get_or_create(
+            booking=instance,
             defaults={
-                "booking": booking,
-                "description": instance.description,
-                "quantity": instance.quantity or 1,
-                "unit_price": instance.unit_price or D0,
-                "discount": D0,
-                "tax_rate": inv.tax_rate or D0,
+                "hotel": instance.hotel,
+                "customer_name": getattr(guest, "full_name", None) or "Guest",
+                "customer_phone": getattr(guest, "phone", None),
+                "customer_email": getattr(guest, "email", None),
+                "invoice_date": timezone.localdate(),
+                "due_date": timezone.localdate(),
+                "currency": "UGX",
+                "status": Invoice.Status.ISSUED,
+                "created_by": getattr(instance, "created_by", None),
             },
         )
 
-        li.booking = booking
-        li.description = instance.description
-        li.quantity = instance.quantity or 1
-        li.unit_price = instance.unit_price or D0
-        li.tax_rate = inv.tax_rate or D0
-        li.save()
+        nights = getattr(instance, "nights", 1) or 1
+        nightly_rate = money(getattr(instance, "nightly_rate", 0))
 
-        _recalc_invoice_from_lines(inv)
+        if nights > 0 and nightly_rate > D0:
+            upsert_line(
+                invoice,
+                f"Room nights ({nights} night(s)) - Room {instance.room.number}",
+                nights,
+                nightly_rate,
+            )
+
+        extra_bed = money(getattr(instance, "extra_bed_charge", 0))
+        if extra_bed > D0:
+            upsert_line(invoice, "Extra bed charge", 1, extra_bed)
+
+        for charge in instance.additional_charges.all():
+            if money(charge.total) > D0:
+                upsert_line(invoice, charge.description, charge.quantity, charge.unit_price)
+
+        recalc_invoice(invoice)
+
+        if created:
+            logger.info(f"Invoice {invoice.invoice_number} created for booking {instance.booking_number}")
+
+    except Exception as e:
+        logger.error(f"Error creating invoice for booking {instance.booking_number}: {e}")
 
 
-@receiver(post_delete, sender=AdditionalCharge)
-def charge_deleted_remove_line(sender, instance: AdditionalCharge, **kwargs):
-    booking = instance.booking
-    inv = getattr(booking, "invoice", None)
-    if inv is None:
+# =========================
+# RESTAURANT → FINANCE
+# =========================
+
+@receiver(post_save, sender=RestaurantInvoice)
+def restaurant_invoice_to_finance(sender, instance, created, raw=False, **kwargs):
+    """Create finance invoice from restaurant invoice"""
+    if raw:
         return
 
-    with transaction.atomic():
-        InvoiceLineItem.objects.filter(invoice=inv, charge=instance).delete()
-        _recalc_invoice_from_lines(inv)
+    try:
+        order = instance.order
+        key = f"REST-{instance.pk}"
+
+        invoice, created = Invoice.objects.get_or_create(
+            hotel=instance.hotel,
+            order_number=key,
+            booking=None,
+            defaults={
+                "customer_name": order.customer_name or "Walk-in Customer",
+                "customer_phone": order.customer_phone,
+                "customer_email": order.customer_email,
+                "invoice_date": timezone.localdate(),
+                "due_date": timezone.localdate(),
+                "currency": "UGX",
+                "status": Invoice.Status.ISSUED,
+                "notes": f"Restaurant order {order.order_number}",
+                "created_by": order.created_by,
+            },
+        )
+
+        for item in order.items.select_related("item"):
+            if item.unit_price > 0:
+                upsert_line(
+                    invoice,
+                    f"Restaurant item: {item.item.name}",
+                    item.qty,
+                    item.unit_price,
+                )
+
+        recalc_invoice(invoice)
+
+    except Exception as e:
+        logger.error(f"Error creating finance invoice for restaurant invoice {instance.pk}: {e}")
 
 
-# -----------------------------
-# Payment -> Invoice sync
-# -----------------------------
+@receiver(post_save, sender=RestaurantPayment)
+def restaurant_payment_to_finance(sender, instance, created, raw=False, **kwargs):
+    """Record restaurant payment in finance system"""
+    if raw:
+        return
+
+    try:
+        restaurant_invoice_to_finance(RestaurantInvoice, instance.invoice, False)
+
+        finance_invoice = Invoice.objects.filter(
+            hotel=instance.hotel,
+            order_number=f"REST-{instance.invoice.pk}",
+        ).first()
+
+        if not finance_invoice:
+            return
+
+        payment, created = Payment.objects.get_or_create(
+            invoice=finance_invoice,
+            reference=f"RESTPAY-{instance.pk}",
+            defaults={
+                "hotel": instance.hotel,
+                "amount": instance.amount,
+                "currency": "UGX",
+                "status": Payment.PaymentStatus.COMPLETED,
+                "received_by": instance.received_by,
+                "notes": "Restaurant payment",
+            },
+        )
+
+        if not created:
+            payment.amount = instance.amount
+            payment.status = Payment.PaymentStatus.COMPLETED
+            payment.save()
+
+    except Exception as e:
+        logger.error(f"Error recording restaurant payment {instance.pk}: {e}")
+
+
+# =========================
+# BAR → FINANCE
+# =========================
+
+@receiver(post_save, sender=BarOrder)
+def bar_order_to_finance(sender, instance, created, raw=False, **kwargs):
+    """Create invoice for bar order when billed or paid"""
+    if raw:
+        return
+
+    try:
+        key = f"BAR-{instance.pk}"
+
+        if instance.status == BarOrder.Status.CANCELLED:
+            invoice = Invoice.objects.filter(hotel=instance.hotel, order_number=key).first()
+            if invoice and invoice.status != Invoice.Status.PAID:
+                invoice.status = Invoice.Status.VOID
+                invoice.voided_at = timezone.now()
+                invoice.void_reason = "Bar order cancelled"
+                invoice.save()
+                logger.info(f"Invoice {invoice.invoice_number} voided for cancelled bar order {instance.order_number}")
+            return
+
+        if instance.status not in [BarOrder.Status.BILLED, BarOrder.Status.PAID]:
+            return
+
+        invoice, created = Invoice.objects.get_or_create(
+            hotel=instance.hotel,
+            order_number=key,
+            booking=None,
+            defaults={
+                "customer_name": instance.display_name,
+                "invoice_date": timezone.localdate(),
+                "due_date": timezone.localdate(),
+                "currency": "UGX",
+                "status": Invoice.Status.ISSUED,
+                "notes": f"Bar order {instance.order_number}",
+                "created_by": instance.created_by,
+            },
+        )
+
+        for item in instance.items.select_related("item"):
+            if item.unit_price > 0:
+                upsert_line(
+                    invoice,
+                    f"Bar item: {item.item.name}",
+                    item.qty,
+                    item.unit_price,
+                )
+
+        recalc_invoice(invoice)
+
+        if instance.status == BarOrder.Status.PAID:
+            payment, _ = Payment.objects.update_or_create(
+                invoice=invoice,
+                reference=f"BARPAY-{instance.pk}",
+                defaults={
+                    "hotel": instance.hotel,
+                    "amount": invoice.total_amount,
+                    "currency": "UGX",
+                    "status": Payment.PaymentStatus.COMPLETED,
+                    "received_by": instance.created_by,
+                    "notes": "Auto bar payment",
+                },
+            )
+            logger.info(f"Payment recorded for bar order {instance.order_number}")
+
+    except Exception as e:
+        logger.error(f"Error creating invoice for bar order {instance.order_number}: {e}")
+
+
+# =========================
+# SERVICES → FINANCE
+# =========================
+
+@receiver(post_save, sender=ServiceBooking)
+def service_booking_to_finance(sender, instance, created, raw=False, **kwargs):
+    """Create invoice for service booking"""
+    if raw:
+        return
+
+    try:
+        key = f"SRV-{instance.pk}"
+
+        if instance.status in [ServiceBooking.Status.CANCELLED, ServiceBooking.Status.NO_SHOW]:
+            invoice = Invoice.objects.filter(hotel=instance.hotel, order_number=key).first()
+            if invoice and invoice.status != Invoice.Status.PAID:
+                invoice.status = Invoice.Status.VOID
+                invoice.voided_at = timezone.now()
+                invoice.void_reason = f"Service {instance.get_status_display()}"
+                invoice.save()
+            return
+
+        invoice, created = Invoice.objects.get_or_create(
+            hotel=instance.hotel,
+            order_number=key,
+            booking=None,
+            defaults={
+                "customer_name": instance.customer_name,
+                "customer_phone": instance.customer_phone,
+                "invoice_date": timezone.localdate(),
+                "due_date": timezone.localdate(),
+                "currency": "UGX",
+                "status": Invoice.Status.ISSUED,
+                "notes": f"Service booking {instance.reference}",
+                "created_by": instance.created_by,
+            },
+        )
+
+        if instance.unit_price > 0:
+            upsert_line(
+                invoice,
+                f"Service: {instance.service.name}",
+                instance.quantity,
+                instance.unit_price,
+            )
+
+        for extra in instance.extras.all():
+            if extra.unit_price > 0:
+                upsert_line(invoice, f"Extra: {extra.name}", extra.quantity, extra.unit_price)
+
+        recalc_invoice(invoice)
+
+    except Exception as e:
+        logger.error(f"Error creating invoice for service booking {instance.reference}: {e}")
+
+
+@receiver(post_save, sender=ServiceBookingExtra)
+def service_extra_to_finance(sender, instance, created, raw=False, **kwargs):
+    """Update invoice when service extra is added"""
+    if raw:
+        return
+    service_booking_to_finance(ServiceBooking, instance.service_booking, False)
+
+
+@receiver(post_save, sender=ServicePayment)
+def service_payment_to_finance(sender, instance, created, raw=False, **kwargs):
+    """Record service payment in finance system"""
+    if raw:
+        return
+
+    try:
+        service_booking = instance.service_booking
+        service_booking_to_finance(ServiceBooking, service_booking, False)
+
+        invoice = Invoice.objects.filter(
+            hotel=service_booking.hotel,
+            order_number=f"SRV-{service_booking.pk}",
+        ).first()
+
+        if not invoice:
+            return
+
+        payment, _ = Payment.objects.update_or_create(
+            invoice=invoice,
+            reference=f"SRVPAY-{instance.pk}",
+            defaults={
+                "hotel": service_booking.hotel,
+                "amount": instance.amount,
+                "currency": "UGX",
+                "status": Payment.PaymentStatus.COMPLETED,
+                "received_by": instance.received_by,
+                "notes": f"Service payment for {service_booking.reference}",
+            },
+        )
+
+    except Exception as e:
+        logger.error(f"Error recording service payment {instance.pk}: {e}")
+
+
+# =========================
+# STORE SALES → FINANCE
+# =========================
+
+@receiver(post_save, sender=StoreSale)
+def store_sale_to_finance(sender, instance, created, raw=False, **kwargs):
+    """Create invoice for store sale"""
+    if raw:
+        return
+
+    try:
+        key = f"STORE-SALE-{instance.pk}"
+
+        invoice, created = Invoice.objects.get_or_create(
+            hotel=instance.hotel,
+            order_number=key,
+            booking=None,
+            defaults={
+                "customer_name": instance.customer_name or "Walk-in Customer",
+                "customer_phone": instance.customer_phone,
+                "invoice_date": timezone.localdate(),
+                "due_date": timezone.localdate(),
+                "currency": "UGX",
+                "status": Invoice.Status.ISSUED,
+                "notes": f"Store sale {instance.sale_number}",
+                "created_by": instance.created_by,
+            },
+        )
+
+        for item in instance.items.select_related("item"):
+            if item.unit_price > 0:
+                upsert_line(
+                    invoice,
+                    f"Store item: {item.item.name}",
+                    item.qty,
+                    item.unit_price,
+                )
+
+        recalc_invoice(invoice)
+
+        if instance.status == StoreSale.Status.PAID:
+            payment, _ = Payment.objects.update_or_create(
+                invoice=invoice,
+                reference=f"STOREPAY-{instance.pk}",
+                defaults={
+                    "hotel": instance.hotel,
+                    "amount": invoice.total_amount,
+                    "currency": "UGX",
+                    "status": Payment.PaymentStatus.COMPLETED,
+                    "received_by": instance.created_by,
+                    "notes": f"Store sale payment {instance.sale_number}",
+                },
+            )
+
+    except Exception as e:
+        logger.error(f"Error creating invoice for store sale {instance.sale_number}: {e}")
+
+
+# =========================
+# STORE PURCHASES → EXPENSES
+# =========================
+
+@receiver(post_save, sender=StoreGoodsReceipt)
+def goods_receipt_to_expense(sender, instance, created, raw=False, **kwargs):
+    """Convert goods receipt to expense"""
+    if raw:
+        return
+
+    try:
+        total = money(instance.total_amount)
+
+        if total <= D0:
+            return
+
+        supplier = instance.purchase_order.supplier
+
+        expense, created = Expense.objects.update_or_create(
+            hotel=instance.hotel,
+            invoice_reference=instance.receipt_number,
+            defaults={
+                "category": Expense.Category.SUPPLIES,
+                "department": Expense.Department.STORE,
+                "expense_type": Expense.ExpenseType.OPERATIONAL,
+                "title": f"Store goods received - {instance.receipt_number}",
+                "description": f"Goods received from {supplier.name}",
+                "amount": total,
+                "currency": "UGX",
+                "payment_method": Expense.PaymentMethod.CASH,
+                "expense_date": instance.received_date,
+                "payee": supplier.name,
+                "approval_status": Expense.ApprovalStatus.APPROVED,
+                "requested_by": instance.received_by,
+                "approved_by": instance.received_by,
+                "approved_at": timezone.now(),
+                "created_by": instance.received_by,
+            },
+        )
+
+        if created:
+            logger.info(f"Expense created for goods receipt {instance.receipt_number}")
+
+    except Exception as e:
+        logger.error(f"Error creating expense for goods receipt {instance.receipt_number}: {e}")
+
+
+# =========================
+# PAYMENT → CASH MOVEMENT
+# =========================
 
 @receiver(post_save, sender=Payment)
-def payment_updates_invoice(sender, instance: Payment, created: bool, **kwargs):
-    """
-    Keep invoice totals in sync when payments are created outside Invoice.record_payment().
-
-    Important:
-    - If Payment was created through Invoice.record_payment(), that method already updates invoice.amount_paid.
-    - So here we recompute from all completed/refunded payments instead of incrementing blindly.
-    """
-    inv = instance.invoice
-    if inv.status == Invoice.Status.VOID:
+def payment_to_cash_movement(sender, instance, created, raw=False, **kwargs):
+    """Update invoice and create cash movement when payment is recorded"""
+    if raw:
         return
 
-    with transaction.atomic():
-        completed_total = inv.payments.filter(
-            status__in=[
-                Payment.PaymentStatus.COMPLETED,
-                Payment.PaymentStatus.PARTIALLY_REFUNDED,
-                Payment.PaymentStatus.REFUNDED,
-            ]
-        ).aggregate(t=Sum("amount"))["t"] or D0
+    try:
+        invoice = instance.invoice
 
-        refunded_total = (
-            inv.payments.filter(
-                status__in=[
-                    Payment.PaymentStatus.PARTIALLY_REFUNDED,
-                    Payment.PaymentStatus.REFUNDED,
-                ]
-            )
-            .aggregate(t=Sum("refunds__amount"))["t"] or D0
-        )
+        # Update invoice paid amount
+        paid = invoice.payments.filter(
+            status=Payment.PaymentStatus.COMPLETED,
+        ).aggregate(total=Sum("amount"))["total"] or D0
 
-        net_paid = Decimal(completed_total or D0) - Decimal(refunded_total or D0)
-        if net_paid < D0:
-            net_paid = D0
+        invoice.amount_paid = money(paid)
+        invoice.status = invoice_status(invoice)
 
-        inv.amount_paid = net_paid
+        if invoice.status == Invoice.Status.PAID:
+            invoice.paid_at = invoice.paid_at or timezone.now()
+            # Create journal entry for paid invoice
+            create_journal_entry_for_invoice(invoice)
 
-        if inv.amount_paid >= Decimal(inv.total_amount or D0) and Decimal(inv.total_amount or D0) > D0:
-            inv.status = Invoice.Status.PAID
-            if not inv.paid_at:
-                inv.paid_at = timezone.now()
-        elif inv.amount_paid > D0:
-            inv.status = Invoice.Status.PARTIALLY_PAID
-            inv.paid_at = None
-        else:
-            if inv.due_date and inv.due_date < timezone.localdate():
-                inv.status = Invoice.Status.OVERDUE
+        invoice.save(update_fields=["amount_paid", "status", "paid_at", "updated_at"])
+
+        # Update booking payment status if linked
+        if invoice.booking_id:
+            booking = invoice.booking
+            booking.amount_paid = invoice.amount_paid
+
+            if invoice.status == Invoice.Status.PAID:
+                booking.payment_status = Booking.PaymentStatus.PAID
+            elif invoice.amount_paid > D0:
+                booking.payment_status = Booking.PaymentStatus.PARTIALLY_PAID
             else:
-                inv.status = Invoice.Status.ISSUED
-            inv.paid_at = None
+                booking.payment_status = Booking.PaymentStatus.PENDING
 
-        inv.save(update_fields=["amount_paid", "status", "paid_at", "updated_at"])
+            booking.save(update_fields=["amount_paid", "payment_status", "updated_at"])
+            logger.info(f"Booking {booking.booking_number} payment status updated to {booking.payment_status}")
+
+        # Create cash movement for completed payments
+        if instance.status == Payment.PaymentStatus.COMPLETED:
+            sync_cash_movement(
+                hotel=instance.hotel,
+                source_type="finance_payment",
+                source_id=instance.pk,
+                direction=CashMovement.Direction.CASH_IN,
+                amount=instance.amount,
+                reference=instance.reference or instance.payment_id,
+                description=f"Payment received for invoice {invoice.invoice_number}",
+                cash_account=instance.cash_account,
+                user=instance.received_by,
+            )
+
+    except Exception as e:
+        logger.error(f"Error processing payment {instance.payment_id}: {e}")
 
 
-# -----------------------------
-# Expense audit logs
-# -----------------------------
+# =========================
+# EXPENSE → CASH MOVEMENT
+# =========================
+
+@receiver(pre_save, sender=Expense)
+def expense_pre_save(sender, instance, **kwargs):
+    """Track old paid amount for cash movement calculation"""
+    if instance.pk:
+        try:
+            old = Expense.objects.get(pk=instance.pk)
+            instance._old_paid_amount = old.paid_amount
+            instance._old_approval_status = old.approval_status
+        except Expense.DoesNotExist:
+            instance._old_paid_amount = D0
+            instance._old_approval_status = None
+    else:
+        instance._old_paid_amount = D0
+        instance._old_approval_status = None
+
 
 @receiver(post_save, sender=Expense)
-def expense_audit(sender, instance: Expense, created: bool, **kwargs):
-    """
-    Create simple audit entries for create/update.
-
-    To avoid noisy logs:
-    - create a CREATE log once
-    - create UPDATE only when the record already exists
-    """
-    if created:
-        ExpenseAuditLog.objects.create(
-            expense=instance,
-            action=ExpenseAuditLog.Action.CREATE,
-            user=instance.created_by,
-            description="Expense created via signal",
-        )
+def expense_to_cash_movement(sender, instance, created, raw=False, **kwargs):
+    """Create audit log and cash movement for expenses"""
+    if raw:
         return
 
-    ExpenseAuditLog.objects.create(
-        expense=instance,
-        action=ExpenseAuditLog.Action.UPDATE,
-        user=None,
-        description="Expense updated via signal",
-    )
+    try:
+        # Create audit log
+        action = ExpenseAuditLog.Action.CREATE if created else ExpenseAuditLog.Action.UPDATE
+        ExpenseAuditLog.objects.create(
+            expense=instance,
+            action=action,
+            user=instance.created_by if created else None,
+            description="Expense created" if created else "Expense updated",
+        )
+
+        # Check if payment status changed to paid
+        old_paid_amount = getattr(instance, '_old_paid_amount', D0)
+        old_status = getattr(instance, '_old_approval_status', None)
+        
+        current_paid = money(instance.paid_amount)
+        current_status = instance.approval_status
+
+        is_newly_paid = (
+            current_paid > D0 and
+            old_paid_amount <= D0 and
+            current_status in [Expense.ApprovalStatus.PAID, Expense.ApprovalStatus.PARTIAL]
+        ) or (
+            old_status not in [Expense.ApprovalStatus.PAID, Expense.ApprovalStatus.PARTIAL] and
+            current_status in [Expense.ApprovalStatus.PAID, Expense.ApprovalStatus.PARTIAL]
+        )
+
+        if is_newly_paid:
+            sync_cash_movement(
+                hotel=instance.hotel,
+                source_type="expense_payment",
+                source_id=instance.pk,
+                direction=CashMovement.Direction.CASH_OUT,
+                amount=current_paid,
+                reference=instance.expense_number,
+                description=f"Expense paid: {instance.title}",
+                cash_account=instance.cash_account,
+                user=instance.created_by,
+            )
+            logger.info(f"Cash movement created for expense {instance.expense_number}")
+
+    except Exception as e:
+        logger.error(f"Error processing expense {instance.expense_number}: {e}")

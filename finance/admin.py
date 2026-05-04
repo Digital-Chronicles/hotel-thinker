@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
-
+from .models import CashMovement
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -805,3 +805,22 @@ class FinancialPeriodAdmin(admin.ModelAdmin):
 
         if ok:
             self.message_user(request, _(f"Closed {ok} period(s)."), level=messages.SUCCESS)
+
+
+@admin.register(CashMovement)
+class CashMovementAdmin(admin.ModelAdmin):
+    list_display = (
+        "created_at",
+        "hotel",
+        "direction",
+        "amount",
+        "cash_account",
+        "balance_after",
+        "source_type",
+        "reference",
+    )
+    list_filter = ("hotel", "direction", "source_type", "cash_account", "created_at")
+    search_fields = ("reference", "description", "source_type")
+    readonly_fields = ("created_at", "balance_after")
+    autocomplete_fields = ("hotel", "cash_account", "created_by")
+    ordering = ("-created_at",)

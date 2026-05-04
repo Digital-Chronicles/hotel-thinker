@@ -3,709 +3,504 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="description" content="Hotel Management System - Professional hotel operations dashboard" />
-  <meta name="theme-color" content="#1e3a8a" />
-  <title>{% block title %}Hotel Thinker | Professional Hotel Management{% endblock %}</title>
+  <meta name="description" content="Hotel Thinker — Enterprise Hotel Management System | Operations, Finance, Reservations" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>{% block title %}Hotel Thinker | Intelligent Hotel Operations{% endblock %}</title>
 
+  <!-- Tailwind + Font Awesome + Fonts -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'sans': ['Inter', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+          },
+          animation: {
+            'fade-in-up': 'fadeInUp 0.3s ease-out',
+            'slide-in-left': 'slideInLeft 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1)',
+            'pulse-ring': 'pulseRing 1.8s ease-in-out infinite',
+            'shimmer': 'shimmer 1.3s infinite',
+            'accordion-down': 'accordionDown 0.25s ease-out',
+            'accordion-up': 'accordionUp 0.2s ease-out',
+          },
+          keyframes: {
+            fadeInUp: {
+              '0%': { opacity: '0', transform: 'translateY(8px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            slideInLeft: {
+              '0%': { transform: 'translateX(-100%)', opacity: '0' },
+              '100%': { transform: 'translateX(0)', opacity: '1' },
+            },
+            pulseRing: {
+              '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+              '50%': { opacity: '0.7', transform: 'scale(1.2)' },
+            },
+            shimmer: {
+              '0%': { backgroundPosition: '-200% 0' },
+              '100%': { backgroundPosition: '200% 0' },
+            },
+            accordionDown: {
+              '0%': { opacity: '0', maxHeight: '0', transform: 'translateY(-8px)' },
+              '100%': { opacity: '1', maxHeight: '500px', transform: 'translateY(0)' },
+            },
+            accordionUp: {
+              '0%': { opacity: '1', maxHeight: '500px', transform: 'translateY(0)' },
+              '100%': { opacity: '0', maxHeight: '0', transform: 'translateY(-8px)' },
+            },
+          },
+          boxShadow: {
+            'card': '0 12px 30px -12px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0,0,0,0.02)',
+            'card-hover': '0 20px 35px -12px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0,0,0,0.05)',
+          },
+        }
+      }
+    }
+  </script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
-      font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
-      background: linear-gradient(145deg, #f1f5f9 0%, #eef2f6 100%);
-      -webkit-tap-highlight-color: transparent;
+      font-family: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f4f9 100%);
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* Modern scrollbar */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 10px; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #e9eef3; border-radius: 10px; }
     ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
     ::-webkit-scrollbar-thumb:hover { background: #5b6e8c; }
 
-    /* Glass morphism effects */
     .glass-nav {
-      background: rgba(255, 255, 255, 0.92);
-      backdrop-filter: blur(16px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.6);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(226, 232, 240, 0.6);
     }
+
     .glass-sidebar {
-      background: linear-gradient(180deg, #ffffff 0%, #fefefe 100%);
-      backdrop-filter: blur(0);
+      background: linear-gradient(180deg, #ffffff 0%, #fefeff 100%);
+      box-shadow: 8px 0 24px -12px rgba(0, 0, 0, 0.08);
     }
 
-    /* Smooth transitions */
-    .transition-smooth { transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1); }
-    .hover-lift:hover { transform: translateY(-2px); box-shadow: 0 20px 30px -12px rgba(0, 0, 0, 0.12); }
-
-    /* Active navigation state */
+    /* Active navigation styles */
     .active-nav {
-      background: linear-gradient(115deg, #2563eb 0%, #1d4ed8 100%) !important;
+      background: linear-gradient(105deg, #1e40af 0%, #2563eb 100%) !important;
       color: white !important;
-      box-shadow: 0 6px 14px rgba(37, 99, 235, 0.25);
+      box-shadow: 0 6px 14px rgba(37, 99, 235, 0.2);
+      border-radius: 0.875rem;
     }
-    .active-nav i {
-      color: white !important;
-    }
+    .active-nav i { color: white !important; }
     .active-nav-sub {
-      background: #eff6ff !important;
-      color: #1e40af !important;
+      background: #eef2ff !important;
+      color: #1e3a8a !important;
+      border-left: 3px solid #2563eb;
     }
-    .active-nav-sub i {
-      color: #2563eb !important;
+    .active-nav-sub i { color: #2563eb !important; }
+
+    /* Dropdown / Accordion styles */
+    .dropdown-trigger {
+      cursor: pointer;
+      user-select: none;
+    }
+    .dropdown-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: max-height;
+    }
+    .dropdown-content.open {
+      max-height: 600px;
+    }
+    .dropdown-chevron {
+      transition: transform 0.2s ease;
+    }
+    .dropdown-chevron.rotated {
+      transform: rotate(90deg);
     }
 
-    /* Status pulse animation */
-    .status-pulse {
-      animation: pulse 2s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); background-color: #ef4444; }
-      50% { opacity: 0.75; transform: scale(1.2); background-color: #f87171; }
-    }
-
-    /* Animation keyframes */
-    @keyframes slideInLeft {
-      from { transform: translateX(-100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes shimmer {
-      0% { background-position: -200% 0; }
-      100% { background-position: 200% 0; }
-    }
-
-    .sidebar-drawer { animation: slideInLeft 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1); }
-    .overlay-fade { animation: fadeInUp 0.2s ease-out; }
-    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .hide-scrollbar::-webkit-scrollbar { display: none; }
-
-    /* Enhanced submenu styling */
-    .submenu {
+    /* Nested submenu styling */
+    .nested-submenu {
       margin-left: 2rem;
-      padding-left: 0.5rem;
+      padding-left: 0.75rem;
       border-left: 1.5px solid #e2e8f0;
-      transition: all 0.2s;
     }
-
-    .submenu a {
+    .nested-submenu a {
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      padding: 0.6rem 0.75rem;
+      padding: 0.55rem 0.8rem;
       border-radius: 0.75rem;
-      color: #475569;
-      font-size: 0.85rem;
+      color: #334155;
+      font-size: 0.8rem;
       font-weight: 500;
       transition: all 0.2s ease;
     }
-
-    .submenu a:hover {
+    .nested-submenu a:hover {
       background: #f0f9ff;
       color: #1d4ed8;
-      transform: translateX(4px);
+      transform: translateX(3px);
     }
-
-    .submenu a i {
+    .nested-submenu a i {
       width: 1.2rem;
-      color: #94a3b8;
+      color: #64748b;
       font-size: 0.8rem;
-      transition: all 0.2s;
     }
 
-    .submenu a:hover i {
-      color: #2563eb;
+    /* Main nav items */
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.7rem 1rem;
+      border-radius: 0.875rem;
+      transition: all 0.2s ease;
+      font-weight: 500;
+      color: #334155;
     }
+    .nav-item i { width: 1.5rem; color: #7c8ba0; }
+    .nav-item:hover { background: #f0f9ff; color: #1d4ed8; }
+    .nav-item:hover i { color: #2563eb; }
 
-    /* Card hover effects */
     .stat-card {
-      transition: all 0.25s ease;
+      transition: all 0.25s;
+      border: 1px solid rgba(255,255,255,0.4);
+      background: rgba(255, 255, 255, 0.75);
     }
     .stat-card:hover {
       transform: translateY(-3px);
-      box-shadow: 0 20px 25px -12px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 20px 28px -12px rgba(0, 0, 0, 0.12);
+      border-color: #cbd5e1;
+      background: white;
     }
 
-    /* Mobile optimizations */
     @media (max-width: 768px) {
       button, a, [role="button"] { min-height: 44px; min-width: 44px; }
     }
 
-    /* Safe area support */
     @supports (padding: max(0px)) {
-      .safe-top { padding-top: max(1rem, env(safe-area-inset-top)); }
-      .safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+      .safe-top { padding-top: max(0.75rem, env(safe-area-inset-top)); }
+      .safe-bottom { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
     }
 
-    /* Loading skeleton */
-    .skeleton {
-      background: linear-gradient(90deg, #f0f2f5 25%, #e6e9ef 50%, #f0f2f5 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s infinite;
+    .status-badge {
+      box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+      animation: pulse-ring 1.8s infinite;
     }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
 
 <body class="h-screen overflow-hidden antialiased">
 
-  <!-- MOBILE BOTTOM NAVIGATION - Enhanced -->
-  <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white/98 backdrop-blur-xl border-t border-white/50 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] z-50 safe-bottom">
+  <!-- Mobile bottom navigation -->
+  <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white/98 backdrop-blur-xl border-t border-white/40 shadow-[0_-8px_30px_-8px_rgba(0,0,0,0.08)] z-50 safe-bottom">
     <div class="flex items-center justify-around px-2 py-2">
-      <a href="{% url 'accounts:dashboard' %}" class="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-slate-500 hover:text-blue-600 transition-all duration-200 group active:scale-95">
-        <i class="fas fa-chart-pie text-xl group-hover:scale-110 transition-transform duration-200"></i>
-        <span class="text-[10px] font-semibold tracking-tight">Home</span>
-      </a>
-      <a href="{% url 'bookings:booking_list' %}" class="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-slate-500 hover:text-blue-600 transition-all duration-200 group active:scale-95">
-        <i class="fas fa-calendar-check text-xl group-hover:scale-110 transition-transform duration-200"></i>
-        <span class="text-[10px] font-semibold tracking-tight">Bookings</span>
-      </a>
-      <a href="{% url 'restaurant:order_list' %}" class="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-slate-500 hover:text-blue-600 transition-all duration-200 group active:scale-95">
-        <i class="fas fa-utensils text-xl group-hover:scale-110 transition-transform duration-200"></i>
-        <span class="text-[10px] font-semibold tracking-tight">Dining</span>
-      </a>
-      <a href="{% url 'finance:dashboard' %}" class="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-slate-500 hover:text-blue-600 transition-all duration-200 group active:scale-95">
-        <i class="fas fa-chart-line text-xl group-hover:scale-110 transition-transform duration-200"></i>
-        <span class="text-[10px] font-semibold tracking-tight">Finance</span>
-      </a>
-      <button id="mobileMenuButton" class="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-slate-500 hover:text-blue-600 transition-all duration-200 group active:scale-95">
-        <i class="fas fa-bars text-xl group-hover:scale-110 transition-transform duration-200"></i>
-        <span class="text-[10px] font-semibold tracking-tight">Menu</span>
-      </button>
+      <a href="{% url 'accounts:dashboard' %}" class="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-slate-600 hover:text-indigo-600 transition-all active:scale-95"><i class="fas fa-chart-pie text-xl"></i><span class="text-[10px] font-bold">Home</span></a>
+      <a href="{% url 'bookings:booking_list' %}" class="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-slate-600 hover:text-indigo-600 transition-all"><i class="fas fa-calendar-check text-xl"></i><span class="text-[10px] font-bold">Bookings</span></a>
+      <a href="{% url 'restaurant:order_list' %}" class="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-slate-600 hover:text-indigo-600 transition-all"><i class="fas fa-utensils text-xl"></i><span class="text-[10px] font-bold">Dining</span></a>
+      <a href="{% url 'finance:dashboard' %}" class="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-slate-600 hover:text-indigo-600 transition-all"><i class="fas fa-chart-line text-xl"></i><span class="text-[10px] font-bold">Finance</span></a>
+      <button id="mobileMenuButton" class="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-slate-600 hover:text-indigo-600 transition-all"><i class="fas fa-bars text-xl"></i><span class="text-[10px] font-bold">Menu</span></button>
     </div>
   </div>
 
   <div class="flex h-screen pb-[70px] lg:pb-0">
 
-    <!-- SIDEBAR - Enhanced with better visuals -->
-    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] h-screen glass-sidebar shadow-2xl border-r border-slate-200/60 transform -translate-x-full transition-all duration-300 ease-out lg:relative lg:translate-x-0 lg:block lg:w-72 lg:shadow-xl">
+    <!-- SIDEBAR with DROPDOWNS (Nested Accordions) -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-[280px] max-w-[85vw] h-screen glass-sidebar border-r border-slate-200/70 shadow-2xl transform -translate-x-full transition-all duration-300 ease-out lg:relative lg:translate-x-0 lg:block lg:w-72 lg:shadow-xl">
       <div class="h-full overflow-y-auto flex flex-col">
-        <div class="lg:hidden flex items-center justify-between p-5 border-b border-slate-200/80 bg-white sticky top-0 z-10">
+        <!-- Mobile header -->
+        <div class="lg:hidden flex items-center justify-between p-5 border-b border-slate-200 bg-white sticky top-0 z-10">
           <div class="flex items-center gap-3">
-            <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shadow-md">
-              <i class="fas fa-hotel text-white text-sm"></i>
-            </div>
-            <span class="font-bold text-xl bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Hotel Thinker</span>
+            <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-600 to-blue-700 flex items-center justify-center shadow-md"><i class="fas fa-hotel text-white text-sm"></i></div>
+            <span class="font-bold text-xl bg-gradient-to-r from-slate-800 to-slate-700 bg-clip-text text-transparent">Hotel Thinker</span>
           </div>
-          <button id="closeSidebarBtn" class="p-2.5 rounded-full text-slate-500 hover:bg-slate-100 transition-all active:scale-90">
-            <i class="fas fa-times text-lg"></i>
-          </button>
+          <button id="closeSidebarBtn" class="p-2.5 rounded-full text-slate-500 hover:bg-slate-100 transition-all"><i class="fas fa-times text-lg"></i></button>
         </div>
 
-        <div class="flex-1 py-6 px-4 space-y-7">
-          <!-- Brand area desktop -->
-          <div class="hidden lg:block text-center pb-5 border-b border-slate-100">
-            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center mx-auto shadow-lg shadow-blue-200/50">
-              <i class="fas fa-hotel text-white text-2xl"></i>
-            </div>
+        <div class="flex-1 py-6 px-4 space-y-5">
+          <!-- Brand desktop -->
+          <div class="hidden lg:flex flex-col items-center pb-5 border-b border-slate-100">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-700 flex items-center justify-center mx-auto shadow-lg shadow-indigo-200/40"><i class="fas fa-hotel text-white text-2xl"></i></div>
             <h2 class="mt-3 text-xl font-extrabold bg-gradient-to-r from-slate-800 to-slate-700 bg-clip-text text-transparent">Hotel Thinker</h2>
-            <p class="text-[11px] text-slate-400 font-semibold mt-1 tracking-wide">Enterprise Suite v3.0</p>
+            <p class="text-[11px] font-semibold text-slate-400 mt-1">Enterprise Suite v3.0</p>
           </div>
 
-          <!-- Navigation - Enhanced spacing and icons -->
-          <nav class="space-y-1.5">
-            <a href="{% url 'accounts:dashboard' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
-              <i class="fas fa-chart-pie w-5 text-slate-400 group-hover:text-blue-500 transition-colors"></i>
-              <span class="text-sm font-semibold">Dashboard</span>
-            </a>
+          <nav class="space-y-1">
+            <!-- Dashboard (always visible) -->
+            <a href="{% url 'accounts:dashboard' %}" class="nav-item"><i class="fas fa-chart-pie w-5"></i><span class="text-sm font-semibold">Dashboard</span></a>
 
-            <div class="pt-4 pb-1">
-              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <i class="fas fa-hotel text-[9px]"></i>
-                <span>Hotel Operations</span>
-              </p>
-            </div>
-            <a href="{% url 'hotels:detail' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
-              <i class="fas fa-building w-5 text-slate-400 group-hover:text-blue-500"></i>
-              <span class="text-sm font-medium">Hotel Profile</span>
-            </a>
-            <a href="{% url 'hotels:settings' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
-              <i class="fas fa-sliders-h w-5 text-slate-400 group-hover:text-blue-500"></i>
-              <span class="text-sm font-medium">Hotel Settings</span>
-            </a>
-
-            <div class="pt-4 pb-1">
-              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <i class="fas fa-users text-[9px]"></i>
-                <span>Team Management</span>
-              </p>
-            </div>
-            <a href="{% url 'accounts:hotel_members_list' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
-              <i class="fas fa-users w-5 text-slate-400 group-hover:text-blue-500"></i>
-              <span class="text-sm font-medium">Staff & Roles</span>
-            </a>
-            <a href="{% url 'accounts:my_profile' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
-              <i class="fas fa-user-circle w-5 text-slate-400 group-hover:text-blue-500"></i>
-              <span class="text-sm font-medium">My Profile</span>
-            </a>
-
-            <div class="pt-4 pb-1">
-              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <i class="fas fa-bed text-[9px]"></i>
-                <span>Accommodation</span>
-              </p>
-            </div>
-            <a href="{% url 'rooms:room_list' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
-              <i class="fas fa-door-open w-5 text-slate-400 group-hover:text-blue-500"></i>
-              <span class="text-sm font-medium">Rooms</span>
-            </a>
-            <a href="{% url 'rooms:manage_dashboard' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
-              <i class="fas fa-chalkboard-user w-5 text-slate-400 group-hover:text-blue-500"></i>
-              <span class="text-sm font-medium">Rooms Manager</span>
-            </a>
-            <a href="{% url 'rooms:roomtype_list' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
-              <i class="fas fa-tag w-5 text-slate-400 group-hover:text-blue-500"></i>
-              <span class="text-sm font-medium">Room Types</span>
-            </a>
-
-            <div class="pt-4 pb-1">
-              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <i class="fas fa-calendar-alt text-[9px]"></i>
-                <span>Reservations</span>
-              </p>
-            </div>
-            <a href="{% url 'bookings:booking_list' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
-              <i class="fas fa-calendar-alt w-5 text-slate-400 group-hover:text-blue-500"></i>
-              <span class="text-sm font-medium">Bookings</span>
-            </a>
-
-            <div class="pt-4 pb-1">
-              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <i class="fas fa-utensils text-[9px]"></i>
-                <span>Food & Beverage</span>
-              </p>
-            </div>
-            <a href="{% url 'restaurant:order_list' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
-              <i class="fas fa-utensils w-5 text-slate-400 group-hover:text-blue-500"></i>
-              <span class="text-sm font-medium">Restaurant Orders</span>
-            </a>
-            <a href="{% url 'restaurant:manage_dashboard' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
-              <i class="fas fa-chart-line w-5 text-slate-400 group-hover:text-blue-500"></i>
-              <span class="text-sm font-medium">Restaurant Manager</span>
-            </a>
-            <a href="{% url 'bar:item_list' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
-              <i class="fas fa-wine-bottle w-5 text-slate-400 group-hover:text-blue-500"></i>
-              <span class="text-sm font-medium">Bar Inventory</span>
-            </a>
-
-            <div class="pt-4 pb-1">
-              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <i class="fas fa-boxes text-[9px]"></i>
-                <span>Inventory</span>
-              </p>
-            </div>
-            <a href="{% url 'store:category_list' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
-              <i class="fas fa-folder w-5 text-slate-400 group-hover:text-blue-500"></i>
-              <span class="text-sm font-medium">Categories</span>
-            </a>
-            <a href="{% url 'store:item_list' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
-              <i class="fas fa-boxes w-5 text-slate-400 group-hover:text-blue-500"></i>
-              <span class="text-sm font-medium">Store Items</span>
-            </a>
-            <a href="{% url 'store:supplier_list' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
-              <i class="fas fa-truck w-5 text-slate-400 group-hover:text-blue-500"></i>
-              <span class="text-sm font-medium">Suppliers</span>
-            </a>
-            <a href="{% url 'store:purchase_order_list' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
-              <i class="fas fa-file-invoice w-5 text-slate-400 group-hover:text-blue-500"></i>
-              <span class="text-sm font-medium">Purchase Orders</span>
-            </a>
-            <a href="{% url 'store:goods_receipt_list' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
-              <i class="fas fa-clipboard-list w-5 text-slate-400 group-hover:text-blue-500"></i>
-              <span class="text-sm font-medium">Goods Receipts</span>
-            </a>
-
-            <!-- FINANCE Section Enhanced -->
-            <div class="pt-4 pb-1">
-              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <i class="fas fa-chart-line text-[9px]"></i>
-                <span>Finance & Accounting</span>
-              </p>
+            <!-- ========== DROPDOWN: HOTEL OPERATIONS ========== -->
+            <div class="dropdown-container">
+              <div class="dropdown-trigger nav-item justify-between cursor-pointer">
+                <div class="flex items-center gap-3"><i class="fas fa-hotel w-5"></i><span class="text-sm font-medium">Hotel Operations</span></div>
+                <i class="fas fa-chevron-right dropdown-chevron text-xs text-slate-400 transition-transform"></i>
+              </div>
+              <div class="dropdown-content ml-2 pl-3 border-l border-slate-200/60 space-y-1 mt-1">
+                <a href="{% url 'hotels:detail' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-building w-4 text-slate-400"></i>Hotel Profile</a>
+                <a href="{% url 'hotels:settings' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-sliders-h w-4 text-slate-400"></i>Hotel Settings</a>
+              </div>
             </div>
 
-            <a href="{% url 'finance:dashboard' %}" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 group">
-              <i class="fas fa-chart-bar w-5 text-slate-400 group-hover:text-blue-500"></i>
-              <span class="text-sm font-medium">Finance Dashboard</span>
-            </a>
-
-            <div class="submenu space-y-1">
-              <a href="{% url 'finance:invoice_list' %}" class="nav-item-sub">
-                <i class="fas fa-file-invoice-dollar"></i>
-                <span>Invoices</span>
-              </a>
-              <a href="{% url 'finance:expense_list' %}" class="nav-item-sub">
-                <i class="fas fa-money-bill-wave"></i>
-                <span>Expenses</span>
-              </a>
-              <a href="{% url 'finance:account_list' %}" class="nav-item-sub">
-                <i class="fas fa-sitemap"></i>
-                <span>Accounts</span>
-              </a>
-              <a href="{% url 'finance:vendor_list' %}" class="nav-item-sub">
-                <i class="fas fa-handshake"></i>
-                <span>Vendors</span>
-              </a>
-              <a href="{% url 'finance:asset_list' %}" class="nav-item-sub">
-                <i class="fas fa-building-columns"></i>
-                <span>Assets</span>
-              </a>
-              <a href="{% url 'finance:liability_list' %}" class="nav-item-sub">
-                <i class="fas fa-file-circle-exclamation"></i>
-                <span>Liabilities</span>
-              </a>
-              <a href="{% url 'finance:journal_list' %}" class="nav-item-sub">
-                <i class="fas fa-book"></i>
-                <span>Journals</span>
-              </a>
+            <!-- ========== DROPDOWN: TEAM MANAGEMENT ========== -->
+            <div class="dropdown-container">
+              <div class="dropdown-trigger nav-item justify-between cursor-pointer">
+                <div class="flex items-center gap-3"><i class="fas fa-users w-5"></i><span class="text-sm font-medium">Team Management</span></div>
+                <i class="fas fa-chevron-right dropdown-chevron text-xs text-slate-400"></i>
+              </div>
+              <div class="dropdown-content ml-2 pl-3 border-l border-slate-200/60 space-y-1 mt-1">
+                <a href="{% url 'accounts:hotel_members_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-user-tie w-4"></i>Staff & Roles</a>
+                <a href="{% url 'accounts:my_profile' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-user-circle w-4"></i>My Profile</a>
+              </div>
             </div>
 
-            <div class="pt-3 pb-1">
-              <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <i class="fas fa-chart-simple text-[9px]"></i>
-                <span>Financial Reports</span>
-              </p>
+            <!-- ========== DROPDOWN: ACCOMMODATION ========== -->
+            <div class="dropdown-container">
+              <div class="dropdown-trigger nav-item justify-between cursor-pointer">
+                <div class="flex items-center gap-3"><i class="fas fa-bed w-5"></i><span class="text-sm font-medium">Accommodation</span></div>
+                <i class="fas fa-chevron-right dropdown-chevron text-xs text-slate-400"></i>
+              </div>
+              <div class="dropdown-content ml-2 pl-3 border-l border-slate-200/60 space-y-1 mt-1">
+                <a href="{% url 'rooms:room_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-door-open w-4"></i>Rooms Inventory</a>
+                <a href="{% url 'rooms:manage_dashboard' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-chalkboard-user w-4"></i>Rooms Manager</a>
+                <a href="{% url 'rooms:roomtype_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-tag w-4"></i>Room Types</a>
+              </div>
             </div>
 
-            <div class="submenu space-y-1">
-              <a href="{% url 'finance:profit_loss' %}" class="nav-item-sub">
-                <i class="fas fa-chart-line"></i>
-                <span>Profit &amp; Loss</span>
-              </a>
-              <a href="{% url 'finance:cash_flow' %}" class="nav-item-sub">
-                <i class="fas fa-money-check-dollar"></i>
-                <span>Cash Flow</span>
-              </a>
-              <a href="{% url 'finance:balance_sheet' %}" class="nav-item-sub">
-                <i class="fas fa-scale-balanced"></i>
-                <span>Balance Sheet</span>
-              </a>
+            <!-- Reservations (simple link) -->
+            <a href="{% url 'bookings:booking_list' %}" class="nav-item"><i class="fas fa-calendar-alt w-5"></i><span class="text-sm font-medium">Reservations</span></a>
+
+            <!-- ========== DROPDOWN: FOOD & BEVERAGE ========== -->
+            <div class="dropdown-container">
+              <div class="dropdown-trigger nav-item justify-between cursor-pointer">
+                <div class="flex items-center gap-3"><i class="fas fa-utensils w-5"></i><span class="text-sm font-medium">Food & Beverage</span></div>
+                <i class="fas fa-chevron-right dropdown-chevron text-xs text-slate-400"></i>
+              </div>
+              <div class="dropdown-content ml-2 pl-3 border-l border-slate-200/60 space-y-1 mt-1">
+                <a href="{% url 'restaurant:order_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-utensils w-4"></i>Restaurant Orders</a>
+                <a href="{% url 'restaurant:manage_dashboard' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-chart-line w-4"></i>Restaurant Analytics</a>
+                <a href="{% url 'bar:order_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-wine-glass w-4"></i>Bar Orders</a>
+                <a href="{% url 'bar:item_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-wine-bottle w-4"></i>Bar Inventory</a>
+              </div>
             </div>
+
+            <!-- ========== DROPDOWN: INVENTORY & SUPPLY ========== -->
+            <div class="dropdown-container">
+              <div class="dropdown-trigger nav-item justify-between cursor-pointer">
+                <div class="flex items-center gap-3"><i class="fas fa-boxes w-5"></i><span class="text-sm font-medium">Inventory & Supply</span></div>
+                <i class="fas fa-chevron-right dropdown-chevron text-xs text-slate-400"></i>
+              </div>
+              <div class="dropdown-content ml-2 pl-3 border-l border-slate-200/60 space-y-1 mt-1">
+                <a href="{% url 'store:category_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-folder w-4"></i>Categories</a>
+                <a href="{% url 'store:item_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-boxes w-4"></i>Store Items</a>
+                <a href="{% url 'store:supplier_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-truck w-4"></i>Suppliers</a>
+                <a href="{% url 'store:purchase_order_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-file-invoice w-4"></i>Purchase Orders</a>
+                <a href="{% url 'store:goods_receipt_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-clipboard-list w-4"></i>Goods Receipts</a>
+              </div>
+            </div>
+
+            <!-- ========== DROPDOWN: FINANCE (Nested submenu example) ========== -->
+            <div class="dropdown-container">
+              <div class="dropdown-trigger nav-item justify-between cursor-pointer">
+                <div class="flex items-center gap-3"><i class="fas fa-chart-line w-5"></i><span class="text-sm font-medium">Finance</span></div>
+                <i class="fas fa-chevron-right dropdown-chevron text-xs text-slate-400"></i>
+              </div>
+              <div class="dropdown-content ml-2 pl-3 border-l border-slate-200/60 space-y-1 mt-1">
+                <a href="{% url 'finance:dashboard' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-chart-bar w-4"></i>Finance Dashboard</a>
+                
+                <!-- Nested dropdown inside Finance: Accounting -->
+                <div class="nested-dropdown-container ml-0">
+                  <div class="nested-trigger flex items-center justify-between py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 cursor-pointer text-sm">
+                    <div class="flex items-center gap-3"><i class="fas fa-book w-4 text-slate-400"></i><span>Accounting</span></div>
+                    <i class="fas fa-chevron-right nested-chevron text-[10px] text-slate-400 transition-transform"></i>
+                  </div>
+                  <div class="nested-dropdown-content ml-5 pl-2 border-l border-slate-200 space-y-1 overflow-hidden max-h-0 transition-all duration-200">
+                    <a href="{% url 'finance:invoice_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-file-invoice-dollar w-3"></i>Invoices</a>
+                    <a href="{% url 'finance:expense_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-money-bill-wave w-3"></i>Expenses</a>
+                    <a href="{% url 'finance:account_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-sitemap w-3"></i>Chart of Accounts</a>
+                    <a href="{% url 'finance:vendor_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-handshake w-3"></i>Vendors</a>
+                    <a href="{% url 'finance:asset_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-building-columns w-3"></i>Assets</a>
+                    <a href="{% url 'finance:liability_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-file-circle-exclamation w-3"></i>Liabilities</a>
+                    <a href="{% url 'finance:journal_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-book w-3"></i>Journals</a>
+                  </div>
+                </div>
+
+                <!-- Nested dropdown: Financial Reports -->
+                <div class="nested-dropdown-container ml-0">
+                  <div class="nested-trigger flex items-center justify-between py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 cursor-pointer text-sm">
+                    <div class="flex items-center gap-3"><i class="fas fa-chart-simple w-4 text-slate-400"></i><span>Reports</span></div>
+                    <i class="fas fa-chevron-right nested-chevron text-[10px] text-slate-400 transition-transform"></i>
+                  </div>
+                  <div class="nested-dropdown-content ml-5 pl-2 border-l border-slate-200 space-y-1 overflow-hidden max-h-0 transition-all duration-200">
+                    <a href="{% url 'finance:profit_loss' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-chart-line w-3"></i>Profit & Loss</a>
+                    <a href="{% url 'finance:cash_flow' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-money-check-dollar w-3"></i>Cash Flow</a>
+                    <a href="{% url 'finance:balance_sheet' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-scale-balanced w-3"></i>Balance Sheet</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Data Operations (simple) -->
+            <a href="{% url 'bulk:dashboard' %}" class="nav-item"><i class="fas fa-database w-5"></i><span class="text-sm font-medium">Data Operations</span></a>
           </nav>
         </div>
 
-        <!-- User profile section - Enhanced -->
-        <div class="p-4 border-t border-slate-200 bg-gradient-to-br from-slate-50 to-white">
+        <!-- User profile -->
+        <div class="p-4 border-t border-slate-200 bg-gradient-to-br from-slate-50/90 to-white">
           <div class="flex items-center gap-3">
-            <div class="h-11 w-11 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white font-bold text-base shadow-md ring-2 ring-white">
+            <div class="h-11 w-11 rounded-full bg-gradient-to-br from-indigo-600 to-blue-700 flex items-center justify-center text-white font-bold text-base shadow-md ring-2 ring-white">
               {{ request.user.get_full_name|default:request.user.username|first|upper }}
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-bold text-slate-800 truncate">{{ request.user.get_full_name|default:request.user.username }}</p>
-              <p class="text-[10px] text-slate-500 truncate flex items-center gap-1 mt-0.5">
-                <i class="fas fa-envelope text-[8px]"></i>
-                {{ request.user.email|default:"admin@hotelthinker.com" }}
-              </p>
+              <p class="text-[10px] text-slate-500 truncate"><i class="fas fa-envelope text-[8px] mr-1"></i> {{ request.user.email|default:"admin@hotelthinker.com" }}</p>
             </div>
           </div>
           <form method="post" action="{% url 'logout' %}" class="mt-3">
             {% csrf_token %}
-            <button type="submit" class="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-gradient-to-r hover:from-rose-50 hover:to-red-50 hover:text-rose-600 hover:border-rose-200 transition-all duration-200 text-sm font-semibold group">
-              <i class="fas fa-sign-out-alt text-sm group-hover:translate-x-0.5 transition-transform"></i>
-              <span>Logout</span>
-            </button>
+            <button type="submit" class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/80 border border-slate-200 text-slate-700 hover:bg-rose-50 hover:text-rose-600 transition-all text-sm font-semibold"><i class="fas fa-sign-out-alt"></i><span>Secure Logout</span></button>
           </form>
         </div>
       </div>
     </aside>
 
-    <div id="sidebarOverlay" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 hidden transition-all duration-300 lg:hidden"></div>
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 hidden transition-all lg:hidden"></div>
 
-    <!-- MAIN CONTENT - Enhanced -->
-    <div class="flex min-w-0 flex-1 flex-col h-full">
-      <header class="shrink-0 glass-nav border-b border-slate-200/60 shadow-sm sticky top-0 z-20 safe-top">
+    <!-- MAIN CONTENT -->
+    <div class="flex min-w-0 flex-1 flex-col h-full overflow-hidden">
+      <header class="shrink-0 glass-nav border-b border-slate-200/50 shadow-sm sticky top-0 z-20 safe-top">
         <div class="px-4 py-3 md:px-6 lg:px-7">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <button id="sidebarToggle" class="lg:hidden p-2.5 rounded-xl text-slate-600 hover:bg-white/60 transition-all active:scale-95">
-                <i class="fas fa-bars text-xl"></i>
-              </button>
-              <button id="desktopSidebarToggle" class="hidden lg:flex items-center justify-center w-9 h-9 rounded-xl text-slate-500 hover:bg-white/60 transition-all">
-                <i class="fas fa-chevron-left text-sm" id="toggleIcon"></i>
-              </button>
+              <button id="sidebarToggle" class="lg:hidden p-2.5 rounded-xl text-slate-600 hover:bg-white/60"><i class="fas fa-bars text-xl"></i></button>
+              <button id="desktopSidebarToggle" class="hidden lg:flex items-center justify-center w-9 h-9 rounded-xl text-slate-500 hover:bg-white/60"><i class="fas fa-chevron-left text-sm" id="toggleIcon"></i></button>
               <div class="hidden sm:block">
-                <h1 class="text-2xl font-extrabold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent tracking-tight">Hotel Thinker</h1>
-                <p class="text-[11px] font-semibold text-slate-500 tracking-wide">Professional Hotel Management Suite</p>
+                <h1 class="text-2xl font-extrabold bg-gradient-to-r from-slate-800 to-slate-700 bg-clip-text text-transparent">Hotel Thinker</h1>
+                <p class="text-[11px] font-semibold text-slate-500">Intelligent Hotel Management</p>
               </div>
-              <div class="sm:hidden">
-                <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shadow-sm">
-                  <i class="fas fa-hotel text-white text-sm"></i>
-                </div>
-              </div>
+              <div class="sm:hidden"><div class="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-600 to-blue-700 flex items-center justify-center"><i class="fas fa-hotel text-white text-sm"></i></div></div>
             </div>
-
-            <div class="flex items-center gap-2 md:gap-4">
-              <button class="relative p-2.5 rounded-xl text-slate-500 hover:bg-white/60 transition-all active:scale-95">
-                <i class="far fa-bell text-xl"></i>
-                <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-white status-pulse"></span>
-              </button>
-
+            <div class="flex items-center gap-3 md:gap-5">
+              <button class="relative p-2.5 rounded-xl text-slate-500 hover:bg-white/60"><i class="far fa-bell text-xl"></i><span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-white status-badge"></span></button>
               {% if request.user.is_authenticated %}
               <div class="relative" id="userMenu">
-                <button id="userMenuButton" class="flex items-center gap-2 md:gap-3 rounded-full border border-slate-200/80 bg-white/70 backdrop-blur-sm px-2.5 py-1.5 md:px-4 md:py-2 hover:bg-white hover:shadow-md transition-all group">
-                  <div class="hidden sm:block text-right">
-                    <p class="text-sm font-bold text-slate-800 truncate max-w-[120px]">{{ request.user.get_full_name|default:request.user.username }}</p>
-                    <div class="flex items-center gap-1.5">
-                      <span class="relative flex h-2 w-2">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                      </span>
-                      <span class="text-[10px] font-semibold text-slate-500">Executive</span>
-                    </div>
-                  </div>
-                  <div class="h-8 w-8 md:h-9 md:w-9 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white font-bold text-sm shadow-md ring-2 ring-white/50">
-                    {{ request.user.get_full_name|default:request.user.username|first|upper }}
-                  </div>
-                  <i class="fas fa-chevron-down text-[11px] text-slate-400 group-hover:text-slate-600 transition-colors hidden sm:inline"></i>
+                <button id="userMenuButton" class="flex items-center gap-2 md:gap-3 rounded-full border border-slate-200/80 bg-white/70 backdrop-blur-sm px-2.5 py-1.5 md:px-4 md:py-2 hover:bg-white transition-all">
+                  <div class="hidden sm:block text-right"><p class="text-sm font-bold text-slate-800">{{ request.user.get_full_name|default:request.user.username }}</p><div class="flex items-center gap-1"><span class="h-2 w-2 bg-emerald-500 rounded-full animate-pulse"></span><span class="text-[10px] font-semibold text-slate-500">Manager</span></div></div>
+                  <div class="h-8 w-8 md:h-9 md:w-9 rounded-full bg-gradient-to-br from-indigo-600 to-blue-700 flex items-center justify-center text-white font-bold">{{ request.user.get_full_name|default:request.user.username|first|upper }}</div>
+                  <i class="fas fa-chevron-down text-[11px] text-slate-400 hidden sm:inline"></i>
                 </button>
-
-                <div id="userDropdown" class="hidden absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 animate-fadeInUp">
-                  <div class="px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white rounded-t-2xl">
-                    <p class="text-sm font-bold text-slate-800 truncate">{{ request.user.get_full_name|default:request.user.username }}</p>
-                    <p class="text-xs text-slate-500 mt-0.5 truncate">{{ request.user.email|default:"admin@hotelthinker.com" }}</p>
-                  </div>
-                  <div class="py-2">
-                    <a href="{% url 'accounts:my_profile' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 transition-colors">
-                      <i class="fas fa-user-circle w-5 text-blue-500"></i>
-                      <span class="font-medium">My Profile</span>
-                    </a>
-                    <a href="{% url 'accounts:hotel_members_list' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 transition-colors">
-                      <i class="fas fa-users w-5 text-blue-500"></i>
-                      <span class="font-medium">Team Members</span>
-                    </a>
-                  </div>
-                  <div class="border-t border-slate-100 pt-2">
-                    <form method="post" action="{% url 'logout' %}">
-                      {% csrf_token %}
-                      <button type="submit" class="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 transition-colors">
-                        <i class="fas fa-sign-out-alt w-5 text-rose-400"></i>
-                        <span class="font-medium">Sign Out</span>
-                      </button>
-                    </form>
-                  </div>
+                <div id="userDropdown" class="hidden absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border py-2 z-50">
+                  <div class="px-4 py-3 border-b"><p class="font-bold">{{ request.user.get_full_name|default:request.user.username }}</p><p class="text-xs text-slate-500">{{ request.user.email|default:"admin@hotelthinker.com" }}</p></div>
+                  <a href="{% url 'accounts:my_profile' %}" class="flex items-center gap-3 px-4 py-2.5 hover:bg-indigo-50"><i class="fas fa-user-circle text-indigo-500"></i>Profile</a>
+                  <a href="{% url 'accounts:hotel_members_list' %}" class="flex items-center gap-3 px-4 py-2.5 hover:bg-indigo-50"><i class="fas fa-users text-indigo-500"></i>Team</a>
+                  <div class="border-t pt-2"><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="w-full text-left flex items-center gap-3 px-4 py-2.5 text-rose-600 hover:bg-rose-50"><i class="fas fa-sign-out-alt text-rose-400"></i>Logout</button></form></div>
                 </div>
               </div>
-              {% else %}
-              <a href="{% url 'login' %}" class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 px-5 py-2.5 text-sm font-bold text-white shadow-md hover:shadow-lg hover:scale-105 transition-all">
-                <i class="fas fa-key text-xs"></i>
-                <span>Sign In</span>
-              </a>
-              {% endif %}
+              {% else %}<a href="{% url 'login' %}" class="bg-gradient-to-r from-indigo-600 to-blue-700 px-5 py-2.5 rounded-xl text-white font-bold">Sign In</a>{% endif %}
             </div>
           </div>
-
-          <!-- Quick Access Bar - Enhanced -->
-          <div class="mt-3 pt-2 border-t border-slate-200/40">
-            <div class="flex items-center gap-2 overflow-x-auto pb-1.5 hide-scrollbar">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-1 hidden md:flex items-center gap-1.5">
-                <i class="fas fa-bolt text-[10px] text-blue-500"></i>
-                <span>Quick Launch</span>
-              </span>
-              <a href="{% url 'rooms:room_list' %}" class="flex items-center gap-1.5 shrink-0 rounded-full bg-white border border-slate-200/70 px-3.5 py-1.5 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/80 hover:shadow-sm transition-all active:scale-95">
-                <i class="fas fa-door-open text-blue-500 text-xs"></i>
-                <span>Rooms</span>
-              </a>
-              <a href="{% url 'bookings:booking_list' %}" class="flex items-center gap-1.5 shrink-0 rounded-full bg-white border border-slate-200/70 px-3.5 py-1.5 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/80 hover:shadow-sm transition-all active:scale-95">
-                <i class="fas fa-calendar-alt text-blue-500 text-xs"></i>
-                <span>Bookings</span>
-              </a>
-              <a href="{% url 'restaurant:order_list' %}" class="flex items-center gap-1.5 shrink-0 rounded-full bg-white border border-slate-200/70 px-3.5 py-1.5 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/80 hover:shadow-sm transition-all active:scale-95">
-                <i class="fas fa-utensils text-blue-500 text-xs"></i>
-                <span>Restaurant</span>
-              </a>
-              <a href="{% url 'store:item_list' %}" class="flex items-center gap-1.5 shrink-0 rounded-full bg-white border border-slate-200/70 px-3.5 py-1.5 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/80 hover:shadow-sm transition-all active:scale-95">
-                <i class="fas fa-boxes text-blue-500 text-xs"></i>
-                <span>Inventory</span>
-              </a>
-              <a href="{% url 'finance:dashboard' %}" class="flex items-center gap-1.5 shrink-0 rounded-full bg-white border border-slate-200/70 px-3.5 py-1.5 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/80 hover:shadow-sm transition-all active:scale-95">
-                <i class="fas fa-chart-line text-blue-500 text-xs"></i>
-                <span>Finance</span>
-              </a>
-            </div>
-          </div>
+          <!-- Quick Access -->
+          <div class="mt-3 pt-2 border-t border-slate-200/40"><div class="flex gap-2 overflow-x-auto pb-1 hide-scrollbar"><span class="text-[10px] font-bold text-slate-400 mr-2 hidden md:flex"><i class="fas fa-bolt text-indigo-500 mr-1"></i>Jump</span>
+            <a href="{% url 'rooms:room_list' %}" class="rounded-full bg-white/70 border px-3.5 py-1.5 text-sm hover:border-indigo-300 hover:bg-indigo-50"><i class="fas fa-door-open text-indigo-500 text-xs mr-1"></i>Rooms</a>
+            <a href="{% url 'bookings:booking_list' %}" class="rounded-full bg-white/70 border px-3.5 py-1.5 text-sm hover:border-indigo-300 hover:bg-indigo-50"><i class="fas fa-calendar-alt text-indigo-500 text-xs mr-1"></i>Bookings</a>
+            <a href="{% url 'restaurant:order_list' %}" class="rounded-full bg-white/70 border px-3.5 py-1.5 text-sm hover:border-indigo-300 hover:bg-indigo-50"><i class="fas fa-utensils text-indigo-500 text-xs mr-1"></i>Dining</a>
+            <a href="{% url 'finance:dashboard' %}" class="rounded-full bg-white/70 border px-3.5 py-1.5 text-sm hover:border-indigo-300 hover:bg-indigo-50"><i class="fas fa-chart-line text-indigo-500 text-xs mr-1"></i>Finance</a>
+          </div></div>
         </div>
       </header>
 
-      <!-- Breadcrumb - Enhanced -->
       {% block breadcrumb_wrapper %}
-      <nav class="bg-transparent px-4 md:px-6 py-3 text-sm border-b border-slate-200/40" aria-label="Breadcrumb">
-        <ol class="flex items-center gap-2 flex-wrap">
-          <li class="flex items-center">
-            <a href="{% url 'accounts:dashboard' %}" class="text-slate-500 hover:text-blue-600 transition-colors font-medium flex items-center gap-1">
-              <i class="fas fa-home text-sm"></i>
-              <span class="sr-only">Dashboard</span>
-            </a>
-          </li>
-          {% block breadcrumb %}{% endblock %}
-        </ol>
-      </nav>
+      <nav class="px-4 md:px-6 py-3 text-sm"><ol class="flex gap-2"><li><a href="{% url 'accounts:dashboard' %}" class="text-slate-500 hover:text-indigo-600"><i class="fas fa-home"></i></a></li>{% block breadcrumb %}{% endblock %}</ol></nav>
       {% endblock %}
 
-      <!-- Main Content Area -->
       <main class="flex-1 min-h-0 overflow-y-auto">
         <div class="p-4 md:p-6 lg:p-8">
           {% include "partials/messages.html" %}
           {% block content %}{% endblock %}
         </div>
       </main>
-
-      <!-- Footer - Enhanced -->
-      <footer class="hidden lg:block shrink-0 border-t border-slate-200/50 bg-white/60 backdrop-blur-sm px-6 py-3">
-        <div class="flex items-center justify-between text-xs text-slate-500">
-          <div class="flex items-center gap-4">
-            <span class="font-semibold text-slate-600">© {% now "Y" %} Hotel Thinker</span>
-            <span class="w-px h-4 bg-slate-300/60"></span>
-            <span class="text-slate-400 flex items-center gap-1">
-              <i class="fas fa-code-branch text-[10px]"></i>
-              Enterprise v3.0
-            </span>
-          </div>
-          <div class="flex items-center gap-6">
-            <a href="#" class="hover:text-blue-600 transition-colors flex items-center gap-1.5 group">
-              <i class="fas fa-headset text-xs group-hover:scale-105 transition-transform"></i>
-              <span>Support</span>
-            </a>
-            <a href="#" class="hover:text-blue-600 transition-colors flex items-center gap-1.5 group">
-              <i class="fas fa-shield-alt text-xs group-hover:scale-105 transition-transform"></i>
-              <span>Security</span>
-            </a>
-            <a href="#" class="hover:text-blue-600 transition-colors flex items-center gap-1.5 group">
-              <i class="fas fa-file-alt text-xs group-hover:scale-105 transition-transform"></i>
-              <span>Documentation</span>
-            </a>
-          </div>
-        </div>
-      </footer>
+      <footer class="hidden lg:block border-t bg-white/40 px-6 py-3 text-xs text-slate-500"><div class="flex justify-between"><span>© {% now "Y" %} Hotel Thinker</span><span>Enterprise v3.0</span></div></footer>
     </div>
   </div>
 
-  <!-- JavaScript - Enhanced -->
+  <!-- Dropdown & Accordion JavaScript -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Sidebar controls
-      const sidebar = document.getElementById('sidebar');
-      const sidebarToggle = document.getElementById('sidebarToggle');
-      const closeSidebarBtn = document.getElementById('closeSidebarBtn');
-      const overlay = document.getElementById('sidebarOverlay');
-      const mobileMenuButton = document.getElementById('mobileMenuButton');
-      const desktopToggle = document.getElementById('desktopSidebarToggle');
-      const toggleIcon = document.getElementById('toggleIcon');
-
-      function openSidebar() {
-        if (window.innerWidth < 1024) {
-          sidebar.classList.remove('-translate-x-full');
-          sidebar.classList.add('translate-x-0');
-          overlay.classList.remove('hidden');
-          document.body.style.overflow = 'hidden';
-        }
-      }
-
-      function closeSidebar() {
-        if (window.innerWidth < 1024) {
-          sidebar.classList.add('-translate-x-full');
-          sidebar.classList.remove('translate-x-0');
-          overlay.classList.add('hidden');
-          document.body.style.overflow = '';
-        }
-      }
-
-      if (sidebarToggle) sidebarToggle.addEventListener('click', openSidebar);
-      if (mobileMenuButton) mobileMenuButton.addEventListener('click', openSidebar);
-      if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeSidebar);
-      if (overlay) overlay.addEventListener('click', closeSidebar);
-
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && window.innerWidth < 1024 && sidebar && sidebar.classList.contains('translate-x-0')) {
-          closeSidebar();
-        }
+      // Main dropdown triggers (accordion style)
+      const dropdownTriggers = document.querySelectorAll('.dropdown-trigger');
+      dropdownTriggers.forEach(trigger => {
+        trigger.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const content = this.nextElementSibling;
+          const chevron = this.querySelector('.dropdown-chevron');
+          if (content && content.classList.contains('dropdown-content')) {
+            content.classList.toggle('open');
+            if (chevron) chevron.classList.toggle('rotated');
+          }
+        });
       });
 
-      // Desktop sidebar collapse
-      if (desktopToggle && sidebar && window.innerWidth >= 1024) {
-        const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-        if (isCollapsed) {
-          sidebar.classList.add('w-20');
-          sidebar.classList.remove('w-72');
-          if (toggleIcon) {
-            toggleIcon.classList.remove('fa-chevron-left');
-            toggleIcon.classList.add('fa-chevron-right');
-          }
-          // Hide text in collapsed mode
-          document.querySelectorAll('.nav-item span, .submenu a span, .submenu a i:first-child').forEach(el => {
-            if (isCollapsed && window.innerWidth >= 1024) {
-              el.style.opacity = '0';
-              el.style.width = '0';
-              el.style.overflow = 'hidden';
-            }
-          });
-        }
-
-        desktopToggle.addEventListener('click', () => {
-          const currentlyCollapsed = sidebar.classList.contains('w-20');
-          if (currentlyCollapsed) {
-            sidebar.classList.remove('w-20');
-            sidebar.classList.add('w-72');
-            if (toggleIcon) {
-              toggleIcon.classList.remove('fa-chevron-right');
-              toggleIcon.classList.add('fa-chevron-left');
-            }
-            localStorage.setItem('sidebarCollapsed', 'false');
-            document.querySelectorAll('.nav-item span, .submenu a span, .submenu a i:first-child').forEach(el => {
-              el.style.opacity = '';
-              el.style.width = '';
-              el.style.overflow = '';
-            });
-          } else {
-            sidebar.classList.add('w-20');
-            sidebar.classList.remove('w-72');
-            if (toggleIcon) {
-              toggleIcon.classList.remove('fa-chevron-left');
-              toggleIcon.classList.add('fa-chevron-right');
-            }
-            localStorage.setItem('sidebarCollapsed', 'true');
-            document.querySelectorAll('.nav-item span, .submenu a span, .submenu a i:first-child').forEach(el => {
-              el.style.opacity = '0';
-              el.style.width = '0';
-              el.style.overflow = 'hidden';
-            });
-          }
-        });
-      }
-
-      // User dropdown
-      const userMenuButton = document.getElementById('userMenuButton');
-      const userDropdown = document.getElementById('userDropdown');
-      if (userMenuButton && userDropdown) {
-        let isOpen = false;
-        userMenuButton.addEventListener('click', (e) => {
+      // Nested dropdowns inside Finance
+      const nestedTriggers = document.querySelectorAll('.nested-trigger');
+      nestedTriggers.forEach(trigger => {
+        trigger.addEventListener('click', function(e) {
           e.stopPropagation();
-          isOpen = !isOpen;
-          userDropdown.classList.toggle('hidden', !isOpen);
+          const content = this.nextElementSibling;
+          const chevron = this.querySelector('.nested-chevron');
+          if (content && content.classList.contains('nested-dropdown-content')) {
+            if (content.style.maxHeight) {
+              content.style.maxHeight = null;
+              if (chevron) chevron.classList.remove('rotated');
+            } else {
+              content.style.maxHeight = content.scrollHeight + "px";
+              if (chevron) chevron.classList.add('rotated');
+            }
+          }
         });
-        document.addEventListener('click', (e) => {
-          if (!userMenuButton.contains(e.target) && !userDropdown.contains(e.target)) {
-            userDropdown.classList.add('hidden');
-            isOpen = false;
+      });
+
+      // Sidebar toggle logic
+      const sidebar = document.getElementById('sidebar'), overlay = document.getElementById('sidebarOverlay');
+      const openSidebar = () => { if(window.innerWidth<1024){ sidebar.classList.remove('-translate-x-full'); sidebar.classList.add('translate-x-0'); overlay.classList.remove('hidden'); document.body.style.overflow='hidden'; } };
+      const closeSidebar = () => { if(window.innerWidth<1024){ sidebar.classList.add('-translate-x-full'); sidebar.classList.remove('translate-x-0'); overlay.classList.add('hidden'); document.body.style.overflow=''; } };
+      document.getElementById('sidebarToggle')?.addEventListener('click', openSidebar);
+      document.getElementById('mobileMenuButton')?.addEventListener('click', openSidebar);
+      document.getElementById('closeSidebarBtn')?.addEventListener('click', closeSidebar);
+      overlay?.addEventListener('click', closeSidebar);
+      document.addEventListener('keydown', e => { if(e.key==='Escape' && window.innerWidth<1024 && sidebar?.classList.contains('translate-x-0')) closeSidebar(); });
+      
+      // Desktop sidebar collapse
+      const desktopToggle = document.getElementById('desktopSidebarToggle'), toggleIcon = document.getElementById('toggleIcon');
+      if(desktopToggle && sidebar && window.innerWidth>=1024){
+        let collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+        if(collapsed){ sidebar.classList.add('w-20'); sidebar.classList.remove('w-72'); if(toggleIcon){ toggleIcon.classList.remove('fa-chevron-left'); toggleIcon.classList.add('fa-chevron-right'); } document.querySelectorAll('.nav-item span, .dropdown-trigger span, .dropdown-content a span').forEach(el => { if(el.tagName === 'SPAN') el.style.display='none'; }); }
+        desktopToggle.addEventListener('click',()=>{
+          if(sidebar.classList.contains('w-20')){
+            sidebar.classList.remove('w-20'); sidebar.classList.add('w-72'); if(toggleIcon){ toggleIcon.classList.remove('fa-chevron-right'); toggleIcon.classList.add('fa-chevron-left'); } localStorage.setItem('sidebarCollapsed','false'); document.querySelectorAll('.nav-item span, .dropdown-trigger span, .dropdown-content a span').forEach(el => { if(el.tagName === 'SPAN') el.style.display=''; });
+          } else {
+            sidebar.classList.add('w-20'); sidebar.classList.remove('w-72'); if(toggleIcon){ toggleIcon.classList.remove('fa-chevron-left'); toggleIcon.classList.add('fa-chevron-right'); } localStorage.setItem('sidebarCollapsed','true'); document.querySelectorAll('.nav-item span, .dropdown-trigger span, .dropdown-content a span').forEach(el => { if(el.tagName === 'SPAN') el.style.display='none'; });
           }
         });
       }
-
-      // Active navigation highlighting
+      
+      // User dropdown
+      const userBtn = document.getElementById('userMenuButton'), userDrop = document.getElementById('userDropdown');
+      let open = false;
+      userBtn?.addEventListener('click',(e)=>{ e.stopPropagation(); open=!open; userDrop?.classList.toggle('hidden',!open); });
+      document.addEventListener('click',(e)=>{ if(userBtn && !userBtn.contains(e.target) && userDrop && !userDrop.contains(e.target)){ userDrop.classList.add('hidden'); open=false; } });
+      
+      // Active page highlight
       const currentPath = window.location.pathname;
-      document.querySelectorAll('.nav-item, .nav-item-sub').forEach(link => {
+      document.querySelectorAll('.nav-item, .dropdown-content a, .nested-dropdown-content a').forEach(link => {
         const href = link.getAttribute('href');
-        if (href && href !== '#' && currentPath.startsWith(href) && href !== '/') {
-          if (link.classList.contains('nav-item')) {
-            link.classList.add('active-nav');
-          } else {
-            link.classList.add('active-nav-sub');
-          }
+        if(href && href !== '#' && currentPath.startsWith(href) && href !== '/'){
+          if(link.classList.contains('nav-item')) link.classList.add('active-nav');
+          else link.classList.add('active-nav-sub');
         }
       });
     });

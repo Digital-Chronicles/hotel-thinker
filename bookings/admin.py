@@ -172,62 +172,62 @@ class BookingAdmin(admin.ModelAdmin):
     # -------------------------
     # Admin actions (use model rules)
     # -------------------------
-    @admin.action(description="Check-in selected bookings (requires >= 50% paid)")
     def admin_check_in(self, request, queryset):
-        ok, failed = 0, 0
+        ok_count, failed_count = 0, 0
         for booking in queryset.select_related("room"):
             try:
                 booking.check_in_guest(request.user)
-                ok += 1
+                ok_count += 1
             except ValidationError as e:
-                failed += 1
+                failed_count += 1
                 self.message_user(
                     request,
                     f"{booking.booking_number}: {', '.join(e.messages)}",
                     level=messages.ERROR,
                 )
-        if ok:
-            self.message_user(request, f"Checked in {ok} booking(s).", level=messages.SUCCESS)
-        if failed and not ok:
-            self.message_user(request, f"Failed to check in {failed} booking(s).", level=messages.ERROR)
+        if ok_count:
+            self.message_user(request, f"Checked in {ok_count} booking(s).", level=messages.SUCCESS)
+        if failed_count and not ok_count:
+            self.message_user(request, f"Failed to check in {failed_count} booking(s).", level=messages.ERROR)
+    admin_check_in.short_description = "Check-in selected bookings (requires at least 50 percent paid)"
 
-    @admin.action(description="Check-out selected bookings (requires 100% paid)")
     def admin_check_out(self, request, queryset):
-        ok, failed = 0, 0
+        ok_count, failed_count = 0, 0
         for booking in queryset.select_related("room"):
             try:
                 booking.check_out_guest(request.user)
-                ok += 1
+                ok_count += 1
             except ValidationError as e:
-                failed += 1
+                failed_count += 1
                 self.message_user(
                     request,
                     f"{booking.booking_number}: {', '.join(e.messages)}",
                     level=messages.ERROR,
                 )
-        if ok:
-            self.message_user(request, f"Checked out {ok} booking(s).", level=messages.SUCCESS)
-        if failed and not ok:
-            self.message_user(request, f"Failed to check out {failed} booking(s).", level=messages.ERROR)
+        if ok_count:
+            self.message_user(request, f"Checked out {ok_count} booking(s).", level=messages.SUCCESS)
+        if failed_count and not ok_count:
+            self.message_user(request, f"Failed to check out {failed_count} booking(s).", level=messages.ERROR)
+    admin_check_out.short_description = "Check-out selected bookings (requires 100 percent paid)"
 
-    @admin.action(description="Cancel selected bookings")
     def admin_cancel(self, request, queryset):
-        ok, failed = 0, 0
+        ok_count, failed_count = 0, 0
         for booking in queryset.select_related("room"):
             try:
                 booking.cancel(user=request.user, reason="Cancelled via admin action", fee=0)
-                ok += 1
+                ok_count += 1
             except ValidationError as e:
-                failed += 1
+                failed_count += 1
                 self.message_user(
                     request,
                     f"{booking.booking_number}: {', '.join(e.messages)}",
                     level=messages.ERROR,
                 )
-        if ok:
-            self.message_user(request, f"Cancelled {ok} booking(s).", level=messages.SUCCESS)
-        if failed and not ok:
-            self.message_user(request, f"Failed to cancel {failed} booking(s).", level=messages.ERROR)
+        if ok_count:
+            self.message_user(request, f"Cancelled {ok_count} booking(s).", level=messages.SUCCESS)
+        if failed_count and not ok_count:
+            self.message_user(request, f"Failed to cancel {failed_count} booking(s).", level=messages.ERROR)
+    admin_cancel.short_description = "Cancel selected bookings"
 
 
 # -------------------------

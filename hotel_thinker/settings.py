@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-22x%$0e#6s3o%k*7wl**%xc5gfs94=5gr=jzhgf==ne55#_fc=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -46,12 +46,16 @@ INSTALLED_APPS = [
     "restaurant.apps.RestaurantConfig",
     "rest_framework",
     "django_filters",
+    "rest_framework.authtoken",
+    "mobile_api.apps.MobileApiConfig",
+    "corsheaders",
     "bar",
     "services",
-    "store",
-    
+    "store",    
+    "bulk",
 ]
 
+BULK_ALLOWED_APPS = ["rooms", "bookings", "restaurant", "bar", "services"]
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -71,6 +75,7 @@ REST_FRAMEWORK = {
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -156,3 +161,28 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
+
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Bulk Imports & Exports</h1>
+      <p class="text-sm text-gray-600 mt-1">
+        Upload, validate, import, and export CSV data for hotel modules.
+      </p>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+      <a href="{% url 'bulk:dashboard' %}"
+         class="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-sm font-medium text-gray-700">
+        History
+      </a>
+
+      <a href="{% url 'bulk:import' %}"
+         class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium">
+        Import CSV
+      </a>
+
+      <a href="{% url 'bulk:export' %}"
+         class="px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium">
+        Export CSV
+      </a>
+    </div>
+  </div>
+
+  {% if messages %}
+    <div class="space-y-2 mb-5">
+      {% for message in messages %}
+        <div class="p-3 rounded-xl border text-sm
+          {% if message.tags == 'success' %}
+            bg-green-50 border-green-200 text-green-800
+          {% elif message.tags == 'error' %}
+            bg-red-50 border-red-200 text-red-800
+          {% elif message.tags == 'info' %}
+            bg-blue-50 border-blue-200 text-blue-800
+          {% else %}
+            bg-yellow-50 border-yellow-200 text-yellow-800
+          {% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% block bulk_content %}{% endblock %}
+</div>
+{% endblock %}

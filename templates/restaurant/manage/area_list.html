@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Dining Areas - Restaurant Setup{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
+          <i class="fas fa-map-marker-alt text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-slate-800">Dining Areas</h1>
+          <p class="text-sm text-slate-500 mt-1">Manage restaurant dining sections and zones</p>
+        </div>
+      </div>
+    </div>
+    <a href="{% url 'restaurant:area_create' %}" 
+       class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold hover:shadow-lg transition-all">
+      <i class="fas fa-plus text-sm"></i>
+      <span>Add New Area</span>
+    </a>
+  </div>
+
+  <!-- Areas Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    {% for area in areas %}
+    <div class="group relative bg-white rounded-2xl border border-slate-200 hover:shadow-xl transition-all duration-300 overflow-hidden">
+      <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/5 to-indigo-500/5 rounded-full blur-2xl"></div>
+      <div class="relative p-5">
+        <div class="flex items-start justify-between mb-4">
+          <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
+            <i class="fas fa-utensils text-blue-600 text-xl"></i>
+          </div>
+          <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
+            {{ area.tables.count }} tables
+          </span>
+        </div>
+        
+        <h3 class="text-lg font-bold text-slate-900 mb-2">{{ area.name }}</h3>
+        
+        {% if area.description %}
+        <p class="text-sm text-slate-600 mb-4">{{ area.description|truncatewords:20 }}</p>
+        {% endif %}
+        
+        <div class="flex items-center gap-2 pt-4 border-t border-slate-100">
+          <a href="{% url 'restaurant:area_update' area.pk %}" 
+             class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-all text-sm font-medium">
+            <i class="fas fa-edit text-xs"></i>
+            <span>Edit</span>
+          </a>
+          <button type="button" 
+                  onclick="confirmDelete({{ area.pk }}, '{{ area.name|escapejs }}')"
+                  class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-rose-50 hover:text-rose-600 transition-all text-sm font-medium">
+            <i class="fas fa-trash-alt text-xs"></i>
+            <span>Delete</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-span-full">
+      <div class="text-center py-12 bg-white rounded-2xl border border-slate-200">
+        <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+          <i class="fas fa-map-marker-alt text-slate-400 text-3xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-800 mb-2">No dining areas yet</h3>
+        <p class="text-sm text-slate-600 mb-6">Create your first dining area to start organizing tables</p>
+        <a href="{% url 'restaurant:area_create' %}" 
+           class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold hover:shadow-lg transition-all">
+          <i class="fas fa-plus text-sm"></i>
+          <span>Create Dining Area</span>
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if is_paginated %}
+  <div class="flex justify-center mt-8">
+    <div class="flex gap-2">
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition">Previous</a>
+      {% endif %}
+      
+      <span class="px-4 py-2 rounded-lg bg-blue-600 text-white">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition">Next</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function confirmDelete(id, name) {
+  if (confirm(`Delete dining area "${name}"? This will also delete all tables in this area.`)) {
+    // Add delete form dynamically or redirect to delete URL
+    window.location.href = `/restaurant/manage/areas/${id}/delete/`;
+  }
+}
+</script>
+{% endblock %}

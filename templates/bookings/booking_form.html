@@ -42,12 +42,31 @@
     </div>
   </div>
 
-  <form method="post" class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+  <form method="post" class="grid grid-cols-1 xl:grid-cols-3 gap-6" id="bookingForm">
     {% csrf_token %}
     {{ form.use_room_rate }}
 
     <!-- Main Form Area -->
     <div class="xl:col-span-2 space-y-6">
+
+      <!-- Form Errors Summary -->
+      {% if form.errors %}
+      <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 animate-shake">
+        <div class="flex items-start gap-2">
+          <i class="fas fa-exclamation-triangle text-rose-600 text-sm mt-0.5"></i>
+          <div class="flex-1">
+            <p class="text-sm font-semibold text-rose-800 mb-2">Please correct the following errors:</p>
+            <ul class="text-sm text-rose-700 space-y-1">
+              {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                  <li>• {{ field|capfirst }}: {{ error }}</li>
+                {% endfor %}
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+      {% endif %}
 
       <!-- Booking Details -->
       <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -69,15 +88,6 @@
         </div>
 
         <div class="p-6 space-y-6">
-          {% if form.non_field_errors %}
-            <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
-              <div class="flex items-start gap-2">
-                <i class="fas fa-exclamation-triangle text-rose-500 text-sm mt-0.5"></i>
-                <div class="text-sm text-rose-700">{{ form.non_field_errors }}</div>
-              </div>
-            </div>
-          {% endif %}
-
           <!-- Guest + Room -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
@@ -111,12 +121,13 @@
                 <select name="room" id="id_room"
                         class="w-full rounded-xl border border-slate-200 pl-9 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-300 bg-white appearance-none"
                         required>
-                  <option value="">Select a room</option>
+                  <option value="">--------- Select a room ---------</option>
                   {% for room in form.fields.room.queryset %}
                     <option value="{{ room.pk }}"
                             data-price="{{ room.room_type.base_price|default:0 }}"
+                            data-room-number="{{ room.number }}"
                             {% if form.room.value|stringformat:"s" == room.pk|stringformat:"s" %}selected{% endif %}>
-                      Room {{ room.number }} — {{ room.room_type.name }} (UGX {{ room.room_type.base_price|floatformat:0|intcomma }})
+                      Room {{ room.number }} — {{ room.room_type.name }} (UGX {{ room.room_type.base_price|floatformat:0|intcomma }}/night)
                     </option>
                   {% endfor %}
                 </select>
@@ -316,8 +327,8 @@
             <span>Cancel</span>
           </a>
 
-          <button type="submit"
-                  class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold shadow-sm transition">
+          <button type="submit" id="submitBtn"
+                  class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed">
             <i class="fas fa-save text-xs"></i>
             <span>{% if form.instance.pk %}Update Booking{% else %}Create Booking{% endif %}</span>
           </button>
@@ -345,13 +356,13 @@
 
           <div class="flex justify-between items-center py-2 border-t border-slate-100">
             <span class="text-sm text-slate-600">Nightly Rate</span>
-            <span class="text-lg font-bold text-blue-600" id="sumRate">0</span>
+            <span class="text-lg font-bold text-blue-600" id="sumRate">UGX 0</span>
           </div>
 
           <div class="rounded-xl bg-slate-50 px-4 py-4 border border-slate-100">
             <div class="flex justify-between items-center">
               <span class="text-base font-semibold text-slate-800">Estimated Total</span>
-              <span class="text-xl font-bold text-emerald-600" id="sumTotal">0</span>
+              <span class="text-xl font-bold text-emerald-600" id="sumTotal">UGX 0</span>
             </div>
           </div>
 
@@ -377,7 +388,7 @@
         </div>
 
         <div class="p-4 space-y-3 text-xs text-slate-500">
-          <p><i class="fas fa-check-circle text-emerald-500 mr-2"></i>Use “Quick Add Guest” to create a new guest without leaving this page</p>
+          <p><i class="fas fa-check-circle text-emerald-500 mr-2"></i>Use "Quick Add Guest" to create a new guest without leaving this page</p>
           <p><i class="fas fa-check-circle text-emerald-500 mr-2"></i>Room rates are pulled from room type configuration</p>
           <p><i class="fas fa-check-circle text-emerald-500 mr-2"></i>Special requests can help housekeeping and reception prepare ahead</p>
           <p><i class="fas fa-check-circle text-emerald-500 mr-2"></i>Internal notes are visible to staff only</p>
@@ -534,7 +545,7 @@
             Cancel
           </button>
           <button type="submit" id="guestQuickSubmit"
-                  class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold shadow-sm transition">
+                  class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed">
             <i class="fas fa-save text-xs mr-1"></i>
             Save Guest
           </button>
@@ -555,12 +566,22 @@
     to { opacity: 1; transform: scale(1); }
   }
 
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+
   .animate-in {
     animation: fade-in 0.2s ease-out;
   }
 
   .zoom-in {
     animation: zoom-in 0.2s ease-out;
+  }
+
+  .animate-shake {
+    animation: shake 0.3s ease-in-out;
   }
 
   #id_guest,
@@ -631,162 +652,267 @@
 
 {% block extra_js %}
 <script>
-  function parseNum(v) {
-    const n = parseFloat((v || "").toString().replace(/,/g, ""));
-    return isNaN(n) ? 0 : n;
-  }
-
-  function formatCurrency(amount) {
-    return new Intl.NumberFormat("en-US", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  }
-
-  function daysBetween(a, b) {
-    const da = new Date(a);
-    const db = new Date(b);
-    if (isNaN(da) || isNaN(db)) return 0;
-    const diff = (db - da) / (1000 * 60 * 60 * 24);
-    return diff > 0 ? Math.floor(diff) : 0;
-  }
-
-  function currentRoomRate() {
-    const sel = document.getElementById("id_room");
-    if (!sel) return 0;
-    const opt = sel.options[sel.selectedIndex];
-    return opt ? parseNum(opt.dataset.price) : 0;
-  }
-
-  function recalc() {
-    const checkIn = document.getElementById("id_check_in")?.value;
-    const checkOut = document.getElementById("id_check_out")?.value;
-    const nights = daysBetween(checkIn, checkOut);
-    const rate = currentRoomRate();
-    const total = rate * nights;
-
-    const roomRateLabel = document.getElementById("roomRateLabel");
-    const sumNights = document.getElementById("sumNights");
-    const sumRate = document.getElementById("sumRate");
-    const sumTotal = document.getElementById("sumTotal");
-
-    if (roomRateLabel) roomRateLabel.textContent = formatCurrency(rate);
-    if (sumNights) sumNights.textContent = nights;
-    if (sumRate) sumRate.textContent = "UGX " + formatCurrency(rate);
-    if (sumTotal) sumTotal.textContent = "UGX " + formatCurrency(total);
-  }
-
-  ["id_check_in", "id_check_out", "id_room"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener("input", recalc);
-      el.addEventListener("change", recalc);
-    }
-  });
-  recalc();
-
-  function openModal(id) {
-    document.getElementById(id)?.classList.remove("hidden");
-  }
-
-  function closeModal(id) {
-    document.getElementById(id)?.classList.add("hidden");
-  }
-
-  document.querySelectorAll("[data-modal-open]").forEach(btn => {
-    btn.addEventListener("click", () => openModal(btn.dataset.modalOpen));
-  });
-
-  document.querySelectorAll("[data-modal-close]").forEach(el => {
-    el.addEventListener("click", () => closeModal(el.dataset.modalClose));
-  });
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeModal("guestModal");
-  });
-
-  const toggleBtn = document.getElementById("toggleMoreGuest");
-  const moreFields = document.getElementById("moreGuestFields");
-
-  if (toggleBtn && moreFields) {
-    toggleBtn.addEventListener("click", () => {
-      moreFields.classList.toggle("hidden");
-      toggleBtn.innerHTML = moreFields.classList.contains("hidden")
-        ? '<i class="fas fa-chevron-down mr-1"></i> More details'
-        : '<i class="fas fa-chevron-up mr-1"></i> Less details';
-    });
-  }
-
-  (function () {
-    const form = document.getElementById("guestQuickForm");
-    if (!form) return;
-
-    const errBox = document.getElementById("guestQuickError");
-    const submitBtn = document.getElementById("guestQuickSubmit");
-    const guestSelect = document.getElementById("id_guest");
-
-    function showError(msg) {
-      if (!errBox) return;
-      errBox.textContent = msg;
-      errBox.classList.remove("hidden");
+  (function() {
+    // DOM Elements
+    const form = document.getElementById('bookingForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const guestSelect = document.getElementById('id_guest');
+    const roomSelect = document.getElementById('id_room');
+    const checkInInput = document.getElementById('id_check_in');
+    const checkOutInput = document.getElementById('id_check_out');
+    const adultsInput = document.getElementById('id_adults');
+    
+    // Helper Functions
+    function parseNum(v) {
+      const n = parseFloat((v || "").toString().replace(/,/g, ""));
+      return isNaN(n) ? 0 : n;
     }
 
-    function clearError() {
-      if (!errBox) return;
-      errBox.textContent = "";
-      errBox.classList.add("hidden");
+    function formatCurrency(amount) {
+      return new Intl.NumberFormat("en-US", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(amount);
     }
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      clearError();
+    function daysBetween(a, b) {
+      const da = new Date(a);
+      const db = new Date(b);
+      if (isNaN(da) || isNaN(db)) return 0;
+      const diff = (db - da) / (1000 * 60 * 60 * 24);
+      return diff > 0 ? Math.floor(diff) : 0;
+    }
 
-      submitBtn.disabled = true;
-      submitBtn.classList.add("opacity-70", "cursor-not-allowed");
+    function currentRoomRate() {
+      if (!roomSelect) return 0;
+      const opt = roomSelect.options[roomSelect.selectedIndex];
+      return opt ? parseNum(opt.dataset.price) : 0;
+    }
 
-      try {
-        const csrf = form.querySelector('input[name="csrfmiddlewaretoken"]').value;
-        const fd = new FormData(form);
+    function recalc() {
+      const checkIn = checkInInput?.value;
+      const checkOut = checkOutInput?.value;
+      const nights = daysBetween(checkIn, checkOut);
+      const rate = currentRoomRate();
+      const total = rate * nights;
 
-        const res = await fetch("{% url 'bookings:guest_quick_create' %}", {
-          method: "POST",
-          headers: { "X-CSRFToken": csrf },
-          body: fd
-        });
+      const roomRateLabel = document.getElementById("roomRateLabel");
+      const sumNights = document.getElementById("sumNights");
+      const sumRate = document.getElementById("sumRate");
+      const sumTotal = document.getElementById("sumTotal");
 
-        const data = await res.json();
+      if (roomRateLabel) roomRateLabel.textContent = formatCurrency(rate);
+      if (sumNights) sumNights.textContent = nights;
+      if (sumRate) sumRate.textContent = "UGX " + formatCurrency(rate);
+      if (sumTotal) sumTotal.textContent = "UGX " + formatCurrency(total);
+    }
 
-        if (!res.ok || !data.ok) {
-          if (data?.errors) {
-            const firstField = Object.keys(data.errors)[0];
-            const firstMsg = data.errors[firstField][0];
-            showError(firstMsg);
-          } else {
-            showError("Failed to create guest. Please check the fields.");
-          }
-          return;
-        }
-
-        if (guestSelect) {
-          const opt = document.createElement("option");
-          opt.value = data.id;
-          opt.textContent = data.label || "New Guest";
-          guestSelect.appendChild(opt);
-          guestSelect.value = data.id;
-        }
-
-        form.reset();
-        if (moreFields) moreFields.classList.add("hidden");
-        if (toggleBtn) toggleBtn.innerHTML = '<i class="fas fa-chevron-down mr-1"></i> More details';
-        closeModal("guestModal");
-
-      } catch (err) {
-        showError("Network error. Please try again.");
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.classList.remove("opacity-70", "cursor-not-allowed");
+    // Validate form before submission
+    function validateForm() {
+      const errors = [];
+      
+      if (!guestSelect || !guestSelect.value) {
+        errors.push("Please select a guest.");
       }
+      
+      if (!roomSelect || !roomSelect.value) {
+        errors.push("Please select a room.");
+      }
+      
+      if (!checkInInput || !checkInInput.value) {
+        errors.push("Please select a check-in date.");
+      }
+      
+      if (!checkOutInput || !checkOutInput.value) {
+        errors.push("Please select a check-out date.");
+      }
+      
+      if (checkInInput && checkOutInput && checkInInput.value && checkOutInput.value) {
+        const checkIn = new Date(checkInInput.value);
+        const checkOut = new Date(checkOutInput.value);
+        if (checkOut <= checkIn) {
+          errors.push("Check-out date must be after check-in date.");
+        }
+      }
+      
+      if (adultsInput && (!adultsInput.value || parseInt(adultsInput.value) < 1)) {
+        errors.push("There must be at least 1 adult.");
+      }
+      
+      if (errors.length > 0) {
+        alert("Please fix the following errors:\n\n" + errors.join("\n"));
+        return false;
+      }
+      
+      return true;
+    }
+
+    // Form submission handler
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        if (!validateForm()) {
+          e.preventDefault();
+          return false;
+        }
+        
+        // Disable submit button to prevent double submission
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        }
+        
+        return true;
+      });
+    }
+
+    // Event listeners for recalculation
+    if (checkInInput) {
+      checkInInput.addEventListener("input", recalc);
+      checkInInput.addEventListener("change", recalc);
+    }
+    
+    if (checkOutInput) {
+      checkOutInput.addEventListener("input", recalc);
+      checkOutInput.addEventListener("change", recalc);
+    }
+    
+    if (roomSelect) {
+      roomSelect.addEventListener("input", recalc);
+      roomSelect.addEventListener("change", recalc);
+    }
+    
+    // Initial calculation
+    recalc();
+
+    // Modal functions
+    function openModal(id) {
+      document.getElementById(id)?.classList.remove("hidden");
+    }
+
+    function closeModal(id) {
+      document.getElementById(id)?.classList.add("hidden");
+    }
+
+    // Modal event listeners
+    document.querySelectorAll("[data-modal-open]").forEach(btn => {
+      btn.addEventListener("click", () => openModal(btn.dataset.modalOpen));
     });
+
+    document.querySelectorAll("[data-modal-close]").forEach(el => {
+      el.addEventListener("click", () => closeModal(el.dataset.modalClose));
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeModal("guestModal");
+    });
+
+    // Guest Quick Add Modal
+    const toggleBtn = document.getElementById("toggleMoreGuest");
+    const moreFields = document.getElementById("moreGuestFields");
+
+    if (toggleBtn && moreFields) {
+      toggleBtn.addEventListener("click", () => {
+        moreFields.classList.toggle("hidden");
+        toggleBtn.innerHTML = moreFields.classList.contains("hidden")
+          ? '<i class="fas fa-chevron-down mr-1"></i> More details'
+          : '<i class="fas fa-chevron-up mr-1"></i> Less details';
+      });
+    }
+
+    // Guest Quick Create Form
+    const guestForm = document.getElementById("guestQuickForm");
+    if (guestForm) {
+      const errBox = document.getElementById("guestQuickError");
+      const guestSubmitBtn = document.getElementById("guestQuickSubmit");
+
+      function showError(msg) {
+        if (!errBox) return;
+        errBox.textContent = msg;
+        errBox.classList.remove("hidden");
+      }
+
+      function clearError() {
+        if (!errBox) return;
+        errBox.textContent = "";
+        errBox.classList.add("hidden");
+      }
+
+      guestForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearError();
+
+        if (guestSubmitBtn) {
+          guestSubmitBtn.disabled = true;
+          guestSubmitBtn.classList.add("opacity-70", "cursor-not-allowed");
+        }
+
+        try {
+          const csrf = guestForm.querySelector('input[name="csrfmiddlewaretoken"]').value;
+          const fd = new FormData(guestForm);
+
+          const res = await fetch("{% url 'bookings:guest_quick_create' %}", {
+            method: "POST",
+            headers: { "X-CSRFToken": csrf },
+            body: fd
+          });
+
+          const data = await res.json();
+
+          if (!res.ok || !data.ok) {
+            if (data?.errors) {
+              const firstField = Object.keys(data.errors)[0];
+              const firstMsg = data.errors[firstField][0];
+              showError(firstMsg);
+            } else {
+              showError("Failed to create guest. Please check the fields.");
+            }
+            return;
+          }
+
+          if (guestSelect) {
+            // Check if guest already exists in dropdown
+            let existingOption = Array.from(guestSelect.options).find(opt => opt.value == data.id);
+            if (!existingOption) {
+              const opt = document.createElement("option");
+              opt.value = data.id;
+              opt.textContent = data.label || data.full_name;
+              guestSelect.appendChild(opt);
+            }
+            guestSelect.value = data.id;
+          }
+
+          guestForm.reset();
+          if (moreFields) moreFields.classList.add("hidden");
+          if (toggleBtn) toggleBtn.innerHTML = '<i class="fas fa-chevron-down mr-1"></i> More details';
+          closeModal("guestModal");
+
+          // Show success message
+          const successMsg = document.createElement('div');
+          successMsg.className = 'fixed top-4 right-4 z-50 bg-emerald-500 text-white px-4 py-3 rounded-xl shadow-lg animate-slide-in';
+          successMsg.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Guest created successfully!';
+          document.body.appendChild(successMsg);
+          setTimeout(() => successMsg.remove(), 3000);
+
+        } catch (err) {
+          showError("Network error. Please try again.");
+        } finally {
+          if (guestSubmitBtn) {
+            guestSubmitBtn.disabled = false;
+            guestSubmitBtn.classList.remove("opacity-70", "cursor-not-allowed");
+          }
+        }
+      });
+    }
   })();
 </script>
+
+<style>
+  @keyframes slide-in {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  .animate-slide-in {
+    animation: slide-in 0.3s ease-out;
+  }
+</style>
 {% endblock %}

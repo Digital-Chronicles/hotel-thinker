@@ -1,30 +1,23 @@
 {% extends "public_site/base_public.html" %}
+{% load static %}
 
-{% block title %}Find Hotels - Search & Compare Best Hotel Deals{% endblock %}
+{% block title %}Find Hotels - Search & Compare Best Hotel Deals Worldwide{% endblock %}
 
 {% block extra_head %}
 <style>
-  .filter-section {
-    transition: all 0.3s ease;
+  .filter-card {
+    transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
   }
   
-  .filter-section:hover {
-    transform: translateY(-2px);
+  .hotel-card {
+    animation: fadeSlideUp 0.5s ease-out forwards;
+    opacity: 0;
   }
   
-  .rating-star {
-    transition: all 0.2s ease;
-  }
-  
-  .hotel-result-card {
-    animation: slideIn 0.5s ease-out;
-    animation-fill-mode: both;
-  }
-  
-  @keyframes slideIn {
+  @keyframes fadeSlideUp {
     from {
       opacity: 0;
-      transform: translateY(20px);
+      transform: translateY(24px);
     }
     to {
       opacity: 1;
@@ -32,171 +25,233 @@
     }
   }
   
-  .hotel-result-card:nth-child(1) { animation-delay: 0.05s; }
-  .hotel-result-card:nth-child(2) { animation-delay: 0.1s; }
-  .hotel-result-card:nth-child(3) { animation-delay: 0.15s; }
-  .hotel-result-card:nth-child(4) { animation-delay: 0.2s; }
-  .hotel-result-card:nth-child(5) { animation-delay: 0.25s; }
-  .hotel-result-card:nth-child(6) { animation-delay: 0.3s; }
+  .hotel-card:nth-child(1) { animation-delay: 0.03s; }
+  .hotel-card:nth-child(2) { animation-delay: 0.06s; }
+  .hotel-card:nth-child(3) { animation-delay: 0.09s; }
+  .hotel-card:nth-child(4) { animation-delay: 0.12s; }
+  .hotel-card:nth-child(5) { animation-delay: 0.15s; }
+  .hotel-card:nth-child(6) { animation-delay: 0.18s; }
   
-  .price-badge {
+  .image-wrapper {
     position: relative;
     overflow: hidden;
+    background: linear-gradient(135deg, #0ea5e9, #6366f1);
   }
   
-  .price-badge::after {
-    content: '';
+  .hotel-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease, opacity 0.3s ease;
+    opacity: 0;
+  }
+  
+  .hotel-img.loaded {
+    opacity: 1;
+  }
+  
+  .group:hover .hotel-img {
+    transform: scale(1.08);
+  }
+  
+  .price-shield {
+    position: relative;
+  }
+  
+  .price-shield::before {
+    content: 'Best Deal';
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+    top: -24px;
+    left: 0;
+    background: linear-gradient(110deg, #10b981, #059669);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 30px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(16,185,129,0.3);
+  }
+  
+  /* Custom range slider */
+  .range-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 5px;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #0ea5e9 0%, #6366f1 100%);
+    outline: none;
+  }
+  
+  .range-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid #0ea5e9;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transition: all 0.2s;
+  }
+  
+  .range-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    background: #0ea5e9;
+  }
+  
+  /* Custom checkbox */
+  .checkbox-custom {
+    position: relative;
+    padding-left: 28px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .checkbox-custom input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+  }
+  
+  .checkbox-mark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 18px;
+    width: 18px;
+    background-color: white;
+    border: 2px solid #cbd5e1;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+  
+  .checkbox-custom:hover input ~ .checkbox-mark {
+    border-color: #0ea5e9;
+  }
+  
+  .checkbox-custom input:checked ~ .checkbox-mark {
+    background-color: #0ea5e9;
+    border-color: #0ea5e9;
+  }
+  
+  .checkbox-mark:after {
+    content: "";
+    position: absolute;
+    display: none;
+    left: 5px;
+    top: 1px;
+    width: 4px;
+    height: 9px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
     transform: rotate(45deg);
-    animation: shimmer 3s infinite;
   }
   
-  @keyframes shimmer {
-    0% { transform: translateX(-100%) rotate(45deg); }
-    100% { transform: translateX(100%) rotate(45deg); }
+  .checkbox-custom input:checked ~ .checkbox-mark:after {
+    display: block;
   }
   
-  .filter-toggle {
-    transition: transform 0.3s ease;
+  /* Grid view styles */
+  .grid-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 1.5rem;
   }
   
-  .filter-toggle.active {
-    transform: rotate(180deg);
+  .grid-view .hotel-card {
+    flex-direction: column;
   }
   
+  .grid-view .image-wrapper {
+    height: 220px;
+  }
+  
+  @media (max-width: 768px) {
+    .grid-view {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  /* Mobile filter slide-in */
   .mobile-filter-panel {
     transition: transform 0.3s ease-in-out;
-    transform: translateX(-100%);
+    transform: translateX(100%);
   }
   
   .mobile-filter-panel.open {
     transform: translateX(0);
   }
   
-  .skeleton-card {
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: loading 1.5s infinite;
+  /* Hero parallax effect */
+  .hero-parallax {
+    background-attachment: fixed;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
   }
   
-  @keyframes loading {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-  }
-  
-  .custom-checkbox {
-    position: relative;
-    padding-left: 30px;
-    cursor: pointer;
-  }
-  
-  .custom-checkbox input {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-  }
-  
-  .checkmark {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 20px;
-    width: 20px;
-    background-color: #fff;
-    border: 2px solid #d1d5db;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-  }
-  
-  .custom-checkbox:hover input ~ .checkmark {
-    border-color: #3b82f6;
-  }
-  
-  .custom-checkbox input:checked ~ .checkmark {
-    background-color: #3b82f6;
-    border-color: #3b82f6;
-  }
-  
-  .checkmark:after {
-    content: "";
-    position: absolute;
-    display: none;
-  }
-  
-  .custom-checkbox input:checked ~ .checkmark:after {
-    display: block;
-  }
-  
-  .custom-checkbox .checkmark:after {
-    left: 6px;
-    top: 2px;
-    width: 5px;
-    height: 10px;
-    border: solid white;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
-  }
-  
-  .range-slider {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 4px;
-    border-radius: 5px;
-    background: #e5e7eb;
-    outline: none;
-  }
-  
-  .range-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: #3b82f6;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  
-  .range-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
-    background: #1d4ed8;
+  @media (max-width: 768px) {
+    .hero-parallax {
+      background-attachment: scroll;
+    }
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Hero Banner -->
-<section class="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white py-16 overflow-hidden">
-  <div class="absolute inset-0 bg-black/20"></div>
-  <div class="absolute -top-40 -right-40 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
-  <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
+<!-- Full Width Hero Banner with Background Image -->
+<section class="relative w-full min-h-[320px] md:min-h-[400px] flex items-center overflow-hidden">
+  <!-- Background Image -->
+  <div class="absolute inset-0 w-full h-full">
+    <img src="https://i.pinimg.com/1200x/73/b0/ee/73b0ee37a6950add86c4a051b93924b9.jpg?auto=compress&cs=tinysrgb&w=1600"
+         alt="Luxury hotel lobby with modern design"
+         class="w-full h-full object-cover object-center">
+    <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-indigo-950/60"></div>
+  </div>
   
-  <div class="container mx-auto px-4 relative z-10">
+  <!-- Animated particles overlay -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div class="particle-1 absolute top-20 left-[10%] w-2 h-2 bg-white/20 rounded-full animate-ping"></div>
+    <div class="particle-2 absolute bottom-32 right-[15%] w-3 h-3 bg-white/15 rounded-full animate-pulse"></div>
+    <div class="particle-3 absolute top-1/2 left-[85%] w-1.5 h-1.5 bg-white/25 rounded-full animate-bounce"></div>
+  </div>
+  
+  <!-- Content -->
+  <div class="relative z-10 w-full container mx-auto px-5 py-16 md:py-24">
     <div class="max-w-3xl">
-      <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 animate-fade-in">
-        Find Your <span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-400">Perfect Stay</span>
+      <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-1.5 mb-5">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        </span>
+        <span class="text-xs font-medium text-white/90">2,500+ Hotels Worldwide</span>
+      </div>
+      
+      <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-4 leading-tight">
+        Find Your 
+        <span class="bg-gradient-to-r from-sky-300 via-blue-300 to-indigo-300 bg-clip-text text-transparent">Perfect Stay</span>
       </h1>
-      <p class="text-lg md:text-xl opacity-95 mb-6 animate-fade-in">
-        Discover amazing hotels at the best prices with exclusive deals
+      
+      <p class="text-base md:text-lg text-gray-200 max-w-xl">
+        Discover amazing hotels at the best prices with exclusive member deals and instant confirmation.
       </p>
       
-      <!-- Quick Stats -->
-      <div class="flex gap-6 text-sm animate-fade-in">
+      <!-- Quick stats -->
+      <div class="flex flex-wrap gap-6 mt-6 text-sm text-white/80">
         <div class="flex items-center gap-2">
-          <i class="fas fa-check-circle text-green-400"></i>
+          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
           <span>Best Price Guarantee</span>
         </div>
         <div class="flex items-center gap-2">
-          <i class="fas fa-headset text-blue-300"></i>
+          <i data-lucide="headphones" class="w-4 h-4 text-sky-400"></i>
           <span>24/7 Support</span>
         </div>
         <div class="flex items-center gap-2">
-          <i class="fas fa-shield-alt text-green-400"></i>
+          <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
           <span>Secure Booking</span>
         </div>
       </div>
@@ -204,503 +259,365 @@
   </div>
 </section>
 
-<section class="py-8 bg-gray-50">
-  <div class="container mx-auto px-4">
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+<!-- Main Content Section -->
+<section class="py-8 bg-slate-50">
+  <div class="container mx-auto px-5 w-full">
+    <div class="flex flex-col lg:flex-row gap-8">
       
-      <!-- Filters Sidebar - Desktop -->
-      <div class="lg:col-span-1 hidden lg:block">
-        <div class="bg-white rounded-2xl shadow-lg sticky top-24 overflow-hidden">
-          <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
-            <h3 class="text-lg font-bold text-white flex items-center gap-2">
-              <i class="fas fa-sliders-h"></i>
+      <!-- Desktop Filter Sidebar -->
+      <aside class="lg:w-80 xl:w-96 hidden lg:block">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 sticky top-24 overflow-hidden">
+          <div class="bg-gradient-to-r from-sky-600 to-indigo-600 px-5 py-4">
+            <h3 class="text-white font-bold flex items-center gap-2">
+              <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
               Filter Hotels
             </h3>
           </div>
           
-          <div class="p-6">
-            <form method="get" id="filterForm">
+          <div class="p-5">
+            <form method="get" id="desktopFilterForm">
               <!-- Search -->
-              <div class="mb-6 filter-section">
-                <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                  <i class="fas fa-search text-blue-500 text-xs"></i>
+              <div class="mb-5">
+                <label class="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                  <i data-lucide="search" class="w-4 h-4 text-sky-500"></i>
                   Search
                 </label>
-                <input type="text" name="q" value="{{ q }}" placeholder="Hotel name, city, or destination..." 
-                       class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition">
+                <input type="text" name="q" value="{{ request.GET.q|default:'' }}" 
+                       placeholder="Hotel name or destination..." 
+                       class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:border-sky-400 focus:ring-2 focus:ring-sky-100 transition">
               </div>
               
               <!-- City -->
-              <div class="mb-6 filter-section">
-                <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                  <i class="fas fa-city text-blue-500 text-xs"></i>
+              <div class="mb-5">
+                <label class="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                  <i data-lucide="map-pin" class="w-4 h-4 text-sky-500"></i>
                   City
                 </label>
-                <select name="city" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition bg-white">
+                <select name="city" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:border-sky-400 bg-white">
                   <option value="">All Cities</option>
                   {% for city in available_cities %}
-                  <option value="{{ city }}" {% if selected_city == city %}selected{% endif %}>{{ city }}</option>
+                  <option value="{{ city }}" {% if request.GET.city == city %}selected{% endif %}>{{ city }}</option>
                   {% endfor %}
                 </select>
               </div>
               
               <!-- Country -->
-              <div class="mb-6 filter-section">
-                <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                  <i class="fas fa-globe text-blue-500 text-xs"></i>
+              <div class="mb-5">
+                <label class="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                  <i data-lucide="globe" class="w-4 h-4 text-sky-500"></i>
                   Country
                 </label>
-                <select name="country" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition bg-white">
+                <select name="country" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:border-sky-400 bg-white">
                   <option value="">All Countries</option>
                   {% for country in available_countries %}
-                  <option value="{{ country }}" {% if selected_country == country %}selected{% endif %}>{{ country }}</option>
+                  <option value="{{ country }}" {% if request.GET.country == country %}selected{% endif %}>{{ country }}</option>
                   {% endfor %}
                 </select>
               </div>
               
               <!-- Category -->
-              <div class="mb-6 filter-section">
-                <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                  <i class="fas fa-tag text-blue-500 text-xs"></i>
+              <div class="mb-5">
+                <label class="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                  <i data-lucide="tag" class="w-4 h-4 text-sky-500"></i>
                   Category
                 </label>
-                <select name="category" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition bg-white">
+                <select name="category" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:border-sky-400 bg-white">
                   <option value="">All Categories</option>
                   {% for category in categories %}
-                  <option value="{{ category.slug }}" {% if selected_category == category.slug %}selected{% endif %}>{{ category.name }}</option>
+                  <option value="{{ category.slug }}" {% if request.GET.category == category.slug %}selected{% endif %}>{{ category.name }}</option>
                   {% endfor %}
                 </select>
               </div>
               
               <!-- Star Rating -->
-              <div class="mb-6 filter-section">
-                <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                  <i class="fas fa-star text-yellow-500 text-xs"></i>
+              <div class="mb-5">
+                <label class="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                  <i data-lucide="star" class="w-4 h-4 text-amber-500"></i>
                   Star Rating
                 </label>
-                <div class="flex gap-2 flex-wrap">
-                  <label class="custom-checkbox text-sm">
-                    <input type="checkbox" value="5" name="star_rating">
-                    <span class="checkmark"></span>
-                    5 Stars
+                <div class="space-y-2">
+                  <label class="checkbox-custom text-sm">
+                    <input type="checkbox" name="star_rating" value="5" {% if "5" in selected_star_ratings %}checked{% endif %}>
+                    <span class="checkbox-mark"></span>
+                    <span>5 Stars <span class="text-amber-500">★★★★★</span></span>
                   </label>
-                  <label class="custom-checkbox text-sm">
-                    <input type="checkbox" value="4" name="star_rating">
-                    <span class="checkmark"></span>
-                    4 Stars
+                  <label class="checkbox-custom text-sm">
+                    <input type="checkbox" name="star_rating" value="4" {% if "4" in selected_star_ratings %}checked{% endif %}>
+                    <span class="checkbox-mark"></span>
+                    <span>4 Stars <span class="text-amber-500">★★★★☆</span></span>
                   </label>
-                  <label class="custom-checkbox text-sm">
-                    <input type="checkbox" value="3" name="star_rating">
-                    <span class="checkmark"></span>
-                    3 Stars
+                  <label class="checkbox-custom text-sm">
+                    <input type="checkbox" name="star_rating" value="3" {% if "3" in selected_star_ratings %}checked{% endif %}>
+                    <span class="checkbox-mark"></span>
+                    <span>3 Stars <span class="text-amber-500">★★★☆☆</span></span>
                   </label>
                 </div>
               </div>
               
               <!-- Guest Rating -->
-              <div class="mb-6 filter-section">
-                <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                  <i class="fas fa-thumbs-up text-blue-500 text-xs"></i>
+              <div class="mb-5">
+                <label class="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                  <i data-lucide="thumbs-up" class="w-4 h-4 text-emerald-500"></i>
                   Guest Rating
                 </label>
                 <div class="space-y-2">
-                  <label class="custom-checkbox text-sm">
-                    <input type="radio" name="min_rating" value="4.5" {% if selected_min_rating == "4.5" %}checked{% endif %}>
-                    <span class="checkmark"></span>
-                    <span class="flex items-center gap-1">
-                      Exceptional <span class="text-yellow-500">★★★★★</span> 4.5+
-                    </span>
+                  <label class="checkbox-custom text-sm">
+                    <input type="radio" name="min_rating" value="4.5" {% if request.GET.min_rating == "4.5" %}checked{% endif %}>
+                    <span class="checkbox-mark"></span>
+                    <span>Exceptional 4.5+ ★★★★★</span>
                   </label>
-                  <label class="custom-checkbox text-sm">
-                    <input type="radio" name="min_rating" value="4.0" {% if selected_min_rating == "4.0" %}checked{% endif %}>
-                    <span class="checkmark"></span>
-                    <span class="flex items-center gap-1">
-                      Very Good <span class="text-yellow-500">★★★★☆</span> 4.0+
-                    </span>
+                  <label class="checkbox-custom text-sm">
+                    <input type="radio" name="min_rating" value="4.0" {% if request.GET.min_rating == "4.0" %}checked{% endif %}>
+                    <span class="checkbox-mark"></span>
+                    <span>Very Good 4.0+ ★★★★☆</span>
                   </label>
-                  <label class="custom-checkbox text-sm">
-                    <input type="radio" name="min_rating" value="3.5" {% if selected_min_rating == "3.5" %}checked{% endif %}>
-                    <span class="checkmark"></span>
-                    <span class="flex items-center gap-1">
-                      Good <span class="text-yellow-500">★★★☆☆</span> 3.5+
-                    </span>
+                  <label class="checkbox-custom text-sm">
+                    <input type="radio" name="min_rating" value="3.5" {% if request.GET.min_rating == "3.5" %}checked{% endif %}>
+                    <span class="checkbox-mark"></span>
+                    <span>Good 3.5+ ★★★☆☆</span>
                   </label>
-                  <label class="custom-checkbox text-sm">
-                    <input type="radio" name="min_rating" value="">
-                    <span class="checkmark"></span>
-                    Any Rating
+                  <label class="checkbox-custom text-sm">
+                    <input type="radio" name="min_rating" value="" {% if not request.GET.min_rating %}checked{% endif %}>
+                    <span class="checkbox-mark"></span>
+                    <span>Any Rating</span>
                   </label>
                 </div>
               </div>
               
               <!-- Price Range -->
-              <div class="mb-6 filter-section">
-                <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                  <i class="fas fa-dollar-sign text-green-500 text-xs"></i>
-                  Price Range
+              <div class="mb-6">
+                <label class="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                  <i data-lucide="dollar-sign" class="w-4 h-4 text-green-500"></i>
+                  Max Price / Night
                 </label>
-                <input type="range" id="priceRange" min="0" max="500" step="10" class="range-slider w-full mb-3">
-                <div class="flex justify-between text-sm text-gray-600">
-                  <span>$0</span>
-                  <span id="priceValue">$250</span>
-                  <span>$500+</span>
-                </div>
-              </div>
-              
-              <!-- Amenities -->
-              <div class="mb-6 filter-section">
-                <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                  <i class="fas fa-wifi text-blue-500 text-xs"></i>
-                  Amenities
-                </label>
-                <div class="space-y-2">
-                  <label class="custom-checkbox text-sm">
-                    <input type="checkbox" name="amenity_wifi">
-                    <span class="checkmark"></span>
-                    Free WiFi
-                  </label>
-                  <label class="custom-checkbox text-sm">
-                    <input type="checkbox" name="amenity_parking">
-                    <span class="checkmark"></span>
-                    Free Parking
-                  </label>
-                  <label class="custom-checkbox text-sm">
-                    <input type="checkbox" name="amenity_pool">
-                    <span class="checkmark"></span>
-                    Swimming Pool
-                  </label>
-                  <label class="custom-checkbox text-sm">
-                    <input type="checkbox" name="amenity_spa">
-                    <span class="checkmark"></span>
-                    Spa & Wellness
-                  </label>
-                  <label class="custom-checkbox text-sm">
-                    <input type="checkbox" name="amenity_restaurant">
-                    <span class="checkmark"></span>
-                    Restaurant
-                  </label>
+                <input type="range" id="priceRangeDesktop" name="max_price" min="0" max="500" step="10" 
+                       value="{{ request.GET.max_price|default:500 }}" class="range-slider w-full mb-2">
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-500">$0</span>
+                  <span id="priceValueDesktop" class="font-semibold text-sky-600">${{ request.GET.max_price|default:500 }}</span>
+                  <span class="text-slate-500">$500+</span>
                 </div>
               </div>
               
               <!-- Featured Only -->
               <div class="mb-6">
-                <label class="custom-checkbox text-sm font-semibold">
-                  <input type="checkbox" name="featured" value="true" {% if selected_featured == "true" %}checked{% endif %}>
-                  <span class="checkmark"></span>
+                <label class="checkbox-custom text-sm font-semibold">
+                  <input type="checkbox" name="featured" value="true" {% if request.GET.featured == "true" %}checked{% endif %}>
+                  <span class="checkbox-mark"></span>
                   <span class="flex items-center gap-2">
-                    <i class="fas fa-crown text-amber-500"></i>
+                    <i data-lucide="crown" class="w-4 h-4 text-amber-500"></i>
                     Featured Hotels Only
                   </span>
                 </label>
               </div>
               
-              <!-- Action Buttons -->
-              <div class="space-y-3">
-                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5">
-                  <i class="fas fa-filter mr-2"></i>
+              <!-- Actions -->
+              <div class="space-y-3 pt-2">
+                <button type="submit" class="w-full bg-gradient-to-r from-sky-600 to-indigo-600 text-white py-2.5 rounded-xl font-semibold hover:shadow-md transition flex items-center justify-center gap-2">
+                  <i data-lucide="filter" class="w-4 h-4"></i>
                   Apply Filters
                 </button>
-                
-                <a href="{% url 'hotel:hotels_list' %}" class="block text-center text-sm text-gray-600 hover:text-blue-600 transition py-2">
-                  <i class="fas fa-undo-alt mr-1"></i>
-                  Clear All Filters
+                <a href="{% url 'hotel:hotels_list' %}" class="block text-center text-sm text-slate-500 hover:text-sky-600 transition py-1">
+                  Clear all filters
                 </a>
               </div>
             </form>
           </div>
         </div>
-      </div>
+      </aside>
       
-      <!-- Mobile Filter Button -->
-      <div class="lg:hidden fixed bottom-20 right-4 z-40">
-        <button id="mobileFilterBtn" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center hover:shadow-xl transition">
-          <i class="fas fa-sliders-h text-xl"></i>
-        </button>
-      </div>
-      
-      <!-- Mobile Filter Panel -->
-      <div id="mobileFilterPanel" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden lg:hidden">
-        <div class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl overflow-y-auto">
-          <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white flex items-center gap-2">
-              <i class="fas fa-sliders-h"></i>
-              Filter Hotels
-            </h3>
-            <button id="closeMobileFilter" class="text-white hover:text-gray-200">
-              <i class="fas fa-times text-2xl"></i>
-            </button>
-          </div>
-          <div class="p-6">
-            <!-- Same filter content as desktop -->
-            <div class="space-y-6">
-              <!-- Copy the filter fields from desktop here -->
-              <div class="mb-6">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Search</label>
-                <input type="text" name="q" value="{{ q }}" placeholder="Hotel name or location" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl">
-              </div>
-              
-              <div class="mb-6">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">City</label>
-                <select name="city" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl">
-                  <option value="">All Cities</option>
-                  {% for city in available_cities %}
-                  <option value="{{ city }}" {% if selected_city == city %}selected{% endif %}>{{ city }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              
-              <div class="mb-6">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Country</label>
-                <select name="country" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl">
-                  <option value="">All Countries</option>
-                  {% for country in available_countries %}
-                  <option value="{{ country }}" {% if selected_country == country %}selected{% endif %}>{{ country }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              
-              <div class="mb-6">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
-                <select name="category" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl">
-                  <option value="">All Categories</option>
-                  {% for category in categories %}
-                  <option value="{{ category.slug }}" {% if selected_category == category.slug %}selected{% endif %}>{{ category.name }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              
-              <div class="mb-6">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Minimum Rating</label>
-                <select name="min_rating" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl">
-                  <option value="">Any Rating</option>
-                  <option value="4.5" {% if selected_min_rating == "4.5" %}selected{% endif %}>4.5+ Stars</option>
-                  <option value="4.0" {% if selected_min_rating == "4.0" %}selected{% endif %}>4.0+ Stars</option>
-                  <option value="3.5" {% if selected_min_rating == "3.5" %}selected{% endif %}>3.5+ Stars</option>
-                  <option value="3.0" {% if selected_min_rating == "3.0" %}selected{% endif %}>3.0+ Stars</option>
-                </select>
-              </div>
-              
-              <div class="mb-6">
-                <label class="flex items-center gap-2">
-                  <input type="checkbox" name="featured" value="true" {% if selected_featured == "true" %}checked{% endif %} class="w-4 h-4 text-blue-600">
-                  <span class="text-sm text-gray-700">Featured Hotels Only</span>
-                </label>
-              </div>
-              
-              <div class="flex gap-3 pt-4">
-                <button type="submit" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold">Apply</button>
-                <a href="{% url 'hotel:hotels_list' %}" class="flex-1 text-center border border-gray-300 py-3 rounded-xl font-semibold">Clear</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Results Section -->
-      <div class="lg:col-span-3">
+      <!-- Main Content -->
+      <div class="flex-1">
         <!-- Results Header -->
-        <div class="bg-white rounded-2xl shadow-sm p-4 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div class="bg-white rounded-xl shadow-sm p-4 mb-6 flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-              <i class="fas fa-hotel text-blue-600"></i>
+            <div class="w-10 h-10 bg-sky-100 rounded-full flex items-center justify-center">
+              <i data-lucide="hotel" class="w-5 h-5 text-sky-600"></i>
             </div>
             <div>
-              <p class="text-sm text-gray-500">Found</p>
-              <p class="text-2xl font-bold text-gray-900">{{ page_obj.paginator.count }} <span class="text-base font-normal text-gray-600">hotels</span></p>
+              <span class="text-xs text-slate-500">Found</span>
+              <p class="text-2xl font-bold text-slate-800 leading-tight">{{ page_obj.paginator.count }} <span class="text-sm font-normal text-slate-500">hotels</span></p>
             </div>
           </div>
           
-          <div class="flex items-center gap-3 w-full sm:w-auto">
-            <div class="flex-1 sm:flex-none relative">
-              <select id="sortBy" class="w-full sm:w-48 px-4 py-2 border border-gray-200 rounded-xl text-sm appearance-none bg-white cursor-pointer">
-                <option value="recommended">Sort by: Recommended</option>
-                <option value="price_asc">Price: Low to High</option>
-                <option value="price_desc">Price: High to Low</option>
-                <option value="rating_desc">Rating: High to Low</option>
-                <option value="newest">Newest First</option>
+          <div class="flex items-center gap-3">
+            <!-- Sort Dropdown -->
+            <div class="relative">
+              <select id="sortSelect" class="appearance-none pl-4 pr-8 py-2 border border-slate-200 rounded-xl text-sm bg-white cursor-pointer focus:border-sky-400">
+                <option value="recommended" {% if selected_sort == "recommended" or not selected_sort %}selected{% endif %}>Sort: Recommended</option>
+                <option value="price_asc" {% if selected_sort == "price_asc" %}selected{% endif %}>Price: Low to High</option>
+                <option value="price_desc" {% if selected_sort == "price_desc" %}selected{% endif %}>Price: High to Low</option>
+                <option value="rating_desc" {% if selected_sort == "rating_desc" %}selected{% endif %}>Rating: High to Low</option>
               </select>
-              <i class="fas fa-chevron-down absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+              <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
             </div>
             
-            <div class="flex gap-2">
-              <button class="p-2 border border-gray-200 rounded-xl hover:bg-gray-50 transition" title="Grid View">
-                <i class="fas fa-th text-gray-600"></i>
+            <!-- View Toggle -->
+            <div class="flex gap-1 border border-slate-200 rounded-xl p-1">
+              <button class="view-toggle p-1.5 rounded-lg transition" data-view="list" title="List View">
+                <i data-lucide="list" class="w-4 h-4 text-slate-500"></i>
               </button>
-              <button class="p-2 border border-gray-200 rounded-xl hover:bg-gray-50 transition" title="List View">
-                <i class="fas fa-list text-blue-600"></i>
+              <button class="view-toggle p-1.5 rounded-lg transition" data-view="grid" title="Grid View">
+                <i data-lucide="layout-grid" class="w-4 h-4 text-slate-500"></i>
               </button>
             </div>
+            
+            <!-- Mobile Filter Button -->
+            <button id="mobileFilterBtn" class="lg:hidden bg-slate-100 p-2 rounded-xl">
+              <i data-lucide="sliders-horizontal" class="w-5 h-5 text-slate-700"></i>
+            </button>
           </div>
         </div>
         
-        <!-- Hotel Results -->
-        <div class="space-y-6">
+        <!-- Hotels Container -->
+        <div id="hotelsContainer" class="space-y-5">
           {% for hotel in hotels %}
-          <div class="hotel-result-card group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:-translate-y-1">
+          <div class="hotel-card group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-slate-100" data-hotel-id="{{ hotel.id }}">
             <div class="flex flex-col md:flex-row">
-              <!-- Image Section -->
-              <div class="md:w-80 relative overflow-hidden">
-                <div class="h-56 md:h-full relative">
-                  {% with hotel.prefetched_images|first as primary_image %}
-                    {% if primary_image %}
-                      <img src="{{ primary_image.image.url }}" alt="{{ hotel.name }}" class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
-                    {% else %}
-                      <div class="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                        <i class="fas fa-hotel text-white text-6xl opacity-30"></i>
+              <!-- Image Column -->
+              <div class="md:w-72 image-wrapper relative">
+                <div class="h-56 md:h-full">
+                  {% if hotel.cover_image %}
+                    <img src="{{ hotel.cover_image.url }}" alt="{{ hotel.name }}" class="hotel-img w-full h-full object-cover" loading="lazy" onload="this.classList.add('loaded')">
+                  {% else %}
+                    <div class="w-full h-full bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center">
+                      <div class="text-center text-white/80">
+                        <i data-lucide="building-2" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+                        <p class="text-sm font-medium">{{ hotel.name|truncatechars:20 }}</p>
                       </div>
-                    {% endif %}
-                  {% endwith %}
-                  
-                  <!-- Overlay gradient -->
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
-                  
-                  <!-- Discount Badge -->
-                  {% if forloop.counter|divisibleby:3 %}
-                  <div class="absolute top-4 left-4 bg-red-500 text-white px-2 py-1 rounded-lg text-xs font-bold shadow-lg">
-                    -20% OFF
-                  </div>
+                    </div>
                   {% endif %}
-                  
-                  <!-- Quick view button -->
-                  <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 translate-y-full group-hover:translate-y-0 transition duration-300 opacity-0 group-hover:opacity-100">
-                    <button onclick="quickView({{ hotel.id }})" class="bg-white text-gray-900 px-4 py-1.5 rounded-full text-sm font-semibold shadow-lg hover:bg-blue-600 hover:text-white transition">
-                      Quick View
-                    </button>
-                  </div>
                 </div>
+                
+                {% if forloop.counter|divisibleby:4 %}
+                <div class="absolute top-3 left-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-md z-10 flex items-center gap-1">
+                  <i data-lucide="zap" class="w-3 h-3"></i> Hot Deal
+                </div>
+                {% endif %}
+                
+                <button class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-md hover:bg-red-50 transition wishlist-btn z-10" data-hotel-id="{{ hotel.id }}">
+                  <i data-lucide="heart" class="w-4 h-4 text-slate-500 hover:text-red-500 transition"></i>
+                </button>
               </div>
               
-              <!-- Info Section -->
-              <div class="flex-1 p-6">
+              <!-- Content Column -->
+              <div class="flex-1 p-5">
                 <div class="flex flex-col h-full">
-                  <div class="flex-1">
-                    <div class="flex items-start justify-between mb-3">
-                      <div class="flex-1">
-                        <h3 class="text-xl md:text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition line-clamp-1">
+                  <div>
+                    <div class="flex items-start justify-between gap-3 mb-2">
+                      <div>
+                        <h3 class="text-xl font-bold text-slate-800 group-hover:text-sky-600 transition">
                           <a href="{% url 'hotel:hotel_profile' hotel.slug %}">{{ hotel.name }}</a>
                         </h3>
-                        <div class="flex items-center gap-2 text-sm text-gray-600 mt-1">
-                          <i class="fas fa-map-marker-alt text-blue-500"></i>
-                          <span>{{ hotel.city }}, {{ hotel.country }}</span>
+                        <div class="flex items-center gap-1.5 text-sm text-slate-500 mt-0.5">
+                          <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+                          <span>{{ hotel.city|default:"Destination" }}, {{ hotel.country|default:"Worldwide" }}</span>
                         </div>
                       </div>
                       
                       {% if hotel.avg_rating %}
-                      <div class="flex flex-col items-end">
-                        <div class="flex items-center gap-1 bg-green-50 px-3 py-1.5 rounded-xl">
-                          <i class="fas fa-star text-yellow-400 text-sm"></i>
-                          <span class="font-extrabold text-gray-800 text-lg">{{ hotel.avg_rating|floatformat:1 }}</span>
+                      <div class="bg-emerald-50 px-2.5 py-1 rounded-xl text-center min-w-[60px]">
+                        <div class="flex items-center gap-0.5 justify-center">
+                          <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i>
+                          <span class="font-extrabold text-slate-800">{{ hotel.avg_rating|floatformat:1 }}</span>
                         </div>
-                        <span class="text-xs text-gray-500 mt-1">{{ hotel.reviews_count }} reviews</span>
+                        <div class="text-[10px] text-slate-500">{{ hotel.reviews_count|default:0 }} reviews</div>
                       </div>
                       {% endif %}
                     </div>
                     
-                    <!-- Star Rating Display -->
+                    <!-- Star Rating -->
                     <div class="flex items-center gap-1 mb-3">
                       {% if hotel.star_rating %}
                         {% for i in "12345"|make_list %}
-                          {% if forloop.counter <= hotel.star_display %}
-                            <i class="fas fa-star text-yellow-400 text-sm"></i>
+                          {% if forloop.counter <= hotel.star_rating %}
+                            <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i>
                           {% else %}
-                            <i class="far fa-star text-gray-300 text-sm"></i>
+                            <i data-lucide="star" class="w-3.5 h-3.5 text-slate-300"></i>
                           {% endif %}
                         {% endfor %}
-                        <span class="text-xs text-gray-500 ml-2">{{ hotel.star_rating }} Star Hotel</span>
+                        <span class="text-xs text-slate-500 ml-2">{{ hotel.star_rating }} Star Hotel</span>
                       {% endif %}
                     </div>
                     
-                    <p class="text-gray-600 text-sm line-clamp-2 mb-4 leading-relaxed">
-                      {{ hotel.short_description|default:hotel.description|truncatewords:30 }}
+                    <p class="text-slate-500 text-sm line-clamp-2 mb-4 leading-relaxed">
+                      {{ hotel.short_description|default:hotel.description|default:"Experience exceptional hospitality and comfort at this premium property. Book now for an unforgettable stay."|truncatewords:25 }}
                     </p>
                     
-                    <!-- Amenities Chips -->
+                    <!-- Amenities -->
                     <div class="flex flex-wrap gap-2 mb-4">
-                      <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full flex items-center gap-1">
-                        <i class="fas fa-wifi text-blue-500 text-xs"></i> Free WiFi
+                      <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full flex items-center gap-1">
+                        <i data-lucide="wifi" class="w-3 h-3"></i> Free WiFi
                       </span>
-                      <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full flex items-center gap-1">
-                        <i class="fas fa-parking text-blue-500 text-xs"></i> Parking
+                      <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full flex items-center gap-1">
+                        <i data-lucide="car" class="w-3 h-3"></i> Parking
                       </span>
-                      <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full flex items-center gap-1">
-                        <i class="fas fa-swimmer text-blue-500 text-xs"></i> Pool
-                      </span>
-                      <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full flex items-center gap-1">
-                        <i class="fas fa-utensils text-blue-500 text-xs"></i> Restaurant
+                      <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full flex items-center gap-1">
+                        <i data-lucide="droplets" class="w-3 h-3"></i> Pool
                       </span>
                     </div>
                   </div>
                   
-                  <!-- Price and Action -->
-                  <div class="flex items-center justify-between pt-4 border-t border-gray-100 mt-4">
-                    <div class="price-badge">
+                  <!-- Price & CTA -->
+                  <div class="flex items-center justify-between pt-4 border-t border-slate-100 mt-2">
+                    <div class="price-shield">
                       {% if hotel.min_price %}
                       <div class="flex items-baseline gap-1">
-                        <span class="text-3xl font-extrabold text-blue-600">${{ hotel.min_price|floatformat:0 }}</span>
-                        <span class="text-gray-500 text-sm">/night</span>
+                        <span class="text-2xl font-extrabold text-sky-600">${{ hotel.min_price|floatformat:0 }}</span>
+                        <span class="text-slate-400 text-sm">/night</span>
                       </div>
-                      <div class="text-xs text-green-600 mt-1 flex items-center gap-1">
-                        <i class="fas fa-tag"></i>
-                        Best available rate
+                      <div class="text-xs text-emerald-600 flex items-center gap-1 mt-0.5">
+                        <i data-lucide="shield-check" class="w-3 h-3"></i> Best rate guaranteed
                       </div>
                       {% else %}
-                      <span class="text-gray-500 text-sm">Call for pricing</span>
+                      <span class="text-slate-500 text-sm">Contact for pricing</span>
                       {% endif %}
                     </div>
                     
-                    <div class="flex gap-3">
-                      <button class="hidden md:flex items-center gap-2 text-gray-500 hover:text-red-500 transition">
-                        <i class="far fa-heart text-xl"></i>
-                      </button>
-                      <a href="{% url 'hotel:hotel_profile' hotel.slug %}" class="relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 group inline-flex items-center gap-2">
-                        <span class="relative z-10">View Deal</span>
-                        <i class="fas fa-arrow-right relative z-10 group-hover:translate-x-1 transition-transform"></i>
-                        <div class="absolute inset-0 bg-gradient-to-r from-blue-700 to-indigo-700 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                      </a>
-                    </div>
+                    <a href="{% url 'hotel:hotel_profile' hotel.slug %}" class="inline-flex items-center gap-2 bg-gradient-to-r from-sky-600 to-indigo-600 text-white px-5 py-2 rounded-xl font-semibold hover:shadow-md transition group">
+                      <span>View Deal</span>
+                      <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-0.5 transition"></i>
+                    </a>
                   </div>
                 </div>
               </div>
             </div>
           </div>
           {% empty %}
-          <div class="bg-white rounded-2xl p-16 text-center">
-            <div class="inline-flex items-center justify-center w-24 h-24 bg-gray-100 rounded-full mb-6">
-              <i class="fas fa-search text-4xl text-gray-400"></i>
+          <div class="bg-white rounded-2xl p-12 text-center">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-slate-100 rounded-full mb-5">
+              <i data-lucide="search-x" class="w-8 h-8 text-slate-400"></i>
             </div>
-            <h3 class="text-2xl font-bold text-gray-900 mb-2">No hotels found</h3>
-            <p class="text-gray-600 mb-6">We couldn't find any hotels matching your criteria.</p>
-            <a href="{% url 'hotel:hotels_list' %}" class="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition">
-              <i class="fas fa-undo-alt"></i>
-              Clear All Filters
+            <h3 class="text-xl font-bold text-slate-800 mb-2">No hotels found</h3>
+            <p class="text-slate-500 mb-6">Try adjusting your search or filters to find your perfect stay.</p>
+            <a href="{% url 'hotel:hotels_list' %}" class="inline-flex items-center gap-2 bg-sky-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-sky-700 transition">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i> Clear all filters
             </a>
           </div>
           {% endfor %}
         </div>
         
-        <!-- Enhanced Pagination -->
+        <!-- Pagination -->
         {% if page_obj.has_other_pages %}
         <div class="mt-10 flex justify-center">
-          <nav class="flex items-center gap-2">
+          <div class="flex gap-2 flex-wrap">
             {% if page_obj.has_previous %}
             <a href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-               class="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-xl hover:bg-gray-50 transition">
-              <i class="fas fa-angle-double-left"></i>
+               class="w-9 h-9 flex items-center justify-center border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+              <i data-lucide="chevrons-left" class="w-4 h-4"></i>
             </a>
             <a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-               class="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-xl hover:bg-gray-50 transition">
-              <i class="fas fa-angle-left"></i>
+               class="w-9 h-9 flex items-center justify-center border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
             </a>
             {% endif %}
             
             {% for num in page_obj.paginator.page_range %}
               {% if page_obj.number == num %}
-              <span class="w-10 h-10 flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-md">
-                {{ num }}
-              </span>
+              <span class="w-9 h-9 flex items-center justify-center bg-gradient-to-r from-sky-600 to-indigo-600 text-white rounded-lg shadow-sm">{{ num }}</span>
               {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
               <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-                 class="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-xl hover:bg-gray-50 transition">
+                 class="w-9 h-9 flex items-center justify-center border border-slate-200 rounded-lg hover:bg-slate-50 transition">
                 {{ num }}
               </a>
               {% endif %}
@@ -708,15 +625,15 @@
             
             {% if page_obj.has_next %}
             <a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-               class="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-xl hover:bg-gray-50 transition">
-              <i class="fas fa-angle-right"></i>
+               class="w-9 h-9 flex items-center justify-center border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
             </a>
             <a href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-               class="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-xl hover:bg-gray-50 transition">
-              <i class="fas fa-angle-double-right"></i>
+               class="w-9 h-9 flex items-center justify-center border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+              <i data-lucide="chevrons-right" class="w-4 h-4"></i>
             </a>
             {% endif %}
-          </nav>
+          </div>
         </div>
         {% endif %}
       </div>
@@ -724,55 +641,205 @@
   </div>
 </section>
 
+<!-- Mobile Filter Drawer -->
+<div id="mobileFilterDrawer" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden lg:hidden">
+  <div class="absolute right-0 top-0 h-full w-full max-w-sm bg-white shadow-2xl mobile-filter-panel">
+    <div class="sticky top-0 bg-gradient-to-r from-sky-600 to-indigo-600 px-5 py-4 flex justify-between items-center">
+      <h3 class="text-white font-bold flex items-center gap-2">
+        <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
+        Filter Hotels
+      </h3>
+      <button id="closeMobileFilter" class="text-white/80 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <div class="p-5 overflow-y-auto h-[calc(100%-60px)]">
+      <form method="get" id="mobileFilterForm">
+        <div class="space-y-5">
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Search</label>
+            <input type="text" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Hotel name or location" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">City</label>
+            <select name="city" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-white">
+              <option value="">All Cities</option>
+              {% for city in available_cities %}
+              <option value="{{ city }}" {% if request.GET.city == city %}selected{% endif %}>{{ city }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Country</label>
+            <select name="country" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-white">
+              <option value="">All Countries</option>
+              {% for country in available_countries %}
+              <option value="{{ country }}" {% if request.GET.country == country %}selected{% endif %}>{{ country }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Category</label>
+            <select name="category" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-white">
+              <option value="">All Categories</option>
+              {% for category in categories %}
+              <option value="{{ category.slug }}" {% if request.GET.category == category.slug %}selected{% endif %}>{{ category.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Min Rating</label>
+            <select name="min_rating" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-white">
+              <option value="">Any Rating</option>
+              <option value="4.5" {% if request.GET.min_rating == "4.5" %}selected{% endif %}>4.5+ Stars</option>
+              <option value="4.0" {% if request.GET.min_rating == "4.0" %}selected{% endif %}>4.0+ Stars</option>
+              <option value="3.5" {% if request.GET.min_rating == "3.5" %}selected{% endif %}>3.5+ Stars</option>
+            </select>
+          </div>
+          <div>
+            <label class="flex items-center gap-2">
+              <input type="checkbox" name="featured" value="true" {% if request.GET.featured == "true" %}checked{% endif %} class="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500">
+              <span class="text-sm text-slate-700">Featured Hotels Only</span>
+            </label>
+          </div>
+          <div class="flex gap-3 pt-4">
+            <button type="submit" class="flex-1 bg-sky-600 text-white py-2.5 rounded-xl font-semibold">Apply</button>
+            <a href="{% url 'hotel:hotels_list' %}" class="flex-1 text-center border border-slate-300 py-2.5 rounded-xl font-semibold text-slate-700">Clear</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
-  // Price range slider
-  const priceRange = document.getElementById('priceRange');
-  const priceValue = document.getElementById('priceValue');
-  
-  if (priceRange && priceValue) {
-    priceRange.addEventListener('input', function() {
-      priceValue.textContent = '$' + this.value;
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    
+    // Price range slider desktop
+    const priceSlider = document.getElementById('priceRangeDesktop');
+    const priceValue = document.getElementById('priceValueDesktop');
+    if (priceSlider && priceValue) {
+      priceSlider.addEventListener('input', function() {
+        priceValue.textContent = '$' + this.value;
+      });
+    }
+    
+    // Sort functionality
+    const sortSelect = document.getElementById('sortSelect');
+    if (sortSelect) {
+      sortSelect.addEventListener('change', function() {
+        const url = new URL(window.location.href);
+        url.searchParams.set('sort', this.value);
+        url.searchParams.set('page', '1');
+        window.location.href = url.toString();
+      });
+    }
+    
+    // View toggle
+    const viewToggles = document.querySelectorAll('.view-toggle');
+    const hotelsContainer = document.getElementById('hotelsContainer');
+    const savedView = localStorage.getItem('hotelListingView') || 'list';
+    
+    function setView(view) {
+      if (view === 'grid') {
+        hotelsContainer.classList.remove('space-y-5');
+        hotelsContainer.classList.add('grid-view');
+      } else {
+        hotelsContainer.classList.remove('grid-view');
+        hotelsContainer.classList.add('space-y-5');
+      }
+      localStorage.setItem('hotelListingView', view);
+    }
+    
+    viewToggles.forEach(toggle => {
+      toggle.addEventListener('click', function() {
+        const view = this.dataset.view;
+        setView(view);
+        viewToggles.forEach(t => t.classList.remove('bg-slate-100'));
+        this.classList.add('bg-slate-100');
+      });
+      if ((savedView === 'grid' && toggle.dataset.view === 'grid') ||
+          (savedView === 'list' && toggle.dataset.view === 'list')) {
+        toggle.classList.add('bg-slate-100');
+      }
     });
-  }
-  
-  // Mobile filter panel
-  const mobileFilterBtn = document.getElementById('mobileFilterBtn');
-  const mobileFilterPanel = document.getElementById('mobileFilterPanel');
-  const closeMobileFilter = document.getElementById('closeMobileFilter');
-  
-  if (mobileFilterBtn && mobileFilterPanel) {
-    mobileFilterBtn.addEventListener('click', () => {
-      mobileFilterPanel.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
+    setView(savedView);
+    
+    // Mobile filter drawer
+    const mobileFilterBtn = document.getElementById('mobileFilterBtn');
+    const mobileDrawer = document.getElementById('mobileFilterDrawer');
+    const closeMobileFilter = document.getElementById('closeMobileFilter');
+    
+    if (mobileFilterBtn && mobileDrawer) {
+      mobileFilterBtn.addEventListener('click', () => {
+        mobileDrawer.classList.remove('hidden');
+        setTimeout(() => {
+          mobileDrawer.querySelector('.mobile-filter-panel').classList.add('open');
+        }, 10);
+        document.body.style.overflow = 'hidden';
+      });
+      
+      function closeDrawer() {
+        mobileDrawer.querySelector('.mobile-filter-panel').classList.remove('open');
+        setTimeout(() => {
+          mobileDrawer.classList.add('hidden');
+          document.body.style.overflow = '';
+        }, 300);
+      }
+      
+      if (closeMobileFilter) closeMobileFilter.addEventListener('click', closeDrawer);
+      mobileDrawer.addEventListener('click', (e) => {
+        if (e.target === mobileDrawer) closeDrawer();
+      });
+    }
+    
+    // Wishlist functionality
+    const wishlistBtns = document.querySelectorAll('.wishlist-btn');
+    wishlistBtns.forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const icon = this.querySelector('[data-lucide="heart"]');
+        if (icon) {
+          const isLiked = icon.classList.contains('fill-red-500');
+          if (isLiked) {
+            icon.classList.remove('fill-red-500', 'text-red-500');
+            icon.classList.add('text-slate-500');
+          } else {
+            icon.classList.add('fill-red-500', 'text-red-500');
+            icon.classList.remove('text-slate-500');
+          }
+        }
+      });
     });
     
-    const closeFilter = () => {
-      mobileFilterPanel.classList.add('hidden');
-      document.body.style.overflow = '';
-    };
+    // Image lazy loading handling
+    document.querySelectorAll('.hotel-img').forEach(img => {
+      if (img.complete && img.naturalHeight !== 0) {
+        img.classList.add('loaded');
+      }
+    });
     
-    if (closeMobileFilter) closeMobileFilter.addEventListener('click', closeFilter);
-    mobileFilterPanel.addEventListener('click', (e) => {
-      if (e.target === mobileFilterPanel) closeFilter();
-    });
-  }
-  
-  // Sort functionality
-  const sortSelect = document.getElementById('sortBy');
-  if (sortSelect) {
-    sortSelect.addEventListener('change', function() {
-      const url = new URL(window.location.href);
-      url.searchParams.set('sort', this.value);
-      url.searchParams.set('page', '1');
-      window.location.href = url.toString();
-    });
-  }
-  
-  // Quick view function
-  function quickView(hotelId) {
-    // Implement modal popup for quick hotel view
-    console.log('Quick view hotel:', hotelId);
-    // You can implement a modal here
-  }
+    // Form submission handlers
+    const desktopForm = document.getElementById('desktopFilterForm');
+    const mobileForm = document.getElementById('mobileFilterForm');
+    
+    function syncFormSubmit(form) {
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const formData = new FormData(this);
+          const params = new URLSearchParams();
+          for (let [key, value] of formData.entries()) {
+            if (value) params.append(key, value);
+          }
+          window.location.href = window.location.pathname + '?' + params.toString();
+        });
+      }
+    }
+    syncFormSubmit(desktopForm);
+    syncFormSubmit(mobileForm);
+  });
 </script>
 {% endblock %}

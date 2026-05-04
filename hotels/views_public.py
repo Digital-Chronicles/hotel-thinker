@@ -23,9 +23,14 @@ def _hotel_base_queryset():
         .prefetch_related(
             Prefetch(
                 "images",
-                queryset=HotelImage.objects.order_by("order", "-uploaded_at"),
+                queryset=HotelImage.objects.filter(is_primary=True).order_by("order", "-uploaded_at")[:1],
                 to_attr="prefetched_images",
-            )
+            ),
+            Prefetch(
+                "amenity_mappings",
+                queryset=HotelAmenityMapping.objects.filter(is_available=True).select_related("amenity"),
+                to_attr="prefetched_amenities",
+            ),
         )
         .annotate(
             reviews_count=Count(
@@ -48,11 +53,24 @@ def public_home(request):
     """Home page view with featured hotels, stats, and popular destinations"""
     hotels_qs = _hotel_base_queryset()
 
-    featured_hotels = hotels_qs.order_by("-is_featured", "-is_verified", "name")[:6]
-    latest_hotels = hotels_qs.order_by("-created_at")[:6]
-    top_rated_hotels = hotels_qs.filter(avg_rating__isnull=False).order_by(
+    featured_hotels = list(hotels_qs.filter(is_featured=True).order_by("-is_verified", "name")[:6])
+    latest_hotels = list(hotels_qs.order_by("-created_at")[:6])
+    top_rated_hotels = list(hotels_qs.filter(avg_rating__isnull=False).order_by(
         "-avg_rating", "-reviews_count", "name"
-    )[:6]
+    )[:6])
+    
+    # Add image_url and brand colors to hotels
+    for hotel in featured_hotels + latest_hotels + top_rated_hotels:
+        if hasattr(hotel, 'prefetched_images') and hotel.prefetched_images:
+            hotel.image_url = hotel.prefetched_images[0].image.url
+        elif hotel.cover_image:
+            hotel.image_url = hotel.cover_image.url
+        else:
+            hotel.image_url = None
+            
+        # Add brand colors (ensure they have default values if None)
+        hotel.brand_color_primary = hotel.brand_color_primary or "#3B82F6"
+        hotel.brand_color_secondary = hotel.brand_color_secondary or "#10B981"
 
     popular_cities = (
         Hotel.objects.filter(is_active=True, is_published=True)
@@ -119,6 +137,12 @@ def public_hotels_list(request):
     category = (request.GET.get("category") or "").strip()
     min_rating = (request.GET.get("min_rating") or "").strip()
     featured = (request.GET.get("featured") or "").strip()
+    
+    # Get star ratings (can be multiple)
+    star_ratings = request.GET.getlist("star_rating")
+    
+    # Get max price
+    max_price = request.GET.get("max_price")
 
     # Apply filters
     if q:
@@ -141,17 +165,70 @@ def public_hotels_list(request):
 
     if min_rating:
         try:
-            hotels_qs = hotels_qs.filter(avg_rating__gte=float(min_rating))
+            min_rating_val = float(min_rating)
+            if 0 <= min_rating_val <= 5:
+                hotels_qs = hotels_qs.filter(avg_rating__gte=min_rating_val)
+        except (TypeError, ValueError):
+            pass
+
+    if star_ratings:
+        # Convert star ratings to integers and filter
+        star_values = []
+        for rating in star_ratings:
+            try:
+                rating_int = int(rating)
+                if 1 <= rating_int <= 5:
+                    star_values.append(rating_int)
+            except ValueError:
+                pass
+        if star_values:
+            hotels_qs = hotels_qs.filter(star_rating__in=star_values)
+    
+    if max_price:
+        try:
+            max_price_val = float(max_price)
+            if max_price_val > 0:
+                hotels_qs = hotels_qs.filter(min_price__lte=max_price_val)
         except (TypeError, ValueError):
             pass
 
     if featured in {"1", "true", "yes"}:
         hotels_qs = hotels_qs.filter(is_featured=True)
 
+    # Apply sorting
+    sort_by = request.GET.get("sort", "recommended")
+    if sort_by == "price_asc":
+        hotels_qs = hotels_qs.filter(min_price__isnull=False).order_by("min_price", "name")
+    elif sort_by == "price_desc":
+        hotels_qs = hotels_qs.filter(min_price__isnull=False).order_by("-min_price", "name")
+    elif sort_by == "rating_desc":
+        hotels_qs = hotels_qs.filter(avg_rating__isnull=False).order_by("-avg_rating", "-reviews_count", "name")
+    elif sort_by == "newest":
+        hotels_qs = hotels_qs.order_by("-created_at", "name")
+    else:  # recommended
+        hotels_qs = hotels_qs.order_by("-is_featured", "-is_verified", "-avg_rating", "name")
+
     # Pagination
     paginator = Paginator(hotels_qs, 12)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
+
+    # Process each hotel in the page to add image_url and brand colors
+    hotels_list = []
+    for hotel in page_obj.object_list:
+        # Add image URL
+        if hasattr(hotel, 'prefetched_images') and hotel.prefetched_images:
+            hotel.image_url = hotel.prefetched_images[0].image.url
+        elif hotel.cover_image:
+            hotel.image_url = hotel.cover_image.url
+        else:
+            hotel.image_url = None
+        
+        # Add brand colors
+        hotel.brand_color_primary = hotel.brand_color_primary or "#3B82F6"
+        hotel.brand_color_secondary = hotel.brand_color_secondary or "#10B981"
+        
+        hotels_list.append(hotel)
 
     # Get filter options for sidebar
     filter_categories = (
@@ -166,7 +243,7 @@ def public_hotels_list(request):
         .order_by("name")
     )
 
-    available_cities = (
+    available_cities = list(
         Hotel.objects.filter(is_active=True, is_published=True)
         .exclude(city__isnull=True)
         .exclude(city__exact="")
@@ -175,7 +252,7 @@ def public_hotels_list(request):
         .order_by("city")
     )
 
-    available_countries = (
+    available_countries = list(
         Hotel.objects.filter(is_active=True, is_published=True)
         .exclude(country__isnull=True)
         .exclude(country__exact="")
@@ -184,30 +261,29 @@ def public_hotels_list(request):
         .order_by("country")
     )
 
-    return render(
-        request,
-        "public_site/hotels_list.html",
-        {
-            "page_obj": page_obj,
-            "hotels": page_obj.object_list,
-            "categories": filter_categories,
-            "available_cities": available_cities,
-            "available_countries": available_countries,
-            "q": q,
-            "selected_city": city,
-            "selected_country": country,
-            "selected_category": category,
-            "selected_min_rating": min_rating,
-            "selected_featured": featured,
-        },
-    )
+    # Prepare context for template
+    context = {
+        "page_obj": page_obj,
+        "hotels": hotels_list,
+        "categories": filter_categories,
+        "available_cities": available_cities,
+        "available_countries": available_countries,
+        "q": q,
+        "selected_city": city,
+        "selected_country": country,
+        "selected_category": category,
+        "selected_min_rating": min_rating,
+        "selected_featured": featured,
+        "selected_star_ratings": star_ratings,
+        "selected_sort": sort_by,
+        "max_price": max_price,
+    }
+    
+    return render(request, "public_site/hotels_list.html", context)
 
 
 def public_hotel_profile(request, slug):
-    """
-    One-page hotel public profile.
-    Rooms and room details are loaded here and shown using pop-up modals in the template.
-    """
+    """Hotel public profile page with all details"""
     # Get hotel with related data
     hotel = get_object_or_404(
         _hotel_base_queryset().prefetch_related(
@@ -217,8 +293,23 @@ def public_hotel_profile(request, slug):
         slug=slug
     )
     
+    # Add brand colors to hotel
+    hotel.brand_color_primary = hotel.brand_color_primary or "#3B82F6"
+    hotel.brand_color_secondary = hotel.brand_color_secondary or "#10B981"
+    
+    # Add image URL to hotel
+    if hasattr(hotel, 'prefetched_images') and hotel.prefetched_images:
+        hotel.image_url = hotel.prefetched_images[0].image.url
+    elif hotel.cover_image:
+        hotel.image_url = hotel.cover_image.url
+    else:
+        hotel.image_url = None
+    
     # Get or create hotel settings
     settings_obj, _ = HotelSetting.objects.get_or_create(hotel=hotel)
+    
+    # Add brand color from settings
+    settings_obj.brand_color = settings_obj.brand_color or "#3B82F6"
 
     # Get amenities
     amenities = (
@@ -227,12 +318,19 @@ def public_hotel_profile(request, slug):
         .order_by("amenity__category", "amenity__name")
     )
 
-    # Get gallery images
-    gallery = HotelImage.objects.filter(hotel=hotel).order_by("order", "-uploaded_at")[:16]
+    # Get gallery images (all images)
+    gallery = list(HotelImage.objects.filter(hotel=hotel).order_by("order", "-uploaded_at")[:16])
+    
+    # Get cover image
+    cover_image = None
+    if gallery:
+        cover_image = next((img for img in gallery if img.is_primary), gallery[0])
+    elif hotel.cover_image:
+        cover_image = hotel.cover_image
 
-    # Get room types with pricing (price is on RoomType model)
-    room_types = (
-        RoomType.objects.filter(hotel=hotel)
+    # FIXED: Removed 'is_active' filter since RoomType doesn't have this field
+    room_types = list(
+        RoomType.objects.filter(hotel=hotel)  # Removed is_active=True
         .annotate(
             rooms_count=Count("rooms", filter=Q(rooms__is_active=True), distinct=True),
             min_price=F("base_price"),
@@ -242,7 +340,7 @@ def public_hotel_profile(request, slug):
     )
 
     # Get all rooms
-    all_rooms = (
+    all_rooms = list(
         Room.objects.filter(hotel=hotel, is_active=True)
         .select_related("room_type")
         .prefetch_related(
@@ -258,9 +356,16 @@ def public_hotel_profile(request, slug):
     )
 
     featured_rooms = all_rooms[:8]
+    
+    # Add image URLs to rooms
+    for room in all_rooms + featured_rooms:
+        if hasattr(room, 'prefetched_images') and room.prefetched_images:
+            room.image_url = room.prefetched_images[0].image.url
+        else:
+            room.image_url = None
 
     # Get recent reviews
-    recent_reviews = (
+    recent_reviews = list(
         HotelReview.objects.filter(hotel=hotel, is_approved=True)
         .order_by("-created_at")[:6]
     )
@@ -279,22 +384,48 @@ def public_hotel_profile(request, slug):
         value=Avg("value_rating"),
         total_reviews=Count("id"),
     )
+    
+    # Ensure numeric values are floats or None
+    for key in review_summary:
+        if review_summary[key] is not None:
+            review_summary[key] = round(float(review_summary[key]), 1)
 
     # Get related hotels
-    related_hotels = (
+    related_hotels_qs = (
         _hotel_base_queryset()
         .exclude(pk=hotel.pk)
         .filter(Q(city=hotel.city) | Q(category=hotel.category))
         .order_by("-is_featured", "-is_verified", "name")[:4]
     )
+    
+    related_hotels = []
+    for related in related_hotels_qs:
+        # Add image URL
+        if hasattr(related, 'prefetched_images') and related.prefetched_images:
+            related.image_url = related.prefetched_images[0].image.url
+        elif related.cover_image:
+            related.image_url = related.cover_image.url
+        else:
+            related.image_url = None
+        
+        # Add brand colors
+        related.brand_color_primary = related.brand_color_primary or "#3B82F6"
+        related.brand_color_secondary = related.brand_color_secondary or "#10B981"
+        
+        related_hotels.append(related)
 
     # Get contact persons
     primary_contact = hotel.contact_persons.filter(is_primary=True).first()
-    other_contacts = (
+    other_contacts = list(
         hotel.contact_persons.exclude(pk=primary_contact.pk)
         if primary_contact
         else hotel.contact_persons.all()
     )
+
+    # Room status choices
+    room_status_choices = []
+    if hasattr(Room, 'Status') and hasattr(Room.Status, 'choices'):
+        room_status_choices = Room.Status.choices
 
     return render(
         request,
@@ -304,6 +435,7 @@ def public_hotel_profile(request, slug):
             "settings": settings_obj,
             "amenities": amenities,
             "gallery": gallery,
+            "cover_image": cover_image,
             "room_types": room_types,
             "all_rooms": all_rooms,
             "featured_rooms": featured_rooms,
@@ -312,14 +444,22 @@ def public_hotel_profile(request, slug):
             "related_hotels": related_hotels,
             "primary_contact": primary_contact,
             "other_contacts": other_contacts,
-            "room_statuses": getattr(Room, "Status", None).choices if hasattr(getattr(Room, "Status", None), "choices") else [],
+            "room_statuses": room_status_choices,
         },
     )
 
 
 def public_hotel_gallery(request, slug):
     """Hotel gallery page with category filtering"""
-    hotel = get_object_or_404(_hotel_base_queryset(), slug=slug)
+    hotel = get_object_or_404(
+        Hotel.objects.filter(is_active=True, is_published=True), 
+        slug=slug
+    )
+    
+    # Add brand colors to hotel
+    hotel.brand_color_primary = hotel.brand_color_primary or "#3B82F6"
+    hotel.brand_color_secondary = hotel.brand_color_secondary or "#10B981"
+    
     category = (request.GET.get("category") or "").strip()
 
     images_qs = HotelImage.objects.filter(hotel=hotel).order_by("order", "-uploaded_at")
@@ -330,11 +470,27 @@ def public_hotel_gallery(request, slug):
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    gallery_categories = (
+    gallery_categories = list(
         HotelImage.objects.filter(hotel=hotel)
         .values_list("category", flat=True)
         .distinct()
     )
+
+    # Image category choices
+    image_category_choices = getattr(HotelImage, "IMAGE_CATEGORIES", [])
+    if not image_category_choices:
+        image_category_choices = [
+            ('exterior', 'Exterior'),
+            ('interior', 'Interior'),
+            ('room', 'Room'),
+            ('suite', 'Suite'),
+            ('dining', 'Dining'),
+            ('pool', 'Pool'),
+            ('spa', 'Spa'),
+            ('gym', 'Gym'),
+            ('event', 'Event'),
+            ('other', 'Other'),
+        ]
 
     return render(
         request,
@@ -345,14 +501,21 @@ def public_hotel_gallery(request, slug):
             "page_obj": page_obj,
             "selected_category": category,
             "gallery_categories": gallery_categories,
-            "image_category_choices": getattr(HotelImage, "IMAGE_CATEGORIES", []),
+            "image_category_choices": image_category_choices,
         },
     )
 
 
 def public_hotel_reviews(request, slug):
     """Hotel reviews page with pagination"""
-    hotel = get_object_or_404(_hotel_base_queryset(), slug=slug)
+    hotel = get_object_or_404(
+        Hotel.objects.filter(is_active=True, is_published=True), 
+        slug=slug
+    )
+    
+    # Add brand colors to hotel
+    hotel.brand_color_primary = hotel.brand_color_primary or "#3B82F6"
+    hotel.brand_color_secondary = hotel.brand_color_secondary or "#10B981"
 
     reviews_qs = HotelReview.objects.filter(
         hotel=hotel,
@@ -376,6 +539,20 @@ def public_hotel_reviews(request, slug):
         value=Avg("value_rating"),
         total_reviews=Count("id"),
     )
+    
+    # Ensure numeric values are floats or None
+    for key in review_summary:
+        if review_summary[key] is not None:
+            review_summary[key] = round(float(review_summary[key]), 1)
+    
+    # Calculate rating distribution if needed
+    rating_distribution = {}
+    for rating in range(1, 6):
+        rating_distribution[rating] = HotelReview.objects.filter(
+            hotel=hotel,
+            is_approved=True,
+            overall_rating=rating
+        ).count()
 
     return render(
         request,
@@ -385,6 +562,7 @@ def public_hotel_reviews(request, slug):
             "reviews": page_obj.object_list,
             "page_obj": page_obj,
             "review_summary": review_summary,
+            "rating_distribution": rating_distribution,
         },
     )
 
@@ -403,6 +581,14 @@ def public_about(request):
             hotel__is_published=True,
             is_approved=True,
         ).count(),
+        "average_rating": HotelReview.objects.filter(
+            hotel__is_active=True,
+            hotel__is_published=True,
+            is_approved=True,
+        ).aggregate(avg=Avg("overall_rating"))["avg"],
     }
+    
+    if stats["average_rating"]:
+        stats["average_rating"] = round(float(stats["average_rating"]), 1)
 
     return render(request, "public_site/about.html", {"stats": stats})
