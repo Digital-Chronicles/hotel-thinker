@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-22x%$0e#6s3o%k*7wl**%xc5gfs94=5gr=jzhgf==ne55#_fc=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ['hotelthinker.site', 'www.hotelthinker.site', 'localhost', '127.0.0.1']
 
 
 # Application definition
