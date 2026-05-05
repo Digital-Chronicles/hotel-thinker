@@ -112,8 +112,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'hotel_thinker_db',
-        'USER': 'hotel_user',
-        'PASSWORD': 'YourStrong!P@ssw0rd',
+        'USER': 'postgres',
+        'PASSWORD': 'atwanzire',
         'HOST': 'localhost',
         'PORT': '5432',
     }
