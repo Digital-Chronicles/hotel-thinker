@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import timedelta, datetime
 from decimal import Decimal
-from rooms.models import Room
+from rooms.models import Room, RoomType
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
@@ -15,7 +15,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
-from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
+from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView, View
 
 from finance.models import Payment
 from hotel_thinker.utils import get_active_hotel_for_user, require_hotel_role
@@ -46,6 +46,34 @@ def get_hotel_and_booking(request, pk: int):
     hotel = get_active_hotel_for_user(request.user)
     booking = get_object_or_404(Booking, pk=pk, hotel=hotel)
     return hotel, booking
+
+
+def get_available_rooms(hotel, check_in, check_out, room_type_id=None, exclude_booking_id=None):
+    """
+    Get rooms that are available for the given date range.
+    Optionally filter by room type and exclude a specific booking.
+    """
+    # Get all active rooms in the hotel
+    rooms_qs = Room.objects.filter(hotel=hotel, is_active=True).select_related('room_type')
+    
+    # Filter by room type if specified
+    if room_type_id:
+        rooms_qs = rooms_qs.filter(room_type_id=room_type_id)
+    
+    # Get booked rooms for the date range
+    booked_rooms = Booking.objects.filter(
+        hotel=hotel,
+        status__in=[Booking.Status.RESERVED, Booking.Status.CONFIRMED, Booking.Status.CHECKED_IN],
+        check_in__lt=check_out,
+        check_out__gt=check_in,
+    ).values_list('room_id', flat=True)
+    
+    # Exclude current booking if updating
+    if exclude_booking_id:
+        booked_rooms = booked_rooms.exclude(pk=exclude_booking_id)
+    
+    # Return rooms that are not booked
+    return rooms_qs.exclude(id__in=booked_rooms)
 
 
 # -----------------------------------------------------------------------------
@@ -487,6 +515,9 @@ class BookingDetailView(HotelScopedQuerysetMixin, DetailView):
         return ctx
 
 
+# -----------------------------------------------------------------------------
+# Enhanced Booking Create View with Room Availability Filtering
+# -----------------------------------------------------------------------------
 @method_decorator(login_required, name="dispatch")
 class BookingCreateView(CreateView):
     model = Booking
@@ -505,38 +536,120 @@ class BookingCreateView(CreateView):
         kwargs["hotel"] = get_active_hotel_for_user(self.request.user)
         return kwargs
 
+    def get_initial(self):
+        initial = super().get_initial()
+        
+        # Pre-fill dates from query parameters
+        check_in = self.request.GET.get('check_in')
+        check_out = self.request.GET.get('check_out')
+        room_type_id = self.request.GET.get('room_type')
+        
+        if check_in:
+            try:
+                initial['check_in'] = datetime.strptime(check_in, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        
+        if check_out:
+            try:
+                initial['check_out'] = datetime.strptime(check_out, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        
+        if room_type_id:
+            initial['room_type'] = room_type_id
+        
+        return initial
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["guest_quick_form"] = GuestQuickCreateForm()
         ctx["is_edit"] = False
         
-        # Check if there are guests and rooms available
         hotel = get_active_hotel_for_user(self.request.user)
-        from rooms.models import Room
+        
+        # Get room types for filtering
+        ctx["room_types"] = RoomType.objects.filter(hotel=hotel, rooms__is_active=True).distinct()
+        
+        # Get available rooms based on selected dates
+        check_in = self.request.GET.get('check_in') or self.request.POST.get('check_in')
+        check_out = self.request.GET.get('check_out') or self.request.POST.get('check_out')
+        room_type_id = self.request.GET.get('room_type') or self.request.POST.get('room_type')
+        
+        if check_in and check_out:
+            try:
+                check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
+                check_out_date = datetime.strptime(check_out, '%Y-%m-%d').date()
+                
+                if check_out_date > check_in_date:
+                    available_rooms = get_available_rooms(
+                        hotel, 
+                        check_in_date, 
+                        check_out_date, 
+                        room_type_id if room_type_id else None
+                    )
+                    ctx["available_rooms"] = available_rooms
+                    ctx["check_in_date"] = check_in_date
+                    ctx["check_out_date"] = check_out_date
+                    ctx["nights"] = (check_out_date - check_in_date).days
+            except ValueError:
+                pass
+        
+        # Check if there are rooms available
         guest_count = Guest.objects.filter(hotel=hotel).count()
-        room_count = Room.objects.filter(hotel=hotel, is_active=True).count()
+        total_rooms = Room.objects.filter(hotel=hotel, is_active=True).count()
+        available_rooms_count = Room.objects.filter(
+            hotel=hotel, 
+            is_active=True
+        ).exclude(
+            status='maintenance'
+        ).count()
         
         if guest_count == 0:
             messages.warning(self.request, "Please create a guest first before making a booking.")
-        if room_count == 0:
+        if total_rooms == 0:
             messages.warning(self.request, "Please add rooms to this hotel first.")
+        elif available_rooms_count == 0:
+            messages.warning(self.request, "No available rooms at the moment.")
         
         return ctx
+
+    def form_invalid(self, form):
+        """Handle invalid form with better error messages"""
+        for field, errors in form.errors.items():
+            for error in errors:
+                messages.error(self.request, f"{field}: {error}")
+        return super().form_invalid(form)
 
     @transaction.atomic
     def form_valid(self, form):
         hotel = get_active_hotel_for_user(self.request.user)
         
-        # Get the room BEFORE saving
+        # Get the room
         room = form.cleaned_data.get('room')
+        check_in = form.cleaned_data.get('check_in')
+        check_out = form.cleaned_data.get('check_out')
+        
         if not room:
             messages.error(self.request, "Please select a room.")
+            return self.form_invalid(form)
+        
+        # Verify room is still available (prevent race conditions)
+        is_available = not Booking.objects.filter(
+            room=room,
+            status__in=[Booking.Status.RESERVED, Booking.Status.CONFIRMED, Booking.Status.CHECKED_IN],
+            check_in__lt=check_out,
+            check_out__gt=check_in,
+        ).exists()
+        
+        if not is_available:
+            messages.error(self.request, "This room is no longer available for the selected dates.")
             return self.form_invalid(form)
         
         # Set all instance attributes
         form.instance.hotel = hotel
         form.instance.created_by = self.request.user
-        form.instance.room = room  # Ensure room is set
+        form.instance.room = room
         form.instance.status = Booking.Status.RESERVED
         form.instance.payment_status = Booking.PaymentStatus.PENDING
         
@@ -564,24 +677,13 @@ class BookingCreateView(CreateView):
         )
         return response
 
-    def form_invalid(self, form):
-        # Log form errors for debugging
-        print("FORM ERRORS:", form.errors)
-        for field, errors in form.errors.items():
-            print(f"Field '{field}': {errors}")
-        
-        # Check specifically for room errors
-        if 'room' in form.errors:
-            messages.error(self.request, "Please select a valid room.")
-        else:
-            messages.error(self.request, "Please correct the errors below.")
-        
-        return super().form_invalid(form)
-
     def get_success_url(self):
         return reverse("bookings:booking_detail", kwargs={"pk": self.object.pk})
-    
-       
+
+
+# -----------------------------------------------------------------------------
+# Enhanced Booking Update View with Room Availability Filtering
+# -----------------------------------------------------------------------------
 @method_decorator(login_required, name="dispatch")
 class BookingUpdateView(HotelScopedQuerysetMixin, UpdateView):
     model = Booking
@@ -604,10 +706,65 @@ class BookingUpdateView(HotelScopedQuerysetMixin, UpdateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["is_edit"] = True
+        ctx["guest_quick_form"] = GuestQuickCreateForm()
+        
+        hotel = get_active_hotel_for_user(self.request.user)
+        booking = self.get_object()
+        
+        # Get room types for filtering
+        ctx["room_types"] = RoomType.objects.filter(hotel=hotel, rooms__is_active=True).distinct()
+        
+        # Get available rooms (excluding current booking)
+        check_in = self.request.GET.get('check_in') or self.request.POST.get('check_in') or booking.check_in
+        check_out = self.request.GET.get('check_out') or self.request.POST.get('check_out') or booking.check_out
+        room_type_id = self.request.GET.get('room_type') or self.request.POST.get('room_type')
+        
+        if check_in and check_out:
+            try:
+                if isinstance(check_in, str):
+                    check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
+                else:
+                    check_in_date = check_in
+                
+                if isinstance(check_out, str):
+                    check_out_date = datetime.strptime(check_out, '%Y-%m-%d').date()
+                else:
+                    check_out_date = check_out
+                
+                if check_out_date > check_in_date:
+                    available_rooms = get_available_rooms(
+                        hotel, 
+                        check_in_date, 
+                        check_out_date, 
+                        room_type_id if room_type_id else None,
+                        exclude_booking_id=booking.pk
+                    )
+                    ctx["available_rooms"] = available_rooms
+                    ctx["check_in_date"] = check_in_date
+                    ctx["check_out_date"] = check_out_date
+                    ctx["nights"] = (check_out_date - check_in_date).days
+            except ValueError:
+                pass
+        
         return ctx
 
     def form_valid(self, form):
         booking = form.save(commit=False)
+        old_room = Booking.objects.get(pk=booking.pk).room if booking.pk else None
+        new_room = form.cleaned_data.get('room')
+        
+        # If room changed, verify new room is available
+        if old_room != new_room and new_room:
+            is_available = not Booking.objects.filter(
+                room=new_room,
+                status__in=[Booking.Status.RESERVED, Booking.Status.CONFIRMED, Booking.Status.CHECKED_IN],
+                check_in__lt=booking.check_out,
+                check_out__gt=booking.check_in,
+            ).exclude(pk=booking.pk).exists()
+            
+            if not is_available:
+                messages.error(self.request, "This room is no longer available for the selected dates.")
+                return self.form_invalid(form)
         
         # Recalculate nightly rate from room if needed
         if booking.room:
@@ -634,11 +791,143 @@ class BookingUpdateView(HotelScopedQuerysetMixin, UpdateView):
         return response
 
     def form_invalid(self, form):
-        messages.error(self.request, "Please correct the errors below.")
+        for field, errors in form.errors.items():
+            for error in errors:
+                messages.error(self.request, f"{field}: {error}")
         return super().form_invalid(form)
 
     def get_success_url(self):
         return reverse("bookings:booking_detail", kwargs={"pk": self.object.pk})
+
+
+# -----------------------------------------------------------------------------
+# AJAX API for getting available rooms
+# -----------------------------------------------------------------------------
+# bookings/views.py - Update the get_available_rooms_api function
+
+@login_required
+@require_GET
+def get_available_rooms_api(request):
+    """
+    AJAX endpoint to get available rooms based on dates and room type.
+    Returns JSON with available rooms for dynamic form updates.
+    """
+    hotel = get_active_hotel_for_user(request.user)
+    
+    check_in_str = request.GET.get('check_in')
+    check_out_str = request.GET.get('check_out')
+    room_type_id = request.GET.get('room_type')
+    exclude_booking_id = request.GET.get('exclude_booking')
+    
+    # Get all active rooms first
+    rooms_qs = Room.objects.filter(hotel=hotel, is_active=True).select_related('room_type')
+    
+    # Filter by room type if specified
+    if room_type_id and room_type_id != '':
+        try:
+            rooms_qs = rooms_qs.filter(room_type_id=room_type_id)
+        except (ValueError, TypeError):
+            pass
+    
+    # If dates are provided, check availability
+    if check_in_str and check_out_str:
+        try:
+            check_in = datetime.strptime(check_in_str, '%Y-%m-%d').date()
+            check_out = datetime.strptime(check_out_str, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({
+                'available': False,
+                'error': 'Invalid date format'
+            }, status=400)
+        
+        if check_out <= check_in:
+            return JsonResponse({
+                'available': False,
+                'error': 'Check-out must be after check-in'
+            }, status=400)
+        
+        # Get booked rooms for the date range
+        booked_room_ids = Booking.objects.filter(
+            hotel=hotel,
+            status__in=[Booking.Status.RESERVED, Booking.Status.CONFIRMED, Booking.Status.CHECKED_IN],
+            check_in__lt=check_out,
+            check_out__gt=check_in,
+        ).values_list('room_id', flat=True)
+        
+        # Exclude current booking if updating
+        if exclude_booking_id and exclude_booking_id != '':
+            try:
+                booked_room_ids = list(booked_room_ids)
+                exclude_id = int(exclude_booking_id)
+                # The exclude_booking_id is the booking ID, not room ID
+                # So we need to handle this differently
+            except (ValueError, TypeError):
+                pass
+        
+        # Get available rooms (not in booked list)
+        available_rooms = rooms_qs.exclude(id__in=booked_room_ids)
+        
+        nights = (check_out - check_in).days
+        
+    else:
+        # No dates provided, return all active rooms (limited to 50)
+        available_rooms = rooms_qs
+        nights = 0
+    
+    # Prepare response data
+    rooms_data = []
+    rooms_by_type = {}
+    
+    for room in available_rooms[:50]:  # Limit to 50 rooms for performance
+        room_info = {
+            'id': room.id,
+            'number': room.number,
+            'floor': room.floor or '',
+            'room_type_id': room.room_type_id,
+            'room_type_name': room.room_type.name,
+            'base_price': str(room.room_type.base_price),
+            'status': room.status,
+        }
+        rooms_data.append(room_info)
+        
+        # Group by room type
+        type_name = room.room_type.name
+        if type_name not in rooms_by_type:
+            rooms_by_type[type_name] = []
+        rooms_by_type[type_name].append(room_info)
+    
+    return JsonResponse({
+        'available': True,
+        'check_in': check_in_str or '',
+        'check_out': check_out_str or '',
+        'nights': nights,
+        'available_rooms_count': available_rooms.count(),
+        'rooms': rooms_data,
+        'rooms_by_type': rooms_by_type,
+    })
+
+
+@login_required
+@require_GET
+def get_room_price_api(request):
+    """Get room price for a specific room"""
+    hotel = get_active_hotel_for_user(request.user)
+    room_id = request.GET.get('room_id')
+    
+    if not room_id:
+        return JsonResponse({'error': 'Room ID required'}, status=400)
+    
+    try:
+        room = Room.objects.get(pk=room_id, hotel=hotel, is_active=True)
+        return JsonResponse({
+            'ok': True,
+            'room_id': room.id,
+            'room_number': room.number,
+            'room_type': room.room_type.name,
+            'base_price': str(room.room_type.base_price),
+        })
+    except Room.DoesNotExist:
+        return JsonResponse({'error': 'Room not found'}, status=404)
 
 
 # -----------------------------------------------------------------------------
@@ -967,8 +1256,6 @@ def check_room_availability(request):
     if not all([room_id, check_in, check_out]):
         return JsonResponse({"available": False, "error": "Missing parameters"}, status=400)
 
-    from rooms.models import Room
-
     try:
         room = Room.objects.get(pk=room_id, hotel=hotel)
     except Room.DoesNotExist:
@@ -1134,8 +1421,6 @@ def room_availability_calendar(request):
     """Display room availability calendar"""
     require_hotel_role(request.user, {"admin", "front_desk_manager", "front_desk", "general_manager"})
     hotel = get_active_hotel_for_user(request.user)
-    
-    from rooms.models import Room
     
     rooms = Room.objects.filter(hotel=hotel, is_active=True).select_related("room_type")
     

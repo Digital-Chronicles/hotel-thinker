@@ -50,17 +50,15 @@
     <div class="xl:col-span-2 space-y-6">
 
       <!-- Form Errors Summary -->
-      {% if form.errors %}
-      <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 animate-shake">
+      {% if form.non_field_errors %}
+      <div class="rounded-xl border border-rose-200 bg-rose-50 p-4">
         <div class="flex items-start gap-2">
           <i class="fas fa-exclamation-triangle text-rose-600 text-sm mt-0.5"></i>
           <div class="flex-1">
             <p class="text-sm font-semibold text-rose-800 mb-2">Please correct the following errors:</p>
             <ul class="text-sm text-rose-700 space-y-1">
-              {% for field, errors in form.errors.items %}
-                {% for error in errors %}
-                  <li>• {{ field|capfirst }}: {{ error }}</li>
-                {% endfor %}
+              {% for error in form.non_field_errors %}
+                <li>• {{ error }}</li>
               {% endfor %}
             </ul>
           </div>
@@ -88,61 +86,26 @@
         </div>
 
         <div class="p-6 space-y-6">
-          <!-- Guest + Room -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-              <div class="flex items-center justify-between mb-1.5">
-                <label class="text-sm font-semibold text-slate-700">
-                  Guest <span class="text-rose-500">*</span>
-                </label>
-                <button type="button"
-                        data-modal-open="guestModal"
-                        class="text-xs font-medium text-blue-600 hover:text-blue-700 transition">
-                  <i class="fas fa-plus-circle mr-1"></i>Quick Add
-                </button>
-              </div>
-
-              <div class="relative">
-                <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
-                {{ form.guest }}
-              </div>
-              {% if form.guest.errors %}
-                <p class="text-xs text-rose-600 mt-1">{{ form.guest.errors|striptags }}</p>
-              {% endif %}
-            </div>
-
-            <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-1.5">
-                Room <span class="text-rose-500">*</span>
+          <!-- Guest Selection -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-sm font-semibold text-slate-700">
+                Guest <span class="text-rose-500">*</span>
               </label>
-
-              <div class="relative">
-                <i class="fas fa-door-open absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
-                <select name="room" id="id_room"
-                        class="w-full rounded-xl border border-slate-200 pl-9 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-300 bg-white appearance-none"
-                        required>
-                  <option value="">--------- Select a room ---------</option>
-                  {% for room in form.fields.room.queryset %}
-                    <option value="{{ room.pk }}"
-                            data-price="{{ room.room_type.base_price|default:0 }}"
-                            data-room-number="{{ room.number }}"
-                            {% if form.room.value|stringformat:"s" == room.pk|stringformat:"s" %}selected{% endif %}>
-                      Room {{ room.number }} — {{ room.room_type.name }} (UGX {{ room.room_type.base_price|floatformat:0|intcomma }}/night)
-                    </option>
-                  {% endfor %}
-                </select>
-                <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
-              </div>
-
-              {% if form.room.errors %}
-                <p class="text-xs text-rose-600 mt-1">{{ form.room.errors|striptags }}</p>
-              {% endif %}
-
-              <p class="text-xs text-slate-500 mt-1.5">
-                <i class="fas fa-info-circle mr-1"></i>
-                Nightly Rate: <span class="font-semibold text-slate-700" id="roomRateLabel">0</span> UGX
-              </p>
+              <button type="button"
+                      data-modal-open="guestModal"
+                      class="text-xs font-medium text-blue-600 hover:text-blue-700 transition">
+                <i class="fas fa-plus-circle mr-1"></i>Quick Add Guest
+              </button>
             </div>
+
+            <div class="relative">
+              <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+              {{ form.guest }}
+            </div>
+            {% if form.guest.errors %}
+              <p class="text-xs text-rose-600 mt-1">{{ form.guest.errors|striptags }}</p>
+            {% endif %}
           </div>
 
           <!-- Dates -->
@@ -174,7 +137,61 @@
             </div>
           </div>
 
-          <!-- Guests -->
+          <!-- Room Type Filter -->
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+              Filter by Room Type (Optional)
+            </label>
+            <div class="relative">
+              <i class="fas fa-filter absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+              <select id="room_type_filter" class="w-full rounded-xl border border-slate-200 pl-9 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 bg-white appearance-none">
+                <option value="">-- All Room Types --</option>
+                {% for room_type in room_types %}
+                  <option value="{{ room_type.id }}">{{ room_type.name }}</option>
+                {% endfor %}
+              </select>
+              <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+            </div>
+            <p class="text-xs text-slate-500 mt-1.5">
+              <i class="fas fa-info-circle mr-1"></i>
+              Select a room type to narrow down available rooms
+            </p>
+          </div>
+
+          <!-- Room Selection -->
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+              Room <span class="text-rose-500">*</span>
+            </label>
+
+            <div class="relative">
+              <i class="fas fa-door-open absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+              <select name="room" id="id_room"
+                      class="w-full rounded-xl border border-slate-200 pl-9 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 bg-white appearance-none"
+                      required>
+                <option value="">-- Select dates first to see available rooms --</option>
+              </select>
+              <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+            </div>
+
+            {% if form.room.errors %}
+              <p class="text-xs text-rose-600 mt-1">{{ form.room.errors|striptags }}</p>
+            {% endif %}
+
+            <!-- Availability Message -->
+            <div id="availabilityMessage" class="mt-2"></div>
+
+            <div class="mt-2 flex items-center gap-4 text-xs">
+              <span class="text-slate-500">
+                <i class="fas fa-info-circle mr-1"></i>
+                Nightly Rate: 
+                <span class="font-semibold text-slate-700" id="roomRateLabel">0</span> UGX
+              </span>
+              <span class="text-slate-500" id="roomTypeLabel"></span>
+            </div>
+          </div>
+
+          <!-- Guests Count -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div>
               <label class="block text-sm font-semibold text-slate-700 mb-1.5">
@@ -195,9 +212,6 @@
                 <i class="fas fa-child absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
                 {{ form.children }}
               </div>
-              {% if form.children.errors %}
-                <p class="text-xs text-rose-600 mt-1">{{ form.children.errors|striptags }}</p>
-              {% endif %}
             </div>
 
             <div>
@@ -206,13 +220,10 @@
                 <i class="fas fa-baby-carriage absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
                 {{ form.infants }}
               </div>
-              {% if form.infants.errors %}
-                <p class="text-xs text-rose-600 mt-1">{{ form.infants.errors|striptags }}</p>
-              {% endif %}
             </div>
           </div>
 
-          <!-- Source + Status -->
+          <!-- Booking Source -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <label class="block text-sm font-semibold text-slate-700 mb-1.5">Booking Source</label>
@@ -220,37 +231,45 @@
                 <i class="fas fa-globe absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
                 {{ form.source }}
               </div>
-              {% if form.source.errors %}
-                <p class="text-xs text-rose-600 mt-1">{{ form.source.errors|striptags }}</p>
-              {% endif %}
             </div>
 
-            {% if form.status %}
+            {% if form.source_reference %}
             <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Status</label>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Source Reference</label>
               <div class="relative">
-                <i class="fas fa-flag-checkered absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
-                {{ form.status }}
+                <i class="fas fa-hashtag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                {{ form.source_reference }}
               </div>
-              {% if form.status.errors %}
-                <p class="text-xs text-rose-600 mt-1">{{ form.status.errors|striptags }}</p>
-              {% endif %}
             </div>
             {% endif %}
           </div>
 
-          {% if form.source_reference %}
-          <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Source Reference</label>
-            <div class="relative">
-              <i class="fas fa-hashtag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
-              {{ form.source_reference }}
+          <!-- Discount Section -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Discount</label>
+              <div class="relative">
+                <i class="fas fa-tag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                {{ form.discount }}
+              </div>
             </div>
-            {% if form.source_reference.errors %}
-              <p class="text-xs text-rose-600 mt-1">{{ form.source_reference.errors|striptags }}</p>
-            {% endif %}
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Discount Type</label>
+              <div class="relative">
+                <i class="fas fa-percent absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                {{ form.discount_type }}
+              </div>
+            </div>
           </div>
-          {% endif %}
+
+          <!-- Tax Rate -->
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Tax Rate (%)</label>
+            <div class="relative">
+              <i class="fas fa-percent absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+              {{ form.tax_rate }}
+            </div>
+          </div>
 
           <!-- Notes -->
           <div class="grid grid-cols-1 gap-5">
@@ -260,9 +279,6 @@
                 <i class="fas fa-star absolute left-3 top-3 text-slate-400 text-sm pointer-events-none"></i>
                 {{ form.special_requests }}
               </div>
-              {% if form.special_requests.errors %}
-                <p class="text-xs text-rose-600 mt-1">{{ form.special_requests.errors|striptags }}</p>
-              {% endif %}
             </div>
 
             {% if form.guest_notes %}
@@ -272,51 +288,9 @@
                 <i class="fas fa-note-sticky absolute left-3 top-3 text-slate-400 text-sm pointer-events-none"></i>
                 {{ form.guest_notes }}
               </div>
-              {% if form.guest_notes.errors %}
-                <p class="text-xs text-rose-600 mt-1">{{ form.guest_notes.errors|striptags }}</p>
-              {% endif %}
-            </div>
-            {% endif %}
-
-            {% if form.internal_notes %}
-            <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Internal Notes</label>
-              <div class="relative">
-                <i class="fas fa-lock absolute left-3 top-3 text-slate-400 text-sm pointer-events-none"></i>
-                {{ form.internal_notes }}
-              </div>
-              <p class="text-xs text-slate-400 mt-1">Visible to staff only.</p>
-              {% if form.internal_notes.errors %}
-                <p class="text-xs text-rose-600 mt-1">{{ form.internal_notes.errors|striptags }}</p>
-              {% endif %}
             </div>
             {% endif %}
           </div>
-
-          <!-- Edit-only fields -->
-          {% if form.payment_status or form.amount_paid %}
-            <div class="pt-2 border-t border-slate-100">
-              <h3 class="text-sm font-semibold text-slate-800 mb-4">Payment Snapshot</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {% if form.payment_status %}
-                <div>
-                  <label class="block text-sm font-semibold text-slate-700 mb-1.5">Payment Status</label>
-                  {{ form.payment_status }}
-                </div>
-                {% endif %}
-
-                {% if form.amount_paid %}
-                <div>
-                  <label class="block text-sm font-semibold text-slate-700 mb-1.5">Amount Paid</label>
-                  <div class="relative">
-                    <i class="fas fa-money-bill-wave absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
-                    {{ form.amount_paid }}
-                  </div>
-                </div>
-                {% endif %}
-              </div>
-            </div>
-          {% endif %}
         </div>
 
         <!-- Footer Buttons -->
@@ -338,20 +312,25 @@
 
     <!-- Sidebar -->
     <div class="space-y-6">
-      <!-- Estimate -->
+      <!-- Estimate Summary -->
       <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden xl:sticky xl:top-6">
         <div class="px-5 py-4 bg-gradient-to-r from-blue-50 to-white border-b border-slate-200">
           <div class="flex items-center gap-2">
             <i class="fas fa-calculator text-blue-500 text-sm"></i>
             <h3 class="font-semibold text-slate-800">Estimate Summary</h3>
           </div>
-          <p class="text-xs text-slate-500 mt-1">Calculated from room rate × number of nights.</p>
+          <p class="text-xs text-slate-500 mt-1">Calculated from room rate × number of nights</p>
         </div>
 
         <div class="p-5 space-y-4">
           <div class="flex justify-between items-center py-2">
             <span class="text-sm text-slate-600">Nights of Stay</span>
             <span class="text-lg font-bold text-slate-800" id="sumNights">0</span>
+          </div>
+
+          <div class="flex justify-between items-center py-2">
+            <span class="text-sm text-slate-600">Room Type</span>
+            <span class="text-sm font-medium text-slate-700" id="selectedRoomType">-</span>
           </div>
 
           <div class="flex justify-between items-center py-2 border-t border-slate-100">
@@ -372,6 +351,7 @@
               <div class="text-xs text-blue-700">
                 <p class="font-semibold mb-1">Quick Tip</p>
                 <p>The room base price is picked automatically from the selected room type.</p>
+                <p class="mt-1">Select check-in/out dates first to see available rooms.</p>
               </div>
             </div>
           </div>
@@ -391,7 +371,8 @@
           <p><i class="fas fa-check-circle text-emerald-500 mr-2"></i>Use "Quick Add Guest" to create a new guest without leaving this page</p>
           <p><i class="fas fa-check-circle text-emerald-500 mr-2"></i>Room rates are pulled from room type configuration</p>
           <p><i class="fas fa-check-circle text-emerald-500 mr-2"></i>Special requests can help housekeeping and reception prepare ahead</p>
-          <p><i class="fas fa-check-circle text-emerald-500 mr-2"></i>Internal notes are visible to staff only</p>
+          <p><i class="fas fa-check-circle text-emerald-500 mr-2"></i>Select dates first to see which rooms are available</p>
+          <p><i class="fas fa-check-circle text-emerald-500 mr-2"></i>Use room type filter to narrow down your search</p>
         </div>
       </div>
     </div>
@@ -403,7 +384,7 @@
   <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" data-modal-close="guestModal"></div>
 
   <div class="relative mx-auto mt-10 md:mt-16 w-full max-w-2xl px-4">
-    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
       <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-white border-b border-slate-200 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
@@ -411,7 +392,7 @@
           </div>
           <div>
             <h3 class="text-lg font-semibold text-slate-800">Add New Guest</h3>
-            <p class="text-xs text-slate-500">Create a guest and select them automatically.</p>
+            <p class="text-xs text-slate-500">Create a guest and select them automatically</p>
           </div>
         </div>
 
@@ -433,7 +414,7 @@
             <div class="relative">
               <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
               <input type="text" name="full_name" required
-                     class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+                     class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300"
                      placeholder="John Doe">
             </div>
           </div>
@@ -445,7 +426,7 @@
             <div class="relative">
               <i class="fas fa-phone absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
               <input type="text" name="phone" required
-                     class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+                     class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300"
                      placeholder="+256 XXX XXX XXX">
             </div>
           </div>
@@ -455,7 +436,7 @@
             <div class="relative">
               <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
               <input type="email" name="email"
-                     class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+                     class="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-300"
                      placeholder="guest@example.com">
             </div>
           </div>
@@ -465,7 +446,7 @@
             <div class="relative">
               <i class="fas fa-tag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
               <select name="guest_type"
-                      class="w-full rounded-xl border border-slate-200 pl-9 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-300 bg-white appearance-none">
+                      class="w-full rounded-xl border border-slate-200 pl-9 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 bg-white appearance-none">
                 <option value="individual">Individual</option>
                 <option value="corporate">Corporate</option>
                 <option value="travel_agency">Travel Agency</option>
@@ -566,10 +547,9 @@
     to { opacity: 1; transform: scale(1); }
   }
 
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
+  @keyframes slide-in {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
   }
 
   .animate-in {
@@ -580,10 +560,11 @@
     animation: zoom-in 0.2s ease-out;
   }
 
-  .animate-shake {
-    animation: shake 0.3s ease-in-out;
+  .animate-slide-in {
+    animation: slide-in 0.3s ease-out;
   }
 
+  /* Form field styling */
   #id_guest,
   #id_check_in,
   #id_check_out,
@@ -591,13 +572,13 @@
   #id_children,
   #id_infants,
   #id_source,
-  #id_status,
-  #id_payment_status,
-  #id_amount_paid,
   #id_source_reference,
   #id_special_requests,
   #id_guest_notes,
-  #id_internal_notes {
+  #id_discount,
+  #id_discount_type,
+  #id_tax_rate,
+  #room_type_filter {
     width: 100%;
     border: 1px solid rgb(226 232 240);
     border-radius: 0.75rem;
@@ -614,305 +595,394 @@
   #id_children,
   #id_infants,
   #id_source,
-  #id_status,
-  #id_payment_status,
-  #id_amount_paid,
-  #id_source_reference {
+  #id_source_reference,
+  #id_discount,
+  #id_discount_type,
+  #id_tax_rate,
+  #room_type_filter {
     padding-left: 2.25rem;
   }
 
   #id_special_requests,
-  #id_guest_notes,
-  #id_internal_notes {
-    min-height: 110px;
+  #id_guest_notes {
+    min-height: 100px;
     padding-left: 2.25rem;
     padding-top: 0.75rem;
   }
 
-  #id_guest:focus,
-  #id_check_in:focus,
-  #id_check_out:focus,
-  #id_adults:focus,
-  #id_children:focus,
-  #id_infants:focus,
-  #id_source:focus,
-  #id_status:focus,
-  #id_payment_status:focus,
-  #id_amount_paid:focus,
-  #id_source_reference:focus,
-  #id_special_requests:focus,
-  #id_guest_notes:focus,
-  #id_internal_notes:focus {
+  select:focus,
+  input:focus,
+  textarea:focus {
     outline: none;
     border-color: rgb(147 197 253);
     box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.35);
   }
 </style>
-{% endblock %}
 
-{% block extra_js %}
 <script>
-  (function() {
+(function() {
     // DOM Elements
     const form = document.getElementById('bookingForm');
     const submitBtn = document.getElementById('submitBtn');
     const guestSelect = document.getElementById('id_guest');
+    const roomTypeFilter = document.getElementById('room_type_filter');
     const roomSelect = document.getElementById('id_room');
     const checkInInput = document.getElementById('id_check_in');
     const checkOutInput = document.getElementById('id_check_out');
     const adultsInput = document.getElementById('id_adults');
+    const availabilityMessage = document.getElementById('availabilityMessage');
+    const selectedRoomTypeSpan = document.getElementById('selectedRoomType');
+    const roomRateLabel = document.getElementById('roomRateLabel');
+    const sumNights = document.getElementById('sumNights');
+    const sumRate = document.getElementById('sumRate');
+    const sumTotal = document.getElementById('sumTotal');
+    
+    let availabilityTimeout = null;
+    let currentRoomsData = [];
     
     // Helper Functions
-    function parseNum(v) {
-      const n = parseFloat((v || "").toString().replace(/,/g, ""));
-      return isNaN(n) ? 0 : n;
+    function formatNumber(num) {
+        return new Intl.NumberFormat('en-US').format(Math.round(num));
     }
-
-    function formatCurrency(amount) {
-      return new Intl.NumberFormat("en-US", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      }).format(amount);
+    
+    function calculateNights(checkIn, checkOut) {
+        if (!checkIn || !checkOut) return 0;
+        const start = new Date(checkIn);
+        const end = new Date(checkOut);
+        const diffTime = end - start;
+        const diffDays = diffTime / (1000 * 60 * 60 * 24);
+        return diffDays > 0 ? diffDays : 0;
     }
-
-    function daysBetween(a, b) {
-      const da = new Date(a);
-      const db = new Date(b);
-      if (isNaN(da) || isNaN(db)) return 0;
-      const diff = (db - da) / (1000 * 60 * 60 * 24);
-      return diff > 0 ? Math.floor(diff) : 0;
-    }
-
-    function currentRoomRate() {
-      if (!roomSelect) return 0;
-      const opt = roomSelect.options[roomSelect.selectedIndex];
-      return opt ? parseNum(opt.dataset.price) : 0;
-    }
-
-    function recalc() {
-      const checkIn = checkInInput?.value;
-      const checkOut = checkOutInput?.value;
-      const nights = daysBetween(checkIn, checkOut);
-      const rate = currentRoomRate();
-      const total = rate * nights;
-
-      const roomRateLabel = document.getElementById("roomRateLabel");
-      const sumNights = document.getElementById("sumNights");
-      const sumRate = document.getElementById("sumRate");
-      const sumTotal = document.getElementById("sumTotal");
-
-      if (roomRateLabel) roomRateLabel.textContent = formatCurrency(rate);
-      if (sumNights) sumNights.textContent = nights;
-      if (sumRate) sumRate.textContent = "UGX " + formatCurrency(rate);
-      if (sumTotal) sumTotal.textContent = "UGX " + formatCurrency(total);
-    }
-
-    // Validate form before submission
-    function validateForm() {
-      const errors = [];
-      
-      if (!guestSelect || !guestSelect.value) {
-        errors.push("Please select a guest.");
-      }
-      
-      if (!roomSelect || !roomSelect.value) {
-        errors.push("Please select a room.");
-      }
-      
-      if (!checkInInput || !checkInInput.value) {
-        errors.push("Please select a check-in date.");
-      }
-      
-      if (!checkOutInput || !checkOutInput.value) {
-        errors.push("Please select a check-out date.");
-      }
-      
-      if (checkInInput && checkOutInput && checkInInput.value && checkOutInput.value) {
-        const checkIn = new Date(checkInInput.value);
-        const checkOut = new Date(checkOutInput.value);
-        if (checkOut <= checkIn) {
-          errors.push("Check-out date must be after check-in date.");
-        }
-      }
-      
-      if (adultsInput && (!adultsInput.value || parseInt(adultsInput.value) < 1)) {
-        errors.push("There must be at least 1 adult.");
-      }
-      
-      if (errors.length > 0) {
-        alert("Please fix the following errors:\n\n" + errors.join("\n"));
-        return false;
-      }
-      
-      return true;
-    }
-
-    // Form submission handler
-    if (form) {
-      form.addEventListener('submit', function(e) {
-        if (!validateForm()) {
-          e.preventDefault();
-          return false;
+    
+    function updateEstimate() {
+        const checkIn = checkInInput?.value;
+        const checkOut = checkOutInput?.value;
+        const nights = calculateNights(checkIn, checkOut);
+        
+        let rate = 0;
+        const selectedOption = roomSelect?.options[roomSelect.selectedIndex];
+        if (selectedOption && selectedOption.value) {
+            rate = parseFloat(selectedOption.dataset.price) || 0;
         }
         
-        // Disable submit button to prevent double submission
-        if (submitBtn) {
-          submitBtn.disabled = true;
-          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        const total = nights * rate;
+        
+        if (sumNights) sumNights.textContent = nights;
+        if (roomRateLabel) roomRateLabel.textContent = formatNumber(rate);
+        if (sumRate) sumRate.textContent = 'UGX ' + formatNumber(rate);
+        if (sumTotal) sumTotal.textContent = 'UGX ' + formatNumber(total);
+        
+        // Update room type display
+        if (selectedRoomTypeSpan && selectedOption && selectedOption.dataset.roomType) {
+            selectedRoomTypeSpan.textContent = selectedOption.dataset.roomType;
+        } else if (selectedRoomTypeSpan) {
+            selectedRoomTypeSpan.textContent = '-';
+        }
+    }
+    
+    // Fetch available rooms from API
+    async function fetchAvailableRooms() {
+        const checkIn = checkInInput?.value;
+        const checkOut = checkOutInput?.value;
+        const roomTypeId = roomTypeFilter?.value || '';
+        
+        // Build URL
+        const url = "{% url 'bookings:api_available_rooms' %}";
+        const params = new URLSearchParams();
+        
+        if (checkIn && checkOut) {
+            params.append('check_in', checkIn);
+            params.append('check_out', checkOut);
+        }
+        params.append('room_type', roomTypeId);
+        
+        {% if form.instance.pk %}
+        params.append('exclude_booking', '{{ form.instance.pk }}');
+        {% endif %}
+        
+        // Show loading state
+        if (roomSelect) {
+            roomSelect.innerHTML = '<option value="">Loading available rooms...</option>';
+            roomSelect.disabled = true;
+        }
+        
+        if (availabilityMessage) {
+            availabilityMessage.innerHTML = '<div class="text-blue-600 text-xs"><i class="fas fa-spinner fa-spin mr-1"></i>Checking availability...</div>';
+        }
+        
+        try {
+            const response = await fetch(`${url}?${params.toString()}`);
+            const data = await response.json();
+            
+            if (data.available && data.rooms) {
+                currentRoomsData = data.rooms;
+                
+                // Store current selection if any
+                const currentValue = roomSelect?.dataset.currentValue || '';
+                
+                // Rebuild room dropdown
+                roomSelect.innerHTML = '';
+                
+                if (data.rooms.length > 0) {
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.textContent = '-- Select a room --';
+                    roomSelect.appendChild(defaultOption);
+                    
+                    data.rooms.forEach(room => {
+                        const option = document.createElement('option');
+                        option.value = room.id;
+                        option.textContent = `Room ${room.number} — ${room.room_type_name} (UGX ${formatNumber(parseFloat(room.base_price))}/night)`;
+                        option.dataset.price = room.base_price;
+                        option.dataset.roomNumber = room.number;
+                        option.dataset.roomType = room.room_type_name;
+                        roomSelect.appendChild(option);
+                    });
+                    
+                    roomSelect.disabled = false;
+                    
+                    // Restore previous selection if still available
+                    if (currentValue && Array.from(roomSelect.options).some(opt => opt.value === currentValue)) {
+                        roomSelect.value = currentValue;
+                    }
+                    
+                    if (checkIn && checkOut) {
+                        const nights = calculateNights(checkIn, checkOut);
+                        if (availabilityMessage) {
+                            availabilityMessage.innerHTML = `<div class="text-emerald-600 text-xs"><i class="fas fa-check-circle mr-1"></i>${data.rooms.length} room(s) available for ${nights} night(s)</div>`;
+                            setTimeout(() => {
+                                if (availabilityMessage) availabilityMessage.innerHTML = '';
+                            }, 3000);
+                        }
+                    } else if (availabilityMessage) {
+                        availabilityMessage.innerHTML = `<div class="text-emerald-600 text-xs"><i class="fas fa-check-circle mr-1"></i>${data.rooms.length} active room(s) available</div>`;
+                        setTimeout(() => {
+                            if (availabilityMessage) availabilityMessage.innerHTML = '';
+                        }, 3000);
+                    }
+                } else {
+                    roomSelect.innerHTML = '<option value="">-- No rooms available --</option>';
+                    roomSelect.disabled = true;
+                    if (availabilityMessage) {
+                        availabilityMessage.innerHTML = '<div class="text-amber-600 text-xs"><i class="fas fa-exclamation-triangle mr-1"></i>No rooms available for the selected criteria</div>';
+                    }
+                }
+            } else {
+                roomSelect.innerHTML = '<option value="">-- Unable to load rooms --</option>';
+                roomSelect.disabled = true;
+                if (availabilityMessage) {
+                    availabilityMessage.innerHTML = '<div class="text-rose-600 text-xs"><i class="fas fa-exclamation-triangle mr-1"></i>Error loading rooms</div>';
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching rooms:', error);
+            roomSelect.innerHTML = '<option value="">-- Error loading rooms --</option>';
+            roomSelect.disabled = true;
+            if (availabilityMessage) {
+                availabilityMessage.innerHTML = '<div class="text-rose-600 text-xs"><i class="fas fa-exclamation-triangle mr-1"></i>Network error. Please refresh and try again.</div>';
+            }
+        }
+        
+        updateEstimate();
+        
+        // Store current value for restoration
+        if (roomSelect && roomSelect.value) {
+            roomSelect.dataset.currentValue = roomSelect.value;
+        }
+    }
+    
+    // Debounced fetch
+    function debouncedFetch() {
+        if (availabilityTimeout) clearTimeout(availabilityTimeout);
+        availabilityTimeout = setTimeout(() => {
+            fetchAvailableRooms();
+        }, 500);
+    }
+    
+    // Validate form before submission
+    function validateForm() {
+        const errors = [];
+        
+        if (!guestSelect || !guestSelect.value) {
+            errors.push("Please select a guest.");
+        }
+        
+        if (!roomSelect || !roomSelect.value) {
+            errors.push("Please select a room.");
+        }
+        
+        if (!checkInInput || !checkInInput.value) {
+            errors.push("Please select a check-in date.");
+        }
+        
+        if (!checkOutInput || !checkOutInput.value) {
+            errors.push("Please select a check-out date.");
+        }
+        
+        if (checkInInput && checkOutInput && checkInInput.value && checkOutInput.value) {
+            const nights = calculateNights(checkInInput.value, checkOutInput.value);
+            if (nights <= 0) {
+                errors.push("Check-out date must be after check-in date.");
+            }
+        }
+        
+        if (adultsInput && (!adultsInput.value || parseInt(adultsInput.value) < 1)) {
+            errors.push("There must be at least 1 adult.");
+        }
+        
+        if (errors.length > 0) {
+            alert("Please fix the following errors:\n\n" + errors.join("\n"));
+            return false;
         }
         
         return true;
-      });
     }
-
-    // Event listeners for recalculation
+    
+    // Form submission
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (!validateForm()) {
+                e.preventDefault();
+                return false;
+            }
+            
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+            }
+            
+            return true;
+        });
+    }
+    
+    // Event Listeners
     if (checkInInput) {
-      checkInInput.addEventListener("input", recalc);
-      checkInInput.addEventListener("change", recalc);
+        checkInInput.addEventListener('change', debouncedFetch);
+        checkInInput.addEventListener('input', updateEstimate);
     }
     
     if (checkOutInput) {
-      checkOutInput.addEventListener("input", recalc);
-      checkOutInput.addEventListener("change", recalc);
+        checkOutInput.addEventListener('change', debouncedFetch);
+        checkOutInput.addEventListener('input', updateEstimate);
+    }
+    
+    if (roomTypeFilter) {
+        roomTypeFilter.addEventListener('change', debouncedFetch);
     }
     
     if (roomSelect) {
-      roomSelect.addEventListener("input", recalc);
-      roomSelect.addEventListener("change", recalc);
+        roomSelect.addEventListener('change', updateEstimate);
     }
     
-    // Initial calculation
-    recalc();
-
-    // Modal functions
+    // Initial load
+    fetchAvailableRooms();
+    updateEstimate();
+    
+    // Modal Functions
     function openModal(id) {
-      document.getElementById(id)?.classList.remove("hidden");
+        const modal = document.getElementById(id);
+        if (modal) modal.classList.remove('hidden');
     }
-
+    
     function closeModal(id) {
-      document.getElementById(id)?.classList.add("hidden");
+        const modal = document.getElementById(id);
+        if (modal) modal.classList.add('hidden');
     }
-
+    
     // Modal event listeners
-    document.querySelectorAll("[data-modal-open]").forEach(btn => {
-      btn.addEventListener("click", () => openModal(btn.dataset.modalOpen));
+    document.querySelectorAll('[data-modal-open]').forEach(btn => {
+        btn.addEventListener('click', () => openModal(btn.dataset.modalOpen));
     });
-
-    document.querySelectorAll("[data-modal-close]").forEach(el => {
-      el.addEventListener("click", () => closeModal(el.dataset.modalClose));
+    
+    document.querySelectorAll('[data-modal-close]').forEach(el => {
+        el.addEventListener('click', () => closeModal(el.dataset.modalClose));
     });
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeModal("guestModal");
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal('guestModal');
     });
-
-    // Guest Quick Add Modal
-    const toggleBtn = document.getElementById("toggleMoreGuest");
-    const moreFields = document.getElementById("moreGuestFields");
-
-    if (toggleBtn && moreFields) {
-      toggleBtn.addEventListener("click", () => {
-        moreFields.classList.toggle("hidden");
-        toggleBtn.innerHTML = moreFields.classList.contains("hidden")
-          ? '<i class="fas fa-chevron-down mr-1"></i> More details'
-          : '<i class="fas fa-chevron-up mr-1"></i> Less details';
-      });
+    
+    // Guest Quick Add
+    const toggleMoreGuest = document.getElementById('toggleMoreGuest');
+    const moreGuestFields = document.getElementById('moreGuestFields');
+    
+    if (toggleMoreGuest && moreGuestFields) {
+        toggleMoreGuest.addEventListener('click', () => {
+            moreGuestFields.classList.toggle('hidden');
+            toggleMoreGuest.innerHTML = moreGuestFields.classList.contains('hidden')
+                ? '<i class="fas fa-chevron-down mr-1"></i> More details'
+                : '<i class="fas fa-chevron-up mr-1"></i> Less details';
+        });
     }
-
-    // Guest Quick Create Form
-    const guestForm = document.getElementById("guestQuickForm");
-    if (guestForm) {
-      const errBox = document.getElementById("guestQuickError");
-      const guestSubmitBtn = document.getElementById("guestQuickSubmit");
-
-      function showError(msg) {
-        if (!errBox) return;
-        errBox.textContent = msg;
-        errBox.classList.remove("hidden");
-      }
-
-      function clearError() {
-        if (!errBox) return;
-        errBox.textContent = "";
-        errBox.classList.add("hidden");
-      }
-
-      guestForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        clearError();
-
-        if (guestSubmitBtn) {
-          guestSubmitBtn.disabled = true;
-          guestSubmitBtn.classList.add("opacity-70", "cursor-not-allowed");
-        }
-
-        try {
-          const csrf = guestForm.querySelector('input[name="csrfmiddlewaretoken"]').value;
-          const fd = new FormData(guestForm);
-
-          const res = await fetch("{% url 'bookings:guest_quick_create' %}", {
-            method: "POST",
-            headers: { "X-CSRFToken": csrf },
-            body: fd
-          });
-
-          const data = await res.json();
-
-          if (!res.ok || !data.ok) {
-            if (data?.errors) {
-              const firstField = Object.keys(data.errors)[0];
-              const firstMsg = data.errors[firstField][0];
-              showError(firstMsg);
-            } else {
-              showError("Failed to create guest. Please check the fields.");
+    
+    const guestQuickForm = document.getElementById('guestQuickForm');
+    if (guestQuickForm) {
+        const guestErrorBox = document.getElementById('guestQuickError');
+        const guestSubmitBtn = document.getElementById('guestQuickSubmit');
+        
+        guestQuickForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (guestErrorBox) guestErrorBox.classList.add('hidden');
+            if (guestSubmitBtn) {
+                guestSubmitBtn.disabled = true;
+                guestSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Saving...';
             }
-            return;
-          }
-
-          if (guestSelect) {
-            // Check if guest already exists in dropdown
-            let existingOption = Array.from(guestSelect.options).find(opt => opt.value == data.id);
-            if (!existingOption) {
-              const opt = document.createElement("option");
-              opt.value = data.id;
-              opt.textContent = data.label || data.full_name;
-              guestSelect.appendChild(opt);
+            
+            try {
+                const csrf = guestQuickForm.querySelector('input[name="csrfmiddlewaretoken"]').value;
+                const formData = new FormData(guestQuickForm);
+                
+                const response = await fetch("{% url 'bookings:guest_quick_create' %}", {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrf },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok && data.id) {
+                    // Add guest to dropdown if not exists
+                    let existing = Array.from(guestSelect.options).find(opt => opt.value == data.id);
+                    if (!existing) {
+                        const option = document.createElement('option');
+                        option.value = data.id;
+                        option.textContent = data.label || data.full_name;
+                        guestSelect.appendChild(option);
+                    }
+                    guestSelect.value = data.id;
+                    
+                    // Reset form and close modal
+                    guestQuickForm.reset();
+                    if (moreGuestFields) moreGuestFields.classList.add('hidden');
+                    closeModal('guestModal');
+                    
+                    // Show success message
+                    const msg = document.createElement('div');
+                    msg.className = 'fixed top-4 right-4 z-50 bg-emerald-500 text-white px-4 py-3 rounded-xl shadow-lg animate-slide-in';
+                    msg.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Guest created successfully!';
+                    document.body.appendChild(msg);
+                    setTimeout(() => msg.remove(), 3000);
+                } else {
+                    if (guestErrorBox) {
+                        const errorMsg = data.errors ? Object.values(data.errors).flat()[0] : 'Failed to create guest';
+                        guestErrorBox.textContent = errorMsg;
+                        guestErrorBox.classList.remove('hidden');
+                    }
+                }
+            } catch (error) {
+                if (guestErrorBox) {
+                    guestErrorBox.textContent = 'Network error. Please try again.';
+                    guestErrorBox.classList.remove('hidden');
+                }
+            } finally {
+                if (guestSubmitBtn) {
+                    guestSubmitBtn.disabled = false;
+                    guestSubmitBtn.innerHTML = '<i class="fas fa-save text-xs mr-1"></i>Save Guest';
+                }
             }
-            guestSelect.value = data.id;
-          }
-
-          guestForm.reset();
-          if (moreFields) moreFields.classList.add("hidden");
-          if (toggleBtn) toggleBtn.innerHTML = '<i class="fas fa-chevron-down mr-1"></i> More details';
-          closeModal("guestModal");
-
-          // Show success message
-          const successMsg = document.createElement('div');
-          successMsg.className = 'fixed top-4 right-4 z-50 bg-emerald-500 text-white px-4 py-3 rounded-xl shadow-lg animate-slide-in';
-          successMsg.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Guest created successfully!';
-          document.body.appendChild(successMsg);
-          setTimeout(() => successMsg.remove(), 3000);
-
-        } catch (err) {
-          showError("Network error. Please try again.");
-        } finally {
-          if (guestSubmitBtn) {
-            guestSubmitBtn.disabled = false;
-            guestSubmitBtn.classList.remove("opacity-70", "cursor-not-allowed");
-          }
-        }
-      });
+        });
     }
-  })();
+})();
 </script>
-
-<style>
-  @keyframes slide-in {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
-  .animate-slide-in {
-    animation: slide-in 0.3s ease-out;
-  }
-</style>
 {% endblock %}

@@ -28,13 +28,13 @@ class GuestFullForm(forms.ModelForm):
             'is_vip', 'marketing_consent', 'newsletter_subscribed',
         ]
         widgets = {
-            'id_issue_date': forms.DateInput(attrs={'type': 'date', 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
-            'id_expiry_date': forms.DateInput(attrs={'type': 'date', 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
-            'special_requests': forms.Textarea(attrs={'rows': 3, 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
-            'dietary_restrictions': forms.Textarea(attrs={'rows': 2, 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
-            'room_preferences': forms.Textarea(attrs={'rows': 2, 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
-            'company_address': forms.Textarea(attrs={'rows': 2, 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
-            'address': forms.Textarea(attrs={'rows': 2, 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
+            'id_issue_date': forms.DateInput(attrs={'type': 'date'}),
+            'id_expiry_date': forms.DateInput(attrs={'type': 'date'}),
+            'special_requests': forms.Textarea(attrs={'rows': 3}),
+            'dietary_restrictions': forms.Textarea(attrs={'rows': 2}),
+            'room_preferences': forms.Textarea(attrs={'rows': 2}),
+            'company_address': forms.Textarea(attrs={'rows': 2}),
+            'address': forms.Textarea(attrs={'rows': 2}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -48,7 +48,6 @@ class GuestFullForm(forms.ModelForm):
     def clean_phone(self):
         phone = self.cleaned_data.get('phone')
         if phone:
-            # Remove any non-digit characters for validation
             import re
             clean_phone = re.sub(r'\D', '', phone)
             if len(clean_phone) < 9:
@@ -63,30 +62,19 @@ class GuestQuickCreateForm(forms.ModelForm):
         model = Guest
         fields = ['full_name', 'phone', 'email', 'id_number', 'guest_type']
         widgets = {
-            'full_name': forms.TextInput(attrs={
-                'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
-                'placeholder': 'John Doe'
-            }),
-            'phone': forms.TextInput(attrs={
-                'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
-                'placeholder': '+256 XXX XXX XXX'
-            }),
-            'email': forms.EmailInput(attrs={
-                'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
-                'placeholder': 'guest@example.com'
-            }),
-            'id_number': forms.TextInput(attrs={
-                'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
-                'placeholder': 'ID/Passport Number'
-            }),
-            'guest_type': forms.Select(attrs={
-                'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
-            }),
+            'full_name': forms.TextInput(attrs={'placeholder': 'John Doe'}),
+            'phone': forms.TextInput(attrs={'placeholder': '+256 XXX XXX XXX'}),
+            'email': forms.EmailInput(attrs={'placeholder': 'guest@example.com'}),
+            'id_number': forms.TextInput(attrs={'placeholder': 'ID/Passport Number'}),
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['guest_type'].initial = 'individual'
+        
+        # Add styling to all fields
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
     
     def clean_phone(self):
         phone = self.cleaned_data.get('phone')
@@ -105,33 +93,47 @@ class GuestQuickCreateForm(forms.ModelForm):
 
 
 # -----------------------------------------------------------------------------
-# Booking Forms
+# Booking Forms with Room Type Filtering
 # -----------------------------------------------------------------------------
+
 class BookingForm(forms.ModelForm):
-    """Form for creating new bookings"""
+    """Form for creating new bookings with room type filtering"""
+    
+    # Add room_type field for filtering rooms
+    room_type = forms.ModelChoiceField(
+        queryset=RoomType.objects.none(),
+        required=False,
+        label=_("Room Type (Optional)"),
+        widget=forms.Select(attrs={
+            'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
+            'data-filter-field': 'room_type'
+        })
+    )
     
     class Meta:
         model = Booking
         fields = [
-            'guest', 'room', 'check_in', 'check_out',
+            'guest', 'room_type', 'room', 'check_in', 'check_out',
             'adults', 'children', 'infants',
             'source', 'source_reference',
             'special_requests', 'guest_notes',
             'discount', 'discount_type', 'tax_rate',
         ]
         widgets = {
-            'check_in': forms.DateInput(attrs={'type': 'date', 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
-            'check_out': forms.DateInput(attrs={'type': 'date', 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
-            'special_requests': forms.Textarea(attrs={'rows': 2, 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm', 'placeholder': 'Any special requests from the guest'}),
-            'guest_notes': forms.Textarea(attrs={'rows': 2, 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm', 'placeholder': 'Notes visible to front desk staff'}),
+            'check_in': forms.DateInput(attrs={'type': 'date', 'class': 'date-picker', 'data-date-field': 'check_in'}),
+            'check_out': forms.DateInput(attrs={'type': 'date', 'class': 'date-picker', 'data-date-field': 'check_out'}),
+            'special_requests': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Any special requests from the guest'}),
+            'guest_notes': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Notes visible to front desk staff'}),
             'source_reference': forms.TextInput(attrs={'placeholder': 'Booking reference from external source'}),
+            'room': forms.Select(attrs={'data-room-select': 'true'}),
         }
 
     def __init__(self, *args, **kwargs):
         self.hotel = kwargs.pop('hotel', None)
+        self.booking = kwargs.pop('booking', None)  # For updates
         super().__init__(*args, **kwargs)
         
-        # Make room required and show error if not selected
+        # Make required fields
         self.fields['room'].required = True
         self.fields['guest'].required = True
         self.fields['check_in'].required = True
@@ -143,14 +145,17 @@ class BookingForm(forms.ModelForm):
             self.fields['guest'].queryset = Guest.objects.filter(hotel=self.hotel).order_by('full_name')
             self.fields['guest'].empty_label = "Select a guest"
             
-            # Filter rooms by hotel and ensure they are active
+            # Set room_type queryset
+            self.fields['room_type'].queryset = RoomType.objects.filter(hotel=self.hotel, rooms__is_active=True).distinct()
+            
+            # Initially load all active rooms (will be filtered by AJAX)
             rooms = Room.objects.filter(
                 hotel=self.hotel, 
                 is_active=True
             ).select_related('room_type')
             
             self.fields['room'].queryset = rooms
-            self.fields['room'].empty_label = "Select a room"
+            self.fields['room'].empty_label = "Select dates first to see available rooms"
             
             # Set default values
             self.fields['adults'].initial = 1
@@ -169,11 +174,26 @@ class BookingForm(forms.ModelForm):
             self.fields['source'].help_text = "How did the guest make this booking?"
             self.fields['discount'].help_text = "Enter discount amount (fixed amount only for now)"
             self.fields['tax_rate'].help_text = "Enter tax percentage (e.g., 18 for 18%)"
+            self.fields['room_type'].help_text = "Filter rooms by type (optional)"
         
         # Add styling to all fields
+        self._add_styling()
+        
+        # Disable room field initially until dates are selected
+        if not self.data.get('check_in') or not self.data.get('check_out'):
+            self.fields['room'].widget.attrs['disabled'] = 'disabled'
+            self.fields['room'].help_text = "Please select check-in and check-out dates first"
+    
+    def _add_styling(self):
+        """Add consistent styling to all form fields"""
         for field_name, field in self.fields.items():
             if 'class' not in field.widget.attrs:
-                field.widget.attrs['class'] = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
+                if isinstance(field.widget, forms.Textarea):
+                    field.widget.attrs['class'] = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
+                elif isinstance(field.widget, forms.Select):
+                    field.widget.attrs['class'] = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
+                elif isinstance(field.widget, (forms.TextInput, forms.EmailInput, forms.NumberInput, forms.DateInput)):
+                    field.widget.attrs['class'] = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
             
             # Add required star for required fields
             if field.required:
@@ -183,13 +203,13 @@ class BookingForm(forms.ModelForm):
     def clean_room(self):
         room = self.cleaned_data.get('room')
         if not room:
-            raise ValidationError(_("Room is required. Please select a room."))
+            raise ValidationError(_("Please select a room."))
         return room
     
     def clean_guest(self):
         guest = self.cleaned_data.get('guest')
         if not guest:
-            raise ValidationError(_("Guest is required. Please select a guest or create one."))
+            raise ValidationError(_("Please select a guest or create one."))
         return guest
     
     def clean_check_in(self):
@@ -259,12 +279,23 @@ class BookingForm(forms.ModelForm):
 
 
 class BookingUpdateForm(forms.ModelForm):
-    """Form for updating existing bookings"""
+    """Form for updating existing bookings with room type filtering"""
+    
+    # Add room_type field for filtering rooms
+    room_type = forms.ModelChoiceField(
+        queryset=RoomType.objects.none(),
+        required=False,
+        label=_("Room Type (Optional)"),
+        widget=forms.Select(attrs={
+            'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
+            'data-filter-field': 'room_type'
+        })
+    )
     
     class Meta:
         model = Booking
         fields = [
-            'guest', 'room', 'check_in', 'check_out',
+            'guest', 'room_type', 'room', 'check_in', 'check_out',
             'adults', 'children', 'infants',
             'status', 'payment_status',
             'source', 'source_reference',
@@ -273,13 +304,14 @@ class BookingUpdateForm(forms.ModelForm):
             'discount', 'discount_type', 'tax_rate',
         ]
         widgets = {
-            'check_in': forms.DateInput(attrs={'type': 'date', 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
-            'check_out': forms.DateInput(attrs={'type': 'date', 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
-            'special_requests': forms.Textarea(attrs={'rows': 2, 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
-            'guest_notes': forms.Textarea(attrs={'rows': 2, 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
-            'internal_notes': forms.Textarea(attrs={'rows': 2, 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
-            'nightly_rate': forms.NumberInput(attrs={'step': '0.01', 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
-            'extra_bed_charge': forms.NumberInput(attrs={'step': '0.01', 'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
+            'check_in': forms.DateInput(attrs={'type': 'date', 'class': 'date-picker'}),
+            'check_out': forms.DateInput(attrs={'type': 'date', 'class': 'date-picker'}),
+            'special_requests': forms.Textarea(attrs={'rows': 2}),
+            'guest_notes': forms.Textarea(attrs={'rows': 2}),
+            'internal_notes': forms.Textarea(attrs={'rows': 2}),
+            'nightly_rate': forms.NumberInput(attrs={'step': '0.01'}),
+            'extra_bed_charge': forms.NumberInput(attrs={'step': '0.01'}),
+            'room': forms.Select(attrs={'data-room-select': 'true'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -293,12 +325,31 @@ class BookingUpdateForm(forms.ModelForm):
         
         if self.hotel:
             self.fields['guest'].queryset = Guest.objects.filter(hotel=self.hotel).order_by('full_name')
-            self.fields['room'].queryset = Room.objects.filter(hotel=self.hotel, is_active=True).select_related('room_type')
+            self.fields['room_type'].queryset = RoomType.objects.filter(hotel=self.hotel, rooms__is_active=True).distinct()
+            
+            # Initially show all active rooms (will be filtered by AJAX)
+            self.fields['room'].queryset = Room.objects.filter(
+                hotel=self.hotel, 
+                is_active=True
+            ).select_related('room_type')
+            
+            # If editing, pre-select the current room's room type
+            if self.instance and self.instance.pk and self.instance.room:
+                self.fields['room_type'].initial = self.instance.room.room_type_id
         
         # Add styling to all fields
+        self._add_styling()
+    
+    def _add_styling(self):
+        """Add consistent styling to all form fields"""
         for field_name, field in self.fields.items():
             if 'class' not in field.widget.attrs:
-                field.widget.attrs['class'] = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
+                if isinstance(field.widget, forms.Textarea):
+                    field.widget.attrs['class'] = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
+                elif isinstance(field.widget, forms.Select):
+                    field.widget.attrs['class'] = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
+                elif isinstance(field.widget, (forms.TextInput, forms.EmailInput, forms.NumberInput, forms.DateInput)):
+                    field.widget.attrs['class'] = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
     
     def clean_discount(self):
         discount = self.cleaned_data.get('discount')
@@ -342,7 +393,7 @@ class BookingUpdateForm(forms.ModelForm):
             cleaned_data['discount_type'] = 'fixed'
         
         return cleaned_data
-    
+
 
 # -----------------------------------------------------------------------------
 # Payment Form
@@ -356,21 +407,17 @@ class BookingPaymentForm(forms.Form):
         decimal_places=2,
         min_value=0.01,
         widget=forms.NumberInput(attrs={
-            'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
             'placeholder': '0.00',
             'step': '0.01'
         })
     )
     method = forms.ChoiceField(
         choices=[],
-        widget=forms.Select(attrs={
-            'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
-        })
+        widget=forms.Select()
     )
     reference = forms.CharField(
         required=False,
         widget=forms.TextInput(attrs={
-            'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
             'placeholder': 'Transaction/Cheque reference (optional)'
         })
     )
@@ -378,7 +425,6 @@ class BookingPaymentForm(forms.Form):
         required=False,
         widget=forms.Textarea(attrs={
             'rows': 2,
-            'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
             'placeholder': 'Payment notes (optional)'
         })
     )
@@ -388,6 +434,15 @@ class BookingPaymentForm(forms.Form):
         from finance.models import Payment
         self.fields['method'].choices = Payment.Method.choices
         self.fields['method'].initial = Payment.Method.CASH
+        
+        # Add styling to all fields
+        for field_name, field in self.fields.items():
+            if isinstance(field.widget, forms.Textarea):
+                field.widget.attrs['class'] = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
+            elif isinstance(field.widget, forms.Select):
+                field.widget.attrs['class'] = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
+            elif isinstance(field.widget, (forms.TextInput, forms.NumberInput)):
+                field.widget.attrs['class'] = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
     
     def clean_amount(self):
         amount = self.cleaned_data.get('amount')
@@ -407,23 +462,10 @@ class AdditionalChargeForm(forms.ModelForm):
         model = AdditionalCharge
         fields = ['category', 'description', 'quantity', 'unit_price']
         widgets = {
-            'category': forms.Select(attrs={
-                'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
-            }),
-            'description': forms.TextInput(attrs={
-                'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
-                'placeholder': 'e.g., Mini Bar items, Laundry service...'
-            }),
-            'quantity': forms.NumberInput(attrs={
-                'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
-                'min': 1,
-                'value': 1
-            }),
-            'unit_price': forms.NumberInput(attrs={
-                'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300',
-                'placeholder': '0.00',
-                'step': '0.01'
-            }),
+            'category': forms.Select(),
+            'description': forms.TextInput(attrs={'placeholder': 'e.g., Mini Bar items, Laundry service...'}),
+            'quantity': forms.NumberInput(attrs={'min': 1, 'value': 1}),
+            'unit_price': forms.NumberInput(attrs={'placeholder': '0.00', 'step': '0.01'}),
         }
     
     def __init__(self, *args, **kwargs):
@@ -453,37 +495,30 @@ class BookingReportForm(forms.Form):
     
     date_from = forms.DateField(
         required=False,
-        widget=forms.DateInput(attrs={
-            'type': 'date',
-            'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
-        })
+        widget=forms.DateInput(attrs={'type': 'date'})
     )
     date_to = forms.DateField(
         required=False,
-        widget=forms.DateInput(attrs={
-            'type': 'date',
-            'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
-        })
+        widget=forms.DateInput(attrs={'type': 'date'})
     )
     status = forms.ChoiceField(
         required=False,
         choices=[('', 'All')] + list(Booking.Status.choices),
-        widget=forms.Select(attrs={
-            'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
-        })
+        widget=forms.Select()
     )
     payment_status = forms.ChoiceField(
         required=False,
         choices=[('', 'All')] + list(Booking.PaymentStatus.choices),
-        widget=forms.Select(attrs={
-            'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
-        })
+        widget=forms.Select()
     )
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field_name, field in self.fields.items():
-            field.widget.attrs['class'] = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
+            if isinstance(field.widget, forms.Select):
+                field.widget.attrs['class'] = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
+            else:
+                field.widget.attrs['class'] = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300'
     
     def clean(self):
         cleaned_data = super().clean()

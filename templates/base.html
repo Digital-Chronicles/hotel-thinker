@@ -20,6 +20,7 @@
           animation: {
             'fade-in-up': 'fadeInUp 0.3s ease-out',
             'slide-in-left': 'slideInLeft 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1)',
+            'slide-out-left': 'slideOutLeft 0.25s ease-in',
             'pulse-ring': 'pulseRing 1.8s ease-in-out infinite',
             'shimmer': 'shimmer 1.3s infinite',
             'accordion-down': 'accordionDown 0.25s ease-out',
@@ -33,6 +34,10 @@
             slideInLeft: {
               '0%': { transform: 'translateX(-100%)', opacity: '0' },
               '100%': { transform: 'translateX(0)', opacity: '1' },
+            },
+            slideOutLeft: {
+              '0%': { transform: 'translateX(0)', opacity: '1' },
+              '100%': { transform: 'translateX(-100%)', opacity: '0' },
             },
             pulseRing: {
               '0%, 100%': { opacity: '1', transform: 'scale(1)' },
@@ -54,6 +59,10 @@
           boxShadow: {
             'card': '0 12px 30px -12px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0,0,0,0.02)',
             'card-hover': '0 20px 35px -12px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0,0,0,0.05)',
+          },
+          transitionProperty: {
+            'width': 'width',
+            'spacing': 'margin, padding',
           },
         }
       }
@@ -86,6 +95,11 @@
       box-shadow: 8px 0 24px -12px rgba(0, 0, 0, 0.08);
     }
 
+    /* Improved sidebar transition */
+    .sidebar-transition {
+      transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    }
+
     /* Active navigation styles */
     .active-nav {
       background: linear-gradient(105deg, #1e40af 0%, #2563eb 100%) !important;
@@ -101,28 +115,36 @@
     }
     .active-nav-sub i { color: #2563eb !important; }
 
-    /* Dropdown / Accordion styles */
-    .dropdown-trigger {
+    /* Dropdown / Accordion styles - improved with smooth height transitions */
+    .dropdown-trigger, .nested-trigger {
       cursor: pointer;
       user-select: none;
     }
     .dropdown-content {
       max-height: 0;
       overflow: hidden;
-      transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
       will-change: max-height;
     }
     .dropdown-content.open {
-      max-height: 600px;
+      max-height: 800px;
     }
-    .dropdown-chevron {
-      transition: transform 0.2s ease;
+    .dropdown-chevron, .nested-chevron {
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .dropdown-chevron.rotated {
+    .dropdown-chevron.rotated, .nested-chevron.rotated {
       transform: rotate(90deg);
     }
 
     /* Nested submenu styling */
+    .nested-dropdown-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .nested-dropdown-content.open {
+      max-height: 500px;
+    }
     .nested-submenu {
       margin-left: 2rem;
       padding-left: 0.75rem;
@@ -165,6 +187,55 @@
     .nav-item:hover { background: #f0f9ff; color: #1d4ed8; }
     .nav-item:hover i { color: #2563eb; }
 
+    /* Collapsed sidebar styles */
+    .sidebar-collapsed .nav-item span,
+    .sidebar-collapsed .dropdown-trigger > div > span,
+    .sidebar-collapsed .dropdown-trigger > span:not(.dropdown-chevron) {
+      display: none !important;
+    }
+    .sidebar-collapsed .dropdown-trigger {
+      justify-content: center;
+      padding: 0.7rem 0.5rem;
+    }
+    .sidebar-collapsed .dropdown-trigger .flex {
+      justify-content: center;
+    }
+    .sidebar-collapsed .dropdown-trigger .dropdown-chevron {
+      display: none;
+    }
+    .sidebar-collapsed .dropdown-content {
+      display: none;
+    }
+    .sidebar-collapsed .nav-item {
+      justify-content: center;
+    }
+    .sidebar-collapsed .nav-item i {
+      margin: 0;
+    }
+    .sidebar-collapsed .dropdown-container {
+      position: relative;
+    }
+    /* Tooltip for collapsed mode */
+    .sidebar-collapsed .nav-item[data-tooltip]:hover::after,
+    .sidebar-collapsed .dropdown-trigger[data-tooltip]:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      left: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #1e293b;
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 0.5rem;
+      font-size: 0.75rem;
+      white-space: nowrap;
+      z-index: 100;
+      margin-left: 0.75rem;
+      pointer-events: none;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
     .stat-card {
       transition: all 0.25s;
       border: 1px solid rgba(255,255,255,0.4);
@@ -192,6 +263,11 @@
     }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
+
+    /* Improved overlay animation */
+    .overlay-fade {
+      transition: opacity 0.25s ease;
+    }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
@@ -211,8 +287,8 @@
 
   <div class="flex h-screen pb-[70px] lg:pb-0">
 
-    <!-- SIDEBAR with DROPDOWNS (Nested Accordions) -->
-    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-[280px] max-w-[85vw] h-screen glass-sidebar border-r border-slate-200/70 shadow-2xl transform -translate-x-full transition-all duration-300 ease-out lg:relative lg:translate-x-0 lg:block lg:w-72 lg:shadow-xl">
+    <!-- SIDEBAR with improved toggle functionality -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-[280px] max-w-[85vw] h-screen glass-sidebar border-r border-slate-200/70 shadow-2xl lg:relative lg:w-72 sidebar-transition overflow-hidden">
       <div class="h-full overflow-y-auto flex flex-col">
         <!-- Mobile header -->
         <div class="lg:hidden flex items-center justify-between p-5 border-b border-slate-200 bg-white sticky top-0 z-10">
@@ -224,97 +300,101 @@
         </div>
 
         <div class="flex-1 py-6 px-4 space-y-5">
-          <!-- Brand desktop -->
-          <div class="hidden lg:flex flex-col items-center pb-5 border-b border-slate-100">
+          <!-- Brand desktop with logo -->
+          <div class="hidden lg:flex flex-col items-center pb-5 border-b border-slate-100 transition-opacity duration-200" id="brandSection">
             <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-700 flex items-center justify-center mx-auto shadow-lg shadow-indigo-200/40"><i class="fas fa-hotel text-white text-2xl"></i></div>
-            <h2 class="mt-3 text-xl font-extrabold bg-gradient-to-r from-slate-800 to-slate-700 bg-clip-text text-transparent">Hotel Thinker</h2>
-            <p class="text-[11px] font-semibold text-slate-400 mt-1">Enterprise Suite v3.0</p>
+            <h2 id="brandTitle" class="mt-3 text-xl font-extrabold bg-gradient-to-r from-slate-800 to-slate-700 bg-clip-text text-transparent whitespace-nowrap">Hotel Thinker</h2>
+            <p id="brandSubtitle" class="text-[11px] font-semibold text-slate-400 mt-1 whitespace-nowrap">Enterprise Suite v3.0</p>
+          </div>
+          <!-- Mini brand for collapsed mode -->
+          <div class="hidden lg:flex flex-col items-center pb-3 transition-opacity duration-200" id="miniBrandSection" style="display: none;">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-blue-700 flex items-center justify-center mx-auto shadow-md"><i class="fas fa-hotel text-white text-sm"></i></div>
           </div>
 
-          <nav class="space-y-1">
+          <nav class="space-y-1" id="mainNav">
             <!-- Dashboard (always visible) -->
-            <a href="{% url 'accounts:dashboard' %}" class="nav-item"><i class="fas fa-chart-pie w-5"></i><span class="text-sm font-semibold">Dashboard</span></a>
+            <a href="{% url 'accounts:dashboard' %}" class="nav-item" data-tooltip="Dashboard"><i class="fas fa-chart-pie w-5"></i><span class="text-sm font-semibold">Dashboard</span></a>
 
             <!-- ========== DROPDOWN: HOTEL OPERATIONS ========== -->
             <div class="dropdown-container">
-              <div class="dropdown-trigger nav-item justify-between cursor-pointer">
+              <div class="dropdown-trigger nav-item justify-between cursor-pointer" data-tooltip="Hotel Operations">
                 <div class="flex items-center gap-3"><i class="fas fa-hotel w-5"></i><span class="text-sm font-medium">Hotel Operations</span></div>
                 <i class="fas fa-chevron-right dropdown-chevron text-xs text-slate-400 transition-transform"></i>
               </div>
               <div class="dropdown-content ml-2 pl-3 border-l border-slate-200/60 space-y-1 mt-1">
-                <a href="{% url 'hotels:detail' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-building w-4 text-slate-400"></i>Hotel Profile</a>
-                <a href="{% url 'hotels:settings' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-sliders-h w-4 text-slate-400"></i>Hotel Settings</a>
+                <a href="{% url 'hotels:detail' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-building w-4 text-slate-400"></i><span>Hotel Profile</span></a>
+                <a href="{% url 'hotels:settings' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-sliders-h w-4 text-slate-400"></i><span>Hotel Settings</span></a>
               </div>
             </div>
 
             <!-- ========== DROPDOWN: TEAM MANAGEMENT ========== -->
             <div class="dropdown-container">
-              <div class="dropdown-trigger nav-item justify-between cursor-pointer">
+              <div class="dropdown-trigger nav-item justify-between cursor-pointer" data-tooltip="Team Management">
                 <div class="flex items-center gap-3"><i class="fas fa-users w-5"></i><span class="text-sm font-medium">Team Management</span></div>
                 <i class="fas fa-chevron-right dropdown-chevron text-xs text-slate-400"></i>
               </div>
               <div class="dropdown-content ml-2 pl-3 border-l border-slate-200/60 space-y-1 mt-1">
-                <a href="{% url 'accounts:hotel_members_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-user-tie w-4"></i>Staff & Roles</a>
-                <a href="{% url 'accounts:my_profile' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-user-circle w-4"></i>My Profile</a>
+                <a href="{% url 'accounts:hotel_members_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-user-tie w-4"></i><span>Staff & Roles</span></a>
+                <a href="{% url 'accounts:my_profile' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-user-circle w-4"></i><span>My Profile</span></a>
               </div>
             </div>
 
             <!-- ========== DROPDOWN: ACCOMMODATION ========== -->
             <div class="dropdown-container">
-              <div class="dropdown-trigger nav-item justify-between cursor-pointer">
+              <div class="dropdown-trigger nav-item justify-between cursor-pointer" data-tooltip="Accommodation">
                 <div class="flex items-center gap-3"><i class="fas fa-bed w-5"></i><span class="text-sm font-medium">Accommodation</span></div>
                 <i class="fas fa-chevron-right dropdown-chevron text-xs text-slate-400"></i>
               </div>
               <div class="dropdown-content ml-2 pl-3 border-l border-slate-200/60 space-y-1 mt-1">
-                <a href="{% url 'rooms:room_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-door-open w-4"></i>Rooms Inventory</a>
-                <a href="{% url 'rooms:manage_dashboard' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-chalkboard-user w-4"></i>Rooms Manager</a>
-                <a href="{% url 'rooms:roomtype_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-tag w-4"></i>Room Types</a>
-                <a href="{% url 'rooms:asset_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-building-columns w-4"></i>Room Assets</a>
-                <a href="{% url 'rooms:liability_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-file-invoice-dollar w-4"></i>Room Liabilities</a>
-                <a href="{% url 'rooms:financial_dashboard' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-chart-line w-4"></i>Room Financial Dashboard</a>
+                <a href="{% url 'rooms:room_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-door-open w-4"></i><span>Rooms Inventory</span></a>
+                <a href="{% url 'rooms:manage_dashboard' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-chalkboard-user w-4"></i><span>Rooms Manager</span></a>
+                <a href="{% url 'rooms:roomtype_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-tag w-4"></i><span>Room Types</span></a>
+                <a href="{% url 'rooms:asset_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-building-columns w-4"></i><span>Room Assets</span></a>
+                <a href="{% url 'rooms:liability_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-file-invoice-dollar w-4"></i><span>Room Liabilities</span></a>
+                <a href="{% url 'rooms:financial_dashboard' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-chart-line w-4"></i><span>Room Financial Dashboard</span></a>
               </div>
             </div>
 
-            <!-- Reservations (simple link) -->
-            <a href="{% url 'bookings:booking_list' %}" class="nav-item"><i class="fas fa-calendar-alt w-5"></i><span class="text-sm font-medium">Reservations</span></a>
+            <!-- Reservations -->
+            <a href="{% url 'bookings:booking_list' %}" class="nav-item" data-tooltip="Reservations"><i class="fas fa-calendar-alt w-5"></i><span class="text-sm font-medium">Reservations</span></a>
 
             <!-- ========== DROPDOWN: FOOD & BEVERAGE ========== -->
             <div class="dropdown-container">
-              <div class="dropdown-trigger nav-item justify-between cursor-pointer">
+              <div class="dropdown-trigger nav-item justify-between cursor-pointer" data-tooltip="Food & Beverage">
                 <div class="flex items-center gap-3"><i class="fas fa-utensils w-5"></i><span class="text-sm font-medium">Food & Beverage</span></div>
                 <i class="fas fa-chevron-right dropdown-chevron text-xs text-slate-400"></i>
               </div>
               <div class="dropdown-content ml-2 pl-3 border-l border-slate-200/60 space-y-1 mt-1">
-                <a href="{% url 'restaurant:order_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-utensils w-4"></i>Restaurant Orders</a>
-                <a href="{% url 'restaurant:manage_dashboard' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-chart-line w-4"></i>Restaurant Analytics</a>
-                <a href="{% url 'bar:order_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-wine-glass w-4"></i>Bar Orders</a>
-                <a href="{% url 'bar:item_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-wine-bottle w-4"></i>Bar Inventory</a>
+                <a href="{% url 'restaurant:order_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-utensils w-4"></i><span>Restaurant Orders</span></a>
+                <a href="{% url 'restaurant:manage_dashboard' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-chart-line w-4"></i><span>Restaurant Analytics</span></a>
+                <a href="{% url 'bar:order_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-wine-glass w-4"></i><span>Bar Orders</span></a>
+                <a href="{% url 'bar:item_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-wine-bottle w-4"></i><span>Bar Inventory</span></a>
               </div>
             </div>
 
             <!-- ========== DROPDOWN: INVENTORY & SUPPLY ========== -->
             <div class="dropdown-container">
-              <div class="dropdown-trigger nav-item justify-between cursor-pointer">
+              <div class="dropdown-trigger nav-item justify-between cursor-pointer" data-tooltip="Inventory & Supply">
                 <div class="flex items-center gap-3"><i class="fas fa-boxes w-5"></i><span class="text-sm font-medium">Inventory & Supply</span></div>
                 <i class="fas fa-chevron-right dropdown-chevron text-xs text-slate-400"></i>
               </div>
               <div class="dropdown-content ml-2 pl-3 border-l border-slate-200/60 space-y-1 mt-1">
-                <a href="{% url 'store:category_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-folder w-4"></i>Categories</a>
-                <a href="{% url 'store:item_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-boxes w-4"></i>Store Items</a>
-                <a href="{% url 'store:supplier_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-truck w-4"></i>Suppliers</a>
-                <a href="{% url 'store:purchase_order_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-file-invoice w-4"></i>Purchase Orders</a>
-                <a href="{% url 'store:goods_receipt_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-clipboard-list w-4"></i>Goods Receipts</a>
+                <a href="{% url 'store:category_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-folder w-4"></i><span>Categories</span></a>
+                <a href="{% url 'store:item_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-boxes w-4"></i><span>Store Items</span></a>
+                <a href="{% url 'store:supplier_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-truck w-4"></i><span>Suppliers</span></a>
+                <a href="{% url 'store:purchase_order_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-file-invoice w-4"></i><span>Purchase Orders</span></a>
+                <a href="{% url 'store:goods_receipt_list' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-clipboard-list w-4"></i><span>Goods Receipts</span></a>
               </div>
             </div>
 
-            <!-- ========== DROPDOWN: FINANCE (Nested submenu example) ========== -->
+            <!-- ========== DROPDOWN: FINANCE with nested ========== -->
             <div class="dropdown-container">
-              <div class="dropdown-trigger nav-item justify-between cursor-pointer">
+              <div class="dropdown-trigger nav-item justify-between cursor-pointer" data-tooltip="Finance">
                 <div class="flex items-center gap-3"><i class="fas fa-chart-line w-5"></i><span class="text-sm font-medium">Finance</span></div>
                 <i class="fas fa-chevron-right dropdown-chevron text-xs text-slate-400"></i>
               </div>
               <div class="dropdown-content ml-2 pl-3 border-l border-slate-200/60 space-y-1 mt-1">
-                <a href="{% url 'finance:dashboard' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-chart-bar w-4"></i>Finance Dashboard</a>
+                <a href="{% url 'finance:dashboard' %}" class="flex items-center gap-3 py-2 px-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-sm"><i class="fas fa-chart-bar w-4"></i><span>Finance Dashboard</span></a>
                 
                 <!-- Nested dropdown inside Finance: Accounting -->
                 <div class="nested-dropdown-container ml-0">
@@ -322,14 +402,14 @@
                     <div class="flex items-center gap-3"><i class="fas fa-book w-4 text-slate-400"></i><span>Accounting</span></div>
                     <i class="fas fa-chevron-right nested-chevron text-[10px] text-slate-400 transition-transform"></i>
                   </div>
-                  <div class="nested-dropdown-content ml-5 pl-2 border-l border-slate-200 space-y-1 overflow-hidden max-h-0 transition-all duration-200">
-                    <a href="{% url 'finance:invoice_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-file-invoice-dollar w-3"></i>Invoices</a>
-                    <a href="{% url 'finance:expense_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-money-bill-wave w-3"></i>Expenses</a>
-                    <a href="{% url 'finance:account_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-sitemap w-3"></i>Chart of Accounts</a>
-                    <a href="{% url 'finance:vendor_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-handshake w-3"></i>Vendors</a>
-                    <a href="{% url 'finance:asset_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-building-columns w-3"></i>Assets</a>
-                    <a href="{% url 'finance:liability_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-file-circle-exclamation w-3"></i>Liabilities</a>
-                    <a href="{% url 'finance:journal_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-book w-3"></i>Journals</a>
+                  <div class="nested-dropdown-content ml-5 pl-2 border-l border-slate-200 space-y-1">
+                    <a href="{% url 'finance:invoice_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-file-invoice-dollar w-3"></i><span>Invoices</span></a>
+                    <a href="{% url 'finance:expense_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-money-bill-wave w-3"></i><span>Expenses</span></a>
+                    <a href="{% url 'finance:account_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-sitemap w-3"></i><span>Chart of Accounts</span></a>
+                    <a href="{% url 'finance:vendor_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-handshake w-3"></i><span>Vendors</span></a>
+                    <a href="{% url 'finance:asset_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-building-columns w-3"></i><span>Assets</span></a>
+                    <a href="{% url 'finance:liability_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-file-circle-exclamation w-3"></i><span>Liabilities</span></a>
+                    <a href="{% url 'finance:journal_list' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-book w-3"></i><span>Journals</span></a>
                   </div>
                 </div>
 
@@ -339,32 +419,32 @@
                     <div class="flex items-center gap-3"><i class="fas fa-chart-simple w-4 text-slate-400"></i><span>Reports</span></div>
                     <i class="fas fa-chevron-right nested-chevron text-[10px] text-slate-400 transition-transform"></i>
                   </div>
-                  <div class="nested-dropdown-content ml-5 pl-2 border-l border-slate-200 space-y-1 overflow-hidden max-h-0 transition-all duration-200">
-                    <a href="{% url 'finance:profit_loss' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-chart-line w-3"></i>Profit & Loss</a>
-                    <a href="{% url 'finance:cash_flow' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-money-check-dollar w-3"></i>Cash Flow</a>
-                    <a href="{% url 'finance:balance_sheet' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-scale-balanced w-3"></i>Balance Sheet</a>
+                  <div class="nested-dropdown-content ml-5 pl-2 border-l border-slate-200 space-y-1">
+                    <a href="{% url 'finance:profit_loss' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-chart-line w-3"></i><span>Profit & Loss</span></a>
+                    <a href="{% url 'finance:cash_flow' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-money-check-dollar w-3"></i><span>Cash Flow</span></a>
+                    <a href="{% url 'finance:balance_sheet' %}" class="flex items-center gap-3 py-1.5 px-2 text-slate-600 hover:text-indigo-700 text-xs"><i class="fas fa-scale-balanced w-3"></i><span>Balance Sheet</span></a>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Data Operations (simple) -->
-            <a href="{% url 'bulk:dashboard' %}" class="nav-item"><i class="fas fa-database w-5"></i><span class="text-sm font-medium">Data Operations</span></a>
+            <!-- Data Operations -->
+            <a href="{% url 'bulk:dashboard' %}" class="nav-item" data-tooltip="Data Operations"><i class="fas fa-database w-5"></i><span class="text-sm font-medium">Data Operations</span></a>
           </nav>
         </div>
 
         <!-- User profile -->
-        <div class="p-4 border-t border-slate-200 bg-gradient-to-br from-slate-50/90 to-white">
+        <div class="p-4 border-t border-slate-200 bg-gradient-to-br from-slate-50/90 to-white transition-all duration-200" id="userProfileSection">
           <div class="flex items-center gap-3">
-            <div class="h-11 w-11 rounded-full bg-gradient-to-br from-indigo-600 to-blue-700 flex items-center justify-center text-white font-bold text-base shadow-md ring-2 ring-white">
+            <div class="h-11 w-11 rounded-full bg-gradient-to-br from-indigo-600 to-blue-700 flex items-center justify-center text-white font-bold text-base shadow-md ring-2 ring-white flex-shrink-0">
               {{ request.user.get_full_name|default:request.user.username|first|upper }}
             </div>
-            <div class="flex-1 min-w-0">
+            <div class="flex-1 min-w-0 transition-opacity duration-200" id="userInfoText">
               <p class="text-sm font-bold text-slate-800 truncate">{{ request.user.get_full_name|default:request.user.username }}</p>
               <p class="text-[10px] text-slate-500 truncate"><i class="fas fa-envelope text-[8px] mr-1"></i> {{ request.user.email|default:"admin@hotelthinker.com" }}</p>
             </div>
           </div>
-          <form method="post" action="{% url 'logout' %}" class="mt-3">
+          <form method="post" action="{% url 'logout' %}" class="mt-3 transition-all duration-200" id="logoutButton">
             {% csrf_token %}
             <button type="submit" class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/80 border border-slate-200 text-slate-700 hover:bg-rose-50 hover:text-rose-600 transition-all text-sm font-semibold"><i class="fas fa-sign-out-alt"></i><span>Secure Logout</span></button>
           </form>
@@ -372,7 +452,7 @@
       </div>
     </aside>
 
-    <div id="sidebarOverlay" class="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 hidden transition-all lg:hidden"></div>
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 hidden transition-all lg:hidden overlay-fade"></div>
 
     <!-- MAIN CONTENT -->
     <div class="flex min-w-0 flex-1 flex-col h-full overflow-hidden">
@@ -380,8 +460,10 @@
         <div class="px-4 py-3 md:px-6 lg:px-7">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <button id="sidebarToggle" class="lg:hidden p-2.5 rounded-xl text-slate-600 hover:bg-white/60"><i class="fas fa-bars text-xl"></i></button>
-              <button id="desktopSidebarToggle" class="hidden lg:flex items-center justify-center w-9 h-9 rounded-xl text-slate-500 hover:bg-white/60"><i class="fas fa-chevron-left text-sm" id="toggleIcon"></i></button>
+              <button id="sidebarToggle" class="lg:hidden p-2.5 rounded-xl text-slate-600 hover:bg-white/60 transition-all"><i class="fas fa-bars text-xl"></i></button>
+              <button id="desktopSidebarToggle" class="hidden lg:flex items-center justify-center w-9 h-9 rounded-xl text-slate-500 hover:bg-white/60 transition-all" title="Collapse sidebar">
+                <i class="fas fa-chevron-left text-sm" id="toggleIcon"></i>
+              </button>
               <div class="hidden sm:block">
                 <h1 class="text-2xl font-extrabold bg-gradient-to-r from-slate-800 to-slate-700 bg-clip-text text-transparent">Hotel Thinker</h1>
                 <p class="text-[11px] font-semibold text-slate-500">Intelligent Hotel Management</p>
@@ -389,7 +471,7 @@
               <div class="sm:hidden"><div class="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-600 to-blue-700 flex items-center justify-center"><i class="fas fa-hotel text-white text-sm"></i></div></div>
             </div>
             <div class="flex items-center gap-3 md:gap-5">
-              <button class="relative p-2.5 rounded-xl text-slate-500 hover:bg-white/60"><i class="far fa-bell text-xl"></i><span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-white status-badge"></span></button>
+              <button class="relative p-2.5 rounded-xl text-slate-500 hover:bg-white/60 transition-all"><i class="far fa-bell text-xl"></i><span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-white status-badge"></span></button>
               {% if request.user.is_authenticated %}
               <div class="relative" id="userMenu">
                 <button id="userMenuButton" class="flex items-center gap-2 md:gap-3 rounded-full border border-slate-200/80 bg-white/70 backdrop-blur-sm px-2.5 py-1.5 md:px-4 md:py-2 hover:bg-white transition-all">
@@ -397,11 +479,11 @@
                   <div class="h-8 w-8 md:h-9 md:w-9 rounded-full bg-gradient-to-br from-indigo-600 to-blue-700 flex items-center justify-center text-white font-bold">{{ request.user.get_full_name|default:request.user.username|first|upper }}</div>
                   <i class="fas fa-chevron-down text-[11px] text-slate-400 hidden sm:inline"></i>
                 </button>
-                <div id="userDropdown" class="hidden absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border py-2 z-50">
+                <div id="userDropdown" class="hidden absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border py-2 z-50 transition-all duration-200">
                   <div class="px-4 py-3 border-b"><p class="font-bold">{{ request.user.get_full_name|default:request.user.username }}</p><p class="text-xs text-slate-500">{{ request.user.email|default:"admin@hotelthinker.com" }}</p></div>
-                  <a href="{% url 'accounts:my_profile' %}" class="flex items-center gap-3 px-4 py-2.5 hover:bg-indigo-50"><i class="fas fa-user-circle text-indigo-500"></i>Profile</a>
-                  <a href="{% url 'accounts:hotel_members_list' %}" class="flex items-center gap-3 px-4 py-2.5 hover:bg-indigo-50"><i class="fas fa-users text-indigo-500"></i>Team</a>
-                  <div class="border-t pt-2"><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="w-full text-left flex items-center gap-3 px-4 py-2.5 text-rose-600 hover:bg-rose-50"><i class="fas fa-sign-out-alt text-rose-400"></i>Logout</button></form></div>
+                  <a href="{% url 'accounts:my_profile' %}" class="flex items-center gap-3 px-4 py-2.5 hover:bg-indigo-50 transition-colors"><i class="fas fa-user-circle text-indigo-500"></i>Profile</a>
+                  <a href="{% url 'accounts:hotel_members_list' %}" class="flex items-center gap-3 px-4 py-2.5 hover:bg-indigo-50 transition-colors"><i class="fas fa-users text-indigo-500"></i>Team</a>
+                  <div class="border-t pt-2"><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="w-full text-left flex items-center gap-3 px-4 py-2.5 text-rose-600 hover:bg-rose-50 transition-colors"><i class="fas fa-sign-out-alt text-rose-400"></i>Logout</button></form></div>
                 </div>
               </div>
               {% else %}<a href="{% url 'login' %}" class="bg-gradient-to-r from-indigo-600 to-blue-700 px-5 py-2.5 rounded-xl text-white font-bold">Sign In</a>{% endif %}
@@ -411,20 +493,20 @@
           <div class="mt-3 pt-2 border-t border-slate-200/40">
             <div class="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
               <span class="text-[10px] font-bold text-slate-400 mr-2 hidden md:flex"><i class="fas fa-bolt text-indigo-500 mr-1"></i>Jump</span>
-              <a href="{% url 'rooms:room_list' %}" class="rounded-full bg-white/70 border px-3.5 py-1.5 text-sm hover:border-indigo-300 hover:bg-indigo-50"><i class="fas fa-door-open text-indigo-500 text-xs mr-1"></i>Rooms</a>
-              <a href="{% url 'rooms:asset_list' %}" class="rounded-full bg-white/70 border px-3.5 py-1.5 text-sm hover:border-indigo-300 hover:bg-indigo-50"><i class="fas fa-building-columns text-indigo-500 text-xs mr-1"></i>Assets</a>
-              <a href="{% url 'rooms:liability_list' %}" class="rounded-full bg-white/70 border px-3.5 py-1.5 text-sm hover:border-indigo-300 hover:bg-indigo-50"><i class="fas fa-file-invoice-dollar text-indigo-500 text-xs mr-1"></i>Liabilities</a>
-              <a href="{% url 'rooms:financial_dashboard' %}" class="rounded-full bg-white/70 border px-3.5 py-1.5 text-sm hover:border-indigo-300 hover:bg-indigo-50"><i class="fas fa-chart-line text-indigo-500 text-xs mr-1"></i>Financial</a>
-              <a href="{% url 'bookings:booking_list' %}" class="rounded-full bg-white/70 border px-3.5 py-1.5 text-sm hover:border-indigo-300 hover:bg-indigo-50"><i class="fas fa-calendar-alt text-indigo-500 text-xs mr-1"></i>Bookings</a>
-              <a href="{% url 'restaurant:order_list' %}" class="rounded-full bg-white/70 border px-3.5 py-1.5 text-sm hover:border-indigo-300 hover:bg-indigo-50"><i class="fas fa-utensils text-indigo-500 text-xs mr-1"></i>Dining</a>
-              <a href="{% url 'finance:dashboard' %}" class="rounded-full bg-white/70 border px-3.5 py-1.5 text-sm hover:border-indigo-300 hover:bg-indigo-50"><i class="fas fa-chart-line text-indigo-500 text-xs mr-1"></i>Finance</a>
+              <a href="{% url 'rooms:room_list' %}" class="rounded-full bg-white/70 border px-3.5 py-1.5 text-sm hover:border-indigo-300 hover:bg-indigo-50 transition-all whitespace-nowrap"><i class="fas fa-door-open text-indigo-500 text-xs mr-1"></i>Rooms</a>
+              <a href="{% url 'rooms:asset_list' %}" class="rounded-full bg-white/70 border px-3.5 py-1.5 text-sm hover:border-indigo-300 hover:bg-indigo-50 transition-all whitespace-nowrap"><i class="fas fa-building-columns text-indigo-500 text-xs mr-1"></i>Assets</a>
+              <a href="{% url 'rooms:liability_list' %}" class="rounded-full bg-white/70 border px-3.5 py-1.5 text-sm hover:border-indigo-300 hover:bg-indigo-50 transition-all whitespace-nowrap"><i class="fas fa-file-invoice-dollar text-indigo-500 text-xs mr-1"></i>Liabilities</a>
+              <a href="{% url 'rooms:financial_dashboard' %}" class="rounded-full bg-white/70 border px-3.5 py-1.5 text-sm hover:border-indigo-300 hover:bg-indigo-50 transition-all whitespace-nowrap"><i class="fas fa-chart-line text-indigo-500 text-xs mr-1"></i>Financial</a>
+              <a href="{% url 'bookings:booking_list' %}" class="rounded-full bg-white/70 border px-3.5 py-1.5 text-sm hover:border-indigo-300 hover:bg-indigo-50 transition-all whitespace-nowrap"><i class="fas fa-calendar-alt text-indigo-500 text-xs mr-1"></i>Bookings</a>
+              <a href="{% url 'restaurant:order_list' %}" class="rounded-full bg-white/70 border px-3.5 py-1.5 text-sm hover:border-indigo-300 hover:bg-indigo-50 transition-all whitespace-nowrap"><i class="fas fa-utensils text-indigo-500 text-xs mr-1"></i>Dining</a>
+              <a href="{% url 'finance:dashboard' %}" class="rounded-full bg-white/70 border px-3.5 py-1.5 text-sm hover:border-indigo-300 hover:bg-indigo-50 transition-all whitespace-nowrap"><i class="fas fa-chart-line text-indigo-500 text-xs mr-1"></i>Finance</a>
             </div>
           </div>
         </div>
       </header>
 
       {% block breadcrumb_wrapper %}
-      <nav class="px-4 md:px-6 py-3 text-sm"><ol class="flex gap-2"><li><a href="{% url 'accounts:dashboard' %}" class="text-slate-500 hover:text-indigo-600"><i class="fas fa-home"></i></a></li>{% block breadcrumb %}{% endblock %}</ol></nav>
+      <nav class="px-4 md:px-6 py-3 text-sm"><ol class="flex gap-2 flex-wrap"><li><a href="{% url 'accounts:dashboard' %}" class="text-slate-500 hover:text-indigo-600 transition-colors"><i class="fas fa-home"></i></a></li>{% block breadcrumb %}{% endblock %}</ol></nav>
       {% endblock %}
 
       <main class="flex-1 min-h-0 overflow-y-auto">
@@ -437,79 +519,200 @@
     </div>
   </div>
 
-  <!-- Dropdown & Accordion JavaScript -->
+  <!-- Enhanced Dropdown & Toggle JavaScript -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Main dropdown triggers (accordion style)
+      // Helper: Get all dropdown elements
       const dropdownTriggers = document.querySelectorAll('.dropdown-trigger');
+      
+      // Initialize all dropdowns from localStorage persistence
+      const saveDropdownState = (key, isOpen) => localStorage.setItem(`dropdown_${key}`, isOpen);
+      const getDropdownState = (key) => localStorage.getItem(`dropdown_${key}`) === 'true';
+      
       dropdownTriggers.forEach(trigger => {
-        trigger.addEventListener('click', function(e) {
-          e.stopPropagation();
-          const content = this.nextElementSibling;
-          const chevron = this.querySelector('.dropdown-chevron');
-          if (content && content.classList.contains('dropdown-content')) {
+        const content = trigger.nextElementSibling;
+        const chevron = trigger.querySelector('.dropdown-chevron');
+        const menuText = trigger.querySelector('.dropdown-trigger > div > span')?.innerText || '';
+        const storageKey = menuText.replace(/\s/g, '_');
+        
+        if (content && content.classList.contains('dropdown-content')) {
+          // Restore state
+          if (getDropdownState(storageKey)) {
+            content.classList.add('open');
+            if (chevron) chevron.classList.add('rotated');
+          }
+          
+          trigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = content.classList.contains('open');
             content.classList.toggle('open');
             if (chevron) chevron.classList.toggle('rotated');
-          }
-        });
+            saveDropdownState(storageKey, !isOpen);
+          });
+        }
       });
 
       // Nested dropdowns inside Finance
       const nestedTriggers = document.querySelectorAll('.nested-trigger');
       nestedTriggers.forEach(trigger => {
-        trigger.addEventListener('click', function(e) {
-          e.stopPropagation();
-          const content = this.nextElementSibling;
-          const chevron = this.querySelector('.nested-chevron');
-          if (content && content.classList.contains('nested-dropdown-content')) {
-            if (content.style.maxHeight) {
+        const content = trigger.nextElementSibling;
+        const chevron = trigger.querySelector('.nested-chevron');
+        const parentText = trigger.querySelector('span')?.innerText || '';
+        const storageKey = `nested_${parentText.replace(/\s/g, '_')}`;
+        
+        if (content && content.classList.contains('nested-dropdown-content')) {
+          if (getDropdownState(storageKey)) {
+            content.style.maxHeight = content.scrollHeight + "px";
+            if (chevron) chevron.classList.add('rotated');
+          }
+          
+          trigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = content.style.maxHeight;
+            if (isOpen) {
               content.style.maxHeight = null;
               if (chevron) chevron.classList.remove('rotated');
+              saveDropdownState(storageKey, false);
             } else {
               content.style.maxHeight = content.scrollHeight + "px";
               if (chevron) chevron.classList.add('rotated');
+              saveDropdownState(storageKey, true);
             }
-          }
-        });
+          });
+        }
       });
 
-      // Sidebar toggle logic
-      const sidebar = document.getElementById('sidebar'), overlay = document.getElementById('sidebarOverlay');
-      const openSidebar = () => { if(window.innerWidth<1024){ sidebar.classList.remove('-translate-x-full'); sidebar.classList.add('translate-x-0'); overlay.classList.remove('hidden'); document.body.style.overflow='hidden'; } };
-      const closeSidebar = () => { if(window.innerWidth<1024){ sidebar.classList.add('-translate-x-full'); sidebar.classList.remove('translate-x-0'); overlay.classList.add('hidden'); document.body.style.overflow=''; } };
-      document.getElementById('sidebarToggle')?.addEventListener('click', openSidebar);
-      document.getElementById('mobileMenuButton')?.addEventListener('click', openSidebar);
-      document.getElementById('closeSidebarBtn')?.addEventListener('click', closeSidebar);
-      overlay?.addEventListener('click', closeSidebar);
-      document.addEventListener('keydown', e => { if(e.key==='Escape' && window.innerWidth<1024 && sidebar?.classList.contains('translate-x-0')) closeSidebar(); });
+      // Sidebar toggle logic (mobile + desktop)
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      const desktopToggle = document.getElementById('desktopSidebarToggle');
+      const toggleIcon = document.getElementById('toggleIcon');
+      const brandSection = document.getElementById('brandSection');
+      const miniBrandSection = document.getElementById('miniBrandSection');
+      const userInfoText = document.getElementById('userInfoText');
+      const logoutButton = document.getElementById('logoutButton');
       
-      // Desktop sidebar collapse
-      const desktopToggle = document.getElementById('desktopSidebarToggle'), toggleIcon = document.getElementById('toggleIcon');
-      if(desktopToggle && sidebar && window.innerWidth>=1024){
-        let collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-        if(collapsed){ sidebar.classList.add('w-20'); sidebar.classList.remove('w-72'); if(toggleIcon){ toggleIcon.classList.remove('fa-chevron-left'); toggleIcon.classList.add('fa-chevron-right'); } document.querySelectorAll('.nav-item span, .dropdown-trigger span, .dropdown-content a span').forEach(el => { if(el.tagName === 'SPAN') el.style.display='none'; }); }
-        desktopToggle.addEventListener('click',()=>{
-          if(sidebar.classList.contains('w-20')){
-            sidebar.classList.remove('w-20'); sidebar.classList.add('w-72'); if(toggleIcon){ toggleIcon.classList.remove('fa-chevron-right'); toggleIcon.classList.add('fa-chevron-left'); } localStorage.setItem('sidebarCollapsed','false'); document.querySelectorAll('.nav-item span, .dropdown-trigger span, .dropdown-content a span').forEach(el => { if(el.tagName === 'SPAN') el.style.display=''; });
+      const openMobileSidebar = () => {
+        if (window.innerWidth < 1024) {
+          sidebar.classList.remove('-translate-x-full');
+          sidebar.classList.add('translate-x-0');
+          overlay.classList.remove('hidden');
+          document.body.style.overflow = 'hidden';
+        }
+      };
+      
+      const closeMobileSidebar = () => {
+        if (window.innerWidth < 1024) {
+          sidebar.classList.add('-translate-x-full');
+          sidebar.classList.remove('translate-x-0');
+          overlay.classList.add('hidden');
+          document.body.style.overflow = '';
+        }
+      };
+      
+      document.getElementById('sidebarToggle')?.addEventListener('click', openMobileSidebar);
+      document.getElementById('mobileMenuButton')?.addEventListener('click', openMobileSidebar);
+      document.getElementById('closeSidebarBtn')?.addEventListener('click', closeMobileSidebar);
+      overlay?.addEventListener('click', closeMobileSidebar);
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && window.innerWidth < 1024 && sidebar?.classList.contains('translate-x-0')) closeMobileSidebar();
+      });
+      
+      // Desktop sidebar collapse/expand with width transition and visual updates
+      if (desktopToggle && sidebar && window.innerWidth >= 1024) {
+        const applyCollapsedState = (collapsed) => {
+          if (collapsed) {
+            sidebar.classList.add('sidebar-collapsed');
+            sidebar.style.width = '80px';
+            // Hide brand text
+            if (brandSection) brandSection.style.display = 'none';
+            if (miniBrandSection) miniBrandSection.style.display = 'flex';
+            if (userInfoText) userInfoText.style.display = 'none';
+            if (logoutButton) {
+              const logoutSpan = logoutButton.querySelector('span');
+              if (logoutSpan) logoutSpan.style.display = 'none';
+              logoutButton.querySelector('i')?.classList.remove('mr-2');
+            }
+            if (toggleIcon) {
+              toggleIcon.classList.remove('fa-chevron-left');
+              toggleIcon.classList.add('fa-chevron-right');
+            }
           } else {
-            sidebar.classList.add('w-20'); sidebar.classList.remove('w-72'); if(toggleIcon){ toggleIcon.classList.remove('fa-chevron-left'); toggleIcon.classList.add('fa-chevron-right'); } localStorage.setItem('sidebarCollapsed','true'); document.querySelectorAll('.nav-item span, .dropdown-trigger span, .dropdown-content a span').forEach(el => { if(el.tagName === 'SPAN') el.style.display='none'; });
+            sidebar.classList.remove('sidebar-collapsed');
+            sidebar.style.width = '';
+            if (brandSection) brandSection.style.display = 'flex';
+            if (miniBrandSection) miniBrandSection.style.display = 'none';
+            if (userInfoText) userInfoText.style.display = 'block';
+            if (logoutButton) {
+              const logoutSpan = logoutButton.querySelector('span');
+              if (logoutSpan) logoutSpan.style.display = 'inline';
+              const icon = logoutButton.querySelector('i');
+              if (icon && !icon.classList.contains('mr-2')) icon.classList.add('mr-2');
+            }
+            if (toggleIcon) {
+              toggleIcon.classList.remove('fa-chevron-right');
+              toggleIcon.classList.add('fa-chevron-left');
+            }
           }
+          localStorage.setItem('sidebarCollapsed', collapsed);
+        };
+        
+        let collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+        applyCollapsedState(collapsed);
+        
+        desktopToggle.addEventListener('click', () => {
+          collapsed = !collapsed;
+          applyCollapsedState(collapsed);
         });
       }
       
       // User dropdown
-      const userBtn = document.getElementById('userMenuButton'), userDrop = document.getElementById('userDropdown');
-      let open = false;
-      userBtn?.addEventListener('click',(e)=>{ e.stopPropagation(); open=!open; userDrop?.classList.toggle('hidden',!open); });
-      document.addEventListener('click',(e)=>{ if(userBtn && !userBtn.contains(e.target) && userDrop && !userDrop.contains(e.target)){ userDrop.classList.add('hidden'); open=false; } });
+      const userBtn = document.getElementById('userMenuButton');
+      const userDrop = document.getElementById('userDropdown');
+      let userOpen = false;
+      userBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userOpen = !userOpen;
+        userDrop?.classList.toggle('hidden', !userOpen);
+      });
+      document.addEventListener('click', (e) => {
+        if (userBtn && !userBtn.contains(e.target) && userDrop && !userDrop.contains(e.target)) {
+          userDrop.classList.add('hidden');
+          userOpen = false;
+        }
+      });
       
-      // Active page highlight
+      // Active page highlight with better matching
       const currentPath = window.location.pathname;
       document.querySelectorAll('.nav-item, .dropdown-content a, .nested-dropdown-content a').forEach(link => {
         const href = link.getAttribute('href');
-        if(href && href !== '#' && currentPath.startsWith(href) && href !== '/'){
-          if(link.classList.contains('nav-item')) link.classList.add('active-nav');
-          else link.classList.add('active-nav-sub');
+        if (href && href !== '#' && href !== '/') {
+          if (currentPath === href || (href !== '/' && currentPath.startsWith(href) && !currentPath.slice(href.length).includes('/'))) {
+            if (link.classList.contains('nav-item')) {
+              link.classList.add('active-nav');
+            } else {
+              link.classList.add('active-nav-sub');
+            }
+            // Auto-expand parent dropdowns if needed
+            let parentDropdown = link.closest('.dropdown-content');
+            if (parentDropdown) {
+              parentDropdown.classList.add('open');
+              const trigger = parentDropdown.previousElementSibling;
+              if (trigger && trigger.classList.contains('dropdown-trigger')) {
+                const chevron = trigger.querySelector('.dropdown-chevron');
+                if (chevron) chevron.classList.add('rotated');
+              }
+            }
+            let parentNested = link.closest('.nested-dropdown-content');
+            if (parentNested) {
+              parentNested.style.maxHeight = parentNested.scrollHeight + 'px';
+              const nestedTrigger = parentNested.previousElementSibling;
+              if (nestedTrigger && nestedTrigger.classList.contains('nested-trigger')) {
+                const chev = nestedTrigger.querySelector('.nested-chevron');
+                if (chev) chev.classList.add('rotated');
+              }
+            }
+          }
         }
       });
     });
