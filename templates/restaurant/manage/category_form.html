@@ -1,0 +1,200 @@
+<!-- restaurant/templates/restaurant/manage/category_form.html -->
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}
+  {% if form.instance.pk %}Edit Category{% else %}New Category{% endif %} | Restaurant Management
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="flex items-center gap-2">
+  <i class="fas fa-chevron-right text-slate-400 text-xs"></i>
+  <a href="{% url 'restaurant:manage_dashboard' %}" class="text-slate-500 hover:text-indigo-600">Restaurant</a>
+</li>
+<li class="flex items-center gap-2">
+  <i class="fas fa-chevron-right text-slate-400 text-xs"></i>
+  <a href="{% url 'restaurant:category_list' %}" class="text-slate-500 hover:text-indigo-600">Categories</a>
+</li>
+<li class="flex items-center gap-2">
+  <i class="fas fa-chevron-right text-slate-400 text-xs"></i>
+  <span class="text-slate-600 font-medium">{% if form.instance.pk %}Edit{% else %}New{% endif %} Category</span>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
+        <i class="fas fa-folder-open text-white text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">
+          {% if form.instance.pk %}Edit Category{% else %}New Category{% endif %}
+        </h1>
+        <p class="text-sm text-slate-500 mt-0.5">
+          {% if form.instance.pk %}
+            Update menu category details
+          {% else %}
+            Create a new menu category for your restaurant
+          {% endif %}
+        </p>
+      </div>
+    </div>
+    <a href="{% url 'restaurant:category_list' %}" 
+       class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition">
+      <i class="fas fa-arrow-left text-xs"></i>
+      <span>Back to Categories</span>
+    </a>
+  </div>
+
+  <!-- Form -->
+  <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+    <form method="post" class="p-6 space-y-6">
+      {% csrf_token %}
+
+      <!-- Form Errors -->
+      {% if form.errors %}
+      <div class="rounded-xl bg-rose-50 border border-rose-200 p-4">
+        <div class="flex items-start gap-2">
+          <i class="fas fa-exclamation-triangle text-rose-600 text-sm mt-0.5"></i>
+          <div class="flex-1">
+            <p class="text-sm font-semibold text-rose-800 mb-2">Please correct the following errors:</p>
+            <ul class="text-sm text-rose-700 space-y-1">
+              {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                  <li>• {{ field|capfirst }}: {{ error }}</li>
+                {% endfor %}
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Category Name -->
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+          Category Name <span class="text-rose-500">*</span>
+        </label>
+        <div class="relative">
+          <i class="fas fa-tag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+          {{ form.name }}
+        </div>
+        <p class="text-xs text-slate-500 mt-1.5">Example: Appetizers, Main Courses, Desserts, Beverages</p>
+        {% if form.name.errors %}
+          <p class="text-xs text-rose-600 mt-1">{{ form.name.errors|striptags }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Description</label>
+        <div class="relative">
+          <i class="fas fa-align-left absolute left-3 top-3 text-slate-400 text-sm pointer-events-none"></i>
+          {{ form.description }}
+        </div>
+        <p class="text-xs text-slate-500 mt-1.5">Brief description of this category (optional)</p>
+        {% if form.description.errors %}
+          <p class="text-xs text-rose-600 mt-1">{{ form.description.errors|striptags }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Display Order (sort_order) -->
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Display Order</label>
+        <div class="relative">
+          <i class="fas fa-sort-numeric-down absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+          {{ form.sort_order }}
+        </div>
+        <p class="text-xs text-slate-500 mt-1.5">Lower numbers appear first in the menu</p>
+        {% if form.sort_order.errors %}
+          <p class="text-xs text-rose-600 mt-1">{{ form.sort_order.errors|striptags }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Is Active -->
+      <div class="flex items-center gap-3 pt-2">
+        <label class="relative inline-flex items-center cursor-pointer">
+          {{ form.is_active }}
+          <span class="ml-3 text-sm font-medium text-slate-700">
+            Active Category
+          </span>
+        </label>
+        <p class="text-xs text-slate-500 ml-2">Inactive categories won't appear in the menu</p>
+        {% if form.is_active.errors %}
+          <p class="text-xs text-rose-600 mt-1">{{ form.is_active.errors|striptags }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Help Tips -->
+      <div class="bg-blue-50 rounded-xl p-4 border border-blue-100">
+        <div class="flex items-start gap-2">
+          <i class="fas fa-lightbulb text-blue-500 text-sm mt-0.5"></i>
+          <div class="text-sm text-blue-700">
+            <p class="font-semibold mb-1">Quick Tips:</p>
+            <ul class="text-xs space-y-1">
+              <li>• Categories help organize your menu items logically</li>
+              <li>• Common categories: Appetizers, Main Course, Desserts, Beverages, etc.</li>
+              <li>• You can reorder categories using the display order field</li>
+              <li>• Deactivating a category will hide all items in that category</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100">
+        <button type="submit" 
+                class="flex-1 sm:flex-none px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-semibold transition shadow-md hover:shadow-lg">
+          <i class="fas fa-save mr-2"></i>
+          {% if form.instance.pk %}Update Category{% else %}Create Category{% endif %}
+        </button>
+        <a href="{% url 'restaurant:category_list' %}" 
+           class="flex-1 sm:flex-none px-6 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl font-medium text-center transition">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  /* Form field styling */
+  #id_name, #id_description, #id_sort_order {
+    width: 100%;
+    border: 1px solid rgb(226 232 240);
+    border-radius: 0.75rem;
+    padding: 0.625rem 0.75rem 0.625rem 2.25rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    background: white;
+  }
+  
+  #id_description {
+    min-height: 100px;
+    padding-top: 0.75rem;
+  }
+  
+  #id_name:focus, #id_description:focus, #id_sort_order:focus {
+    outline: none;
+    border-color: rgb(147 197 253);
+    box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.35);
+  }
+  
+  /* Custom checkbox styling */
+  #id_is_active {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 0.375rem;
+    border: 2px solid rgb(203 213 225);
+    cursor: pointer;
+  }
+  
+  #id_is_active:checked {
+    background-color: rgb(16 185 129);
+    border-color: rgb(16 185 129);
+  }
+</style>
+{% endblock %}
