@@ -44,6 +44,42 @@ urlpatterns = [
     path("galleries/<int:pk>/add-images/", views.room_image_gallery_add_images, name="gallery_add_images"),
     path("galleries/<int:gallery_pk>/remove-image/<int:image_pk>/", views.room_image_gallery_remove_image, name="gallery_remove_image"),
 
+    # ============================================================
+    # ASSET MANAGEMENT URLS
+    # ============================================================
+    
+    # Asset Categories
+    path("asset-categories/", views.AssetCategoryListView.as_view(), name="asset_category_list"),
+    path("asset-categories/create/", views.asset_category_create, name="asset_category_create"),
+    
+    # Assets
+    path("assets/", views.AssetListView.as_view(), name="asset_list"),
+    path("assets/new/", views.AssetCreateView.as_view(), name="asset_create"),
+    path("assets/<int:pk>/", views.AssetDetailView.as_view(), name="asset_detail"),
+    path("assets/<int:pk>/edit/", views.AssetUpdateView.as_view(), name="asset_update"),
+    path("assets/<int:pk>/delete/", views.asset_delete, name="asset_delete"),
+    path("assets/<int:pk>/calculate-depreciation/", views.asset_calculate_depreciation, name="asset_calculate_depreciation"),
+    path("assets/bulk-depreciation/", views.asset_bulk_depreciation, name="asset_bulk_depreciation"),
+    
+    # ============================================================
+    # LIABILITY MANAGEMENT URLS
+    # ============================================================
+    
+    # Liabilities
+    path("liabilities/", views.LiabilityListView.as_view(), name="liability_list"),
+    path("liabilities/new/", views.LiabilityCreateView.as_view(), name="liability_create"),
+    path("liabilities/<int:pk>/", views.LiabilityDetailView.as_view(), name="liability_detail"),
+    path("liabilities/<int:pk>/edit/", views.LiabilityUpdateView.as_view(), name="liability_update"),
+    path("liabilities/<int:pk>/delete/", views.liability_delete, name="liability_delete"),
+    path("liabilities/<int:pk>/pay/", views.liability_make_payment, name="liability_pay"),
+    path("liabilities/<int:pk>/mark-paid/", views.liability_mark_paid, name="liability_mark_paid"),
+    
+    # ============================================================
+    # FINANCIAL DASHBOARD URLS
+    # ============================================================
+    
+    path("financial-dashboard/", views.RoomsFinancialDashboardView.as_view(), name="financial_dashboard"),
+
     # API Endpoints
     path("api/rooms/", views.room_list_api, name="room_list_api"),
     path("api/rooms/<int:room_id>/images/", views.room_images_api, name="room_images_api"),

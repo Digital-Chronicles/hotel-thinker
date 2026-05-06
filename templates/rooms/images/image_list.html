@@ -1,0 +1,209 @@
+{# rooms/templates/rooms/images/image_list.html #}
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Room Images - Hotel Thinker{% endblock %}
+
+{% block breadcrumb %}
+<li><span class="mx-2">/</span></li>
+<li><a href="{% url 'rooms:image_list' %}" class="text-indigo-600">Images</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-800">Room Images</h1>
+            <p class="text-slate-500 mt-1">Manage all room images across your hotel</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{% url 'rooms:image_upload' %}" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-all">
+                <i class="fas fa-upload mr-2"></i>Upload Image
+            </a>
+            <a href="{% url 'rooms:image_bulk_upload' %}" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50">
+                <i class="fas fa-layer-group mr-2"></i>Bulk Upload
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-2xl p-4 shadow-card">
+            <p class="text-slate-500 text-xs">Total Images</p>
+            <p class="text-2xl font-bold text-slate-800">{{ total_images }}</p>
+        </div>
+        <div class="bg-white rounded-2xl p-4 shadow-card">
+            <p class="text-slate-500 text-xs">Active</p>
+            <p class="text-2xl font-bold text-emerald-600">{{ active_images }}</p>
+        </div>
+        <div class="bg-white rounded-2xl p-4 shadow-card">
+            <p class="text-slate-500 text-xs">Primary Images</p>
+            <p class="text-2xl font-bold text-indigo-600">{{ primary_images }}</p>
+        </div>
+        <div class="bg-white rounded-2xl p-4 shadow-card">
+            <p class="text-slate-500 text-xs">Featured</p>
+            <p class="text-2xl font-bold text-amber-600">{{ featured_images }}</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-4">
+        <form method="get" class="flex flex-wrap gap-3 items-end">
+            <div class="flex-1 min-w-[150px]">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Search</label>
+                <input type="text" name="search" value="{{ request.GET.search|default:'' }}" 
+                       placeholder="Image title, caption, room..." 
+                       class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+            </div>
+            <div class="w-40">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Category</label>
+                <select name="category" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                    <option value="">All Categories</option>
+                    {% for value, label in categories %}
+                    <option value="{{ value }}" {% if request.GET.category == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="w-40">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Room</label>
+                <select name="room_id" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                    <option value="">All Rooms</option>
+                    {% for r in rooms %}
+                    <option value="{{ r.id }}" {% if request.GET.room_id == r.id|stringformat:"s" %}selected{% endif %}>Room {{ r.number }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="w-40">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Room Type</label>
+                <select name="room_type_id" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                    <option value="">All Types</option>
+                    {% for rt in room_types %}
+                    <option value="{{ rt.id }}" {% if request.GET.room_type_id == rt.id|stringformat:"s" %}selected{% endif %}>{{ rt.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <button type="submit" class="px-4 py-2 rounded-xl bg-slate-800 text-white hover:bg-slate-700">
+                    <i class="fas fa-search mr-2"></i>Filter
+                </button>
+                <a href="{% url 'rooms:image_list' %}" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50">
+                    <i class="fas fa-times mr-2"></i>Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Image Grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {% for image in images %}
+        <div class="group relative bg-white rounded-xl shadow-card border border-slate-100 overflow-hidden hover:shadow-lg transition-all">
+            <div class="aspect-square overflow-hidden bg-slate-100">
+                <img src="{{ image.image.url }}" alt="{{ image.title|default:image.room.number }}" 
+                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+            </div>
+            <div class="absolute top-2 left-2 flex gap-1">
+                {% if image.is_primary %}
+                <span class="px-2 py-0.5 bg-indigo-600 text-white text-xs rounded-full">Primary</span>
+                {% endif %}
+                {% if image.is_featured %}
+                <span class="px-2 py-0.5 bg-amber-500 text-white text-xs rounded-full">Featured</span>
+                {% endif %}
+            </div>
+            <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                <a href="{% url 'rooms:image_update' image.pk %}" class="p-2 bg-white rounded-lg text-slate-700 hover:bg-indigo-50 transition">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <button onclick="deleteImage({{ image.pk }}, '{{ image.title|default:image.room.number|escapejs }}')" class="p-2 bg-white rounded-lg text-red-600 hover:bg-red-50 transition">
+                    <i class="fas fa-trash"></i>
+                </button>
+                <button onclick="setPrimary({{ image.pk }})" class="p-2 bg-white rounded-lg text-indigo-600 hover:bg-indigo-50 transition">
+                    <i class="fas fa-star"></i>
+                </button>
+            </div>
+            <div class="p-2 text-xs">
+                {% if image.room %}
+                <p class="font-semibold text-slate-700 truncate">Room {{ image.room.number }}</p>
+                {% endif %}
+                <p class="text-slate-400 truncate">{{ image.get_category_display }}</p>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-12 text-slate-400">
+            <i class="fas fa-image text-5xl mb-3 block"></i>
+            <p>No images found. <a href="{% url 'rooms:image_upload' %}" class="text-indigo-600">Upload your first image</a></p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="flex justify-between items-center">
+        <p class="text-sm text-slate-500">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</p>
+        <div class="flex gap-2">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+               class="px-3 py-1 rounded-lg border border-slate-200 hover:bg-slate-50">Previous</a>
+            {% endif %}
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+               class="px-3 py-1 rounded-lg border border-slate-200 hover:bg-slate-50">Next</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 items-center justify-center">
+    <div class="bg-white rounded-2xl max-w-md w-full mx-4 p-6">
+        <div class="text-center">
+            <div class="h-14 w-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-trash-alt text-red-600 text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Delete Image</h3>
+            <p class="text-slate-500 mb-6">Are you sure you want to delete the image for "<span id="imageName"></span>"? This action cannot be undone.</p>
+            <form id="deleteForm" method="post">
+                {% csrf_token %}
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeDeleteModal()" class="flex-1 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function deleteImage(imageId, imageName) {
+    document.getElementById('imageName').textContent = imageName;
+    document.getElementById('deleteForm').action = `/rooms/images/${imageId}/delete/`;
+    document.getElementById('deleteModal').classList.remove('hidden');
+    document.getElementById('deleteModal').classList.add('flex');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+    document.getElementById('deleteModal').classList.remove('flex');
+}
+
+function setPrimary(imageId) {
+    if (confirm('Set this as the primary image for its room?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/rooms/images/${imageId}/set-primary/`;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+        form.appendChild(csrfInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+document.getElementById('deleteModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteModal();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,254 @@
+{# rooms/templates/rooms/liabilities/liability_list.html #}
+{% extends "base.html" %}
+
+{% block title %}Room Liabilities - Hotel Thinker{% endblock %}
+
+{% block breadcrumb %}
+<li><span class="mx-2">/</span></li>
+<li><a href="{% url 'rooms:liability_list' %}" class="text-indigo-600">Liabilities</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-800">Room Liabilities</h1>
+            <p class="text-slate-500 mt-1">Track loans, maintenance debts, and other financial obligations</p>
+        </div>
+        <div>
+            <a href="{% url 'rooms:liability_create' %}" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 text-white hover:shadow-lg transition-all">
+                <i class="fas fa-plus mr-2"></i>Add Liability
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white rounded-2xl p-5 shadow-card border border-slate-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-slate-500 text-sm">Total Liabilities</p>
+                    <p class="text-2xl font-bold text-slate-800">{{ total_liabilities }}</p>
+                </div>
+                <div class="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+                    <i class="fas fa-file-invoice text-red-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 shadow-card border border-slate-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-slate-500 text-sm">Total Balance</p>
+                    <p class="text-2xl font-bold text-red-600">UGX {{ total_balance|floatformat:0 }}</p>
+                </div>
+                <div class="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+                    <i class="fas fa-dollar-sign text-red-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 shadow-card border border-slate-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-slate-500 text-sm">Active Liabilities</p>
+                    <p class="text-2xl font-bold text-amber-600">{{ active_liabilities }}</p>
+                </div>
+                <div class="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
+                    <i class="fas fa-clock text-amber-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 shadow-card border border-slate-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-slate-500 text-sm">Overdue</p>
+                    <p class="text-2xl font-bold text-rose-600">{{ overdue_liabilities }}</p>
+                </div>
+                <div class="h-12 w-12 rounded-full bg-rose-100 flex items-center justify-center">
+                    <i class="fas fa-exclamation-triangle text-rose-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-4">
+        <form method="get" class="flex flex-wrap gap-3 items-end">
+            <div class="flex-1 min-w-[150px]">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Search</label>
+                <input type="text" name="search" value="{{ request.GET.search|default:'' }}" 
+                       placeholder="Liability name..." 
+                       class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+            </div>
+            <div class="w-40">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Status</label>
+                <select name="status" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                    <option value="">All Statuses</option>
+                    {% for value, label in filter_form.fields.status.choices %}
+                        {% if value %}
+                        <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="w-48">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Type</label>
+                <select name="liability_type" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                    <option value="">All Types</option>
+                    {% for value, label in filter_form.fields.liability_type.choices %}
+                        {% if value %}
+                        <option value="{{ value }}" {% if request.GET.liability_type == value %}selected{% endif %}>{{ label }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="w-48">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Room</label>
+                <select name="room" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                    <option value="">All Rooms</option>
+                    {% for room in filter_form.fields.room.queryset %}
+                    <option value="{{ room.id }}" {% if request.GET.room|add:"0" == room.id %}selected{% endif %}>Room {{ room.number }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <button type="submit" class="px-4 py-2 rounded-xl bg-slate-800 text-white hover:bg-slate-700">
+                    <i class="fas fa-search mr-2"></i>Filter
+                </button>
+                <a href="{% url 'rooms:liability_list' %}" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50">
+                    <i class="fas fa-times mr-2"></i>Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Liabilities Table -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-600">Name</th>
+                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-600">Type</th>
+                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-600">Location</th>
+                        <th class="text-right px-6 py-3 text-xs font-semibold text-slate-600">Principal</th>
+                        <th class="text-right px-6 py-3 text-xs font-semibold text-slate-600">Remaining</th>
+                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-600">Status</th>
+                        <th class="text-center px-6 py-3 text-xs font-semibold text-slate-600">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for liability in liabilities %}
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <p class="font-semibold text-slate-800">{{ liability.name }}</p>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm">{{ liability.get_liability_type_display }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if liability.room %}
+                            <span class="inline-flex px-2 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs">
+                                Room {{ liability.room.number }}
+                            </span>
+                            {% elif liability.room_type %}
+                            <span class="text-sm">{{ liability.room_type.name }}</span>
+                            {% else %}
+                            <span class="text-sm text-slate-400">Hotel Level</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-right">UGX {{ liability.principal_amount|floatformat:0 }}</td>
+                        <td class="px-6 py-4 text-right font-semibold text-red-600">UGX {{ liability.remaining_balance|floatformat:0 }}</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex px-2 py-1 rounded-full text-xs font-semibold
+                                {% if liability.status == 'paid' %}bg-emerald-100 text-emerald-700
+                                {% elif liability.status == 'active' %}bg-blue-100 text-blue-700
+                                {% elif liability.status == 'overdue' %}bg-red-100 text-red-700
+                                {% elif liability.status == 'pending' %}bg-amber-100 text-amber-700
+                                {% else %}bg-slate-100 text-slate-700{% endif %}">
+                                {{ liability.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <a href="{% url 'rooms:liability_detail' liability.pk %}" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'rooms:liability_update' liability.pk %}" class="p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button onclick="confirmDelete({{ liability.pk }}, '{{ liability.name|escapejs }}')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center text-slate-400">
+                            <i class="fas fa-file-invoice-dollar text-4xl mb-3 block"></i>
+                            <p>No liabilities found. <a href="{% url 'rooms:liability_create' %}" class="text-indigo-600">Add your first liability</a></p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="border-t border-slate-200 px-6 py-4 flex justify-between items-center">
+            <p class="text-sm text-slate-500">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</p>
+            <div class="flex gap-2">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                   class="px-3 py-1 rounded-lg border border-slate-200 hover:bg-slate-50">Previous</a>
+                {% endif %}
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                   class="px-3 py-1 rounded-lg border border-slate-200 hover:bg-slate-50">Next</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 items-center justify-center">
+    <div class="bg-white rounded-2xl max-w-md w-full mx-4 p-6">
+        <div class="text-center">
+            <div class="h-14 w-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-trash text-red-600 text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Delete Liability</h3>
+            <p class="text-slate-500 mb-6">Are you sure you want to delete "<span id="liabilityName"></span>"? This action cannot be undone.</p>
+            <form id="deleteForm" method="post">
+                {% csrf_token %}
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeDeleteModal()" class="flex-1 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(liabilityId, liabilityName) {
+    document.getElementById('liabilityName').textContent = liabilityName;
+    document.getElementById('deleteForm').action = `/rooms/liabilities/${liabilityId}/delete/`;
+    document.getElementById('deleteModal').classList.remove('hidden');
+    document.getElementById('deleteModal').classList.add('flex');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+    document.getElementById('deleteModal').classList.remove('flex');
+}
+
+document.getElementById('deleteModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteModal();
+});
+</script>
+{% endblock %}

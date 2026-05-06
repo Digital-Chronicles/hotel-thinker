@@ -5,6 +5,8 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.safestring import mark_safe
 from .models import RoomType, Room, RoomImage, RoomImageGallery
+from django import forms
+from .models import RoomAsset, RoomLiability, AssetCategory, AssetDepreciationSchedule, LiabilityPayment
 
 
 # Tailwind helper styles
@@ -421,3 +423,246 @@ class RoomImageFilterForm(forms.Form):
         ],
         widget=forms.Select(attrs={"class": TW_SELECT})
     )
+
+
+class AssetCategoryForm(forms.ModelForm):
+    class Meta:
+        model = AssetCategory
+        fields = [
+            'name', 'description', 'asset_type', 'default_depreciation_method',
+            'default_useful_life_years', 'default_salvage_value_percent', 'is_active'
+        ]
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        for field in self.fields:
+            if field in ['name', 'asset_type', 'default_depreciation_method']:
+                self.fields[field].widget.attrs.update({'class': TW_SELECT})
+            elif field == 'description':
+                self.fields[field].widget.attrs.update({'class': TW_TEXTAREA, 'rows': 3})
+            elif field in ['default_useful_life_years', 'default_salvage_value_percent']:
+                self.fields[field].widget.attrs.update({'class': TW_INPUT, 'type': 'number'})
+
+
+class RoomAssetForm(forms.ModelForm):
+    class Meta:
+        model = RoomAsset
+        fields = [
+            'room', 'room_type', 'category', 'name', 'serial_number',
+            'model_number', 'brand', 'purchase_date', 'purchase_price',
+            'depreciation_method', 'useful_life_years', 'salvage_value',
+            'status', 'purchase_invoice', 'warranty_expiry', 'notes'
+        ]
+        widgets = {
+            'notes': forms.Textarea(attrs={'rows': 3}),
+            'purchase_date': forms.DateInput(attrs={'type': 'date'}),
+            'warranty_expiry': forms.DateInput(attrs={'type': 'date'}),
+        }
+    
+    def __init__(self, *args, hotel=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        if hotel:
+            self.fields['room'].queryset = Room.objects.filter(hotel=hotel, is_active=True)
+            self.fields['room_type'].queryset = RoomType.objects.filter(hotel=hotel)
+            self.fields['category'].queryset = AssetCategory.objects.filter(hotel=hotel, is_active=True)
+            
+            # Make room and room_type mutually exclusive
+            self.fields['room'].required = False
+            self.fields['room_type'].required = False
+        
+        # Apply Tailwind classes
+        for field_name, field in self.fields.items():
+            if field_name in ['room', 'room_type', 'category', 'depreciation_method', 'status']:
+                field.widget.attrs.update({'class': TW_SELECT})
+            elif field_name in ['name', 'serial_number', 'model_number', 'brand']:
+                field.widget.attrs.update({'class': TW_INPUT, 'placeholder': f'Enter {field_name.replace("_", " ")}'})
+            elif field_name in ['purchase_price', 'salvage_value']:
+                field.widget.attrs.update({'class': TW_INPUT, 'type': 'number', 'step': '0.01'})
+            elif field_name in ['useful_life_years']:
+                field.widget.attrs.update({'class': TW_INPUT, 'type': 'number', 'min': 1})
+            else:
+                field.widget.attrs.update({'class': TW_INPUT})
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        room = cleaned_data.get('room')
+        room_type = cleaned_data.get('room_type')
+        
+        if not room and not room_type:
+            raise ValidationError("Either a specific room or room type must be selected.")
+        
+        if room and room_type:
+            raise ValidationError("Select either a specific room OR a room type, not both.")
+        
+        return cleaned_data
+    
+    def clean_salvage_value(self):
+        purchase_price = self.cleaned_data.get('purchase_price', 0)
+        salvage_value = self.cleaned_data.get('salvage_value', 0)
+        
+        if salvage_value > purchase_price:
+            raise ValidationError("Salvage value cannot exceed purchase price.")
+        
+        return salvage_value
+
+
+class RoomLiabilityForm(forms.ModelForm):
+    class Meta:
+        model = RoomLiability
+        fields = [
+            'room', 'room_type', 'name', 'liability_type', 'description',
+            'principal_amount', 'interest_rate', 'start_date', 'due_date',
+            'payment_frequency', 'status', 'notes'
+        ]
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+            'notes': forms.Textarea(attrs={'rows': 2}),
+            'start_date': forms.DateInput(attrs={'type': 'date'}),
+            'due_date': forms.DateInput(attrs={'type': 'date'}),
+        }
+    
+    def __init__(self, *args, hotel=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        if hotel:
+            self.fields['room'].queryset = Room.objects.filter(hotel=hotel, is_active=True)
+            self.fields['room_type'].queryset = RoomType.objects.filter(hotel=hotel)
+            
+            self.fields['room'].required = False
+            self.fields['room_type'].required = False
+        
+        # Apply Tailwind classes
+        for field_name, field in self.fields.items():
+            if field_name in ['room', 'room_type', 'liability_type', 'payment_frequency', 'status']:
+                field.widget.attrs.update({'class': TW_SELECT})
+            elif field_name in ['name']:
+                field.widget.attrs.update({'class': TW_INPUT})
+            elif field_name in ['principal_amount', 'interest_rate']:
+                field.widget.attrs.update({'class': TW_INPUT, 'type': 'number', 'step': '0.01'})
+            else:
+                field.widget.attrs.update({'class': TW_INPUT})
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        room = cleaned_data.get('room')
+        room_type = cleaned_data.get('room_type')
+        
+        if not room and not room_type:
+            raise ValidationError("Either a specific room or room type must be selected.")
+        
+        if room and room_type:
+            raise ValidationError("Select either a specific room OR a room type, not both.")
+        
+        return cleaned_data
+
+
+class LiabilityPaymentForm(forms.ModelForm):
+    class Meta:
+        model = LiabilityPayment
+        fields = ['payment_date', 'amount', 'reference_number', 'notes']
+        widgets = {
+            'payment_date': forms.DateInput(attrs={'type': 'date'}),
+            'notes': forms.Textarea(attrs={'rows': 2}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        for field_name, field in self.fields.items():
+            if field_name == 'reference_number':
+                field.widget.attrs.update({'class': TW_INPUT})
+            elif field_name == 'notes':
+                field.widget.attrs.update({'class': TW_TEXTAREA})
+            else:
+                field.widget.attrs.update({'class': TW_INPUT})
+    
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount')
+        if amount and amount <= 0:
+            raise ValidationError("Payment amount must be positive.")
+        return amount
+
+
+class AssetFilterForm(forms.Form):
+    """Filter form for assets list"""
+    
+    status = forms.ChoiceField(
+        required=False,
+        choices=[('', 'All Statuses')] + RoomAsset.STATUS_CHOICES,
+        widget=forms.Select(attrs={'class': TW_SELECT})
+    )
+    category = forms.ModelChoiceField(
+        required=False,
+        queryset=AssetCategory.objects.none(),
+        widget=forms.Select(attrs={'class': TW_SELECT})
+    )
+    room = forms.ModelChoiceField(
+        required=False,
+        queryset=Room.objects.none(),
+        widget=forms.Select(attrs={'class': TW_SELECT})
+    )
+    depreciation_method = forms.ChoiceField(
+        required=False,
+        choices=[('', 'All Methods')] + AssetCategory.DEPRECIATION_METHODS,
+        widget=forms.Select(attrs={'class': TW_SELECT})
+    )
+    
+    def __init__(self, *args, hotel=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if hotel:
+            self.fields['category'].queryset = AssetCategory.objects.filter(hotel=hotel, is_active=True)
+            self.fields['room'].queryset = Room.objects.filter(hotel=hotel, is_active=True)
+
+
+class LiabilityFilterForm(forms.Form):
+    """Filter form for liabilities list"""
+    
+    status = forms.ChoiceField(
+        required=False,
+        choices=[('', 'All Statuses')] + RoomLiability.STATUS_CHOICES,
+        widget=forms.Select(attrs={'class': TW_SELECT})
+    )
+    liability_type = forms.ChoiceField(
+        required=False,
+        choices=[('', 'All Types')] + RoomLiability.LIABILITY_TYPES,
+        widget=forms.Select(attrs={'class': TW_SELECT})
+    )
+    room = forms.ModelChoiceField(
+        required=False,
+        queryset=Room.objects.none(),
+        widget=forms.Select(attrs={'class': TW_SELECT})
+    )
+    
+    def __init__(self, *args, hotel=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if hotel:
+            self.fields['room'].queryset = Room.objects.filter(hotel=hotel, is_active=True)
+
+# Add this to your rooms/forms.py if not already present
+
+class LiabilityFilterForm(forms.Form):
+    """Filter form for liabilities list"""
+    
+    status = forms.ChoiceField(
+        required=False,
+        choices=[('', 'All Statuses')] + RoomLiability.STATUS_CHOICES,
+        widget=forms.Select(attrs={'class': TW_SELECT})
+    )
+    liability_type = forms.ChoiceField(
+        required=False,
+        choices=[('', 'All Types')] + RoomLiability.LIABILITY_TYPES,
+        widget=forms.Select(attrs={'class': TW_SELECT})
+    )
+    room = forms.ModelChoiceField(
+        required=False,
+        queryset=Room.objects.none(),
+        widget=forms.Select(attrs={'class': TW_SELECT})
+    )
+    
+    def __init__(self, *args, hotel=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if hotel:
+            self.fields['room'].queryset = Room.objects.filter(hotel=hotel, is_active=True)
+

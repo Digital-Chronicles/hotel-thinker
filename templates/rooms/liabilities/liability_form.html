@@ -1,0 +1,314 @@
+{# rooms/templates/rooms/liabilities/liability_form.html #}
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Edit Liability{% else %}Add New Liability{% endif %} - Hotel Thinker{% endblock %}
+
+{% block breadcrumb %}
+<li><span class="mx-2">/</span></li>
+<li><a href="{% url 'rooms:liability_list' %}" class="text-indigo-600">Liabilities</a></li>
+<li><span class="mx-2">/</span></li>
+<li>{% if form.instance.pk %}Edit{% else %}Add{% endif %}</li>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+        <div class="border-b border-slate-200 px-6 py-4 bg-gradient-to-r from-slate-50 to-white">
+            <h1 class="text-xl font-bold text-slate-800">
+                {% if form.instance.pk %}
+                <i class="fas fa-edit mr-2 text-amber-600"></i>Edit Liability: {{ form.instance.name }}
+                {% else %}
+                <i class="fas fa-plus-circle mr-2 text-amber-600"></i>Add New Liability
+                {% endif %}
+            </h1>
+            <p class="text-sm text-slate-500 mt-1">Track loans, maintenance debts, supplier payments, and other financial obligations</p>
+        </div>
+        
+        <form method="post" class="p-6 space-y-6" id="liabilityForm">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+                {% for error in form.non_field_errors %}
+                <p class="text-red-600 text-sm">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Basic Information Section -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-2 pb-2 border-b border-slate-200">
+                    <i class="fas fa-info-circle text-amber-600"></i>
+                    <h3 class="font-semibold text-slate-800">Basic Information</h3>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">
+                            Liability Name <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.name.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-xs text-slate-400 mt-1">e.g., "Room 101 Renovation Loan", "Maintenance Contract", "Supplier Debt"</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">
+                            Liability Type <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.liability_type }}
+                        {% if form.liability_type.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.liability_type.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Status</label>
+                        {{ form.status }}
+                        {% if form.status.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.status.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Description</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.description.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-xs text-slate-400 mt-1">Optional detailed description of this liability</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Location Section -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-2 pb-2 border-b border-slate-200">
+                    <i class="fas fa-map-marker-alt text-amber-600"></i>
+                    <h3 class="font-semibold text-slate-800">Location Assignment</h3>
+                </div>
+                
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+                    <p class="text-sm text-blue-800"><i class="fas fa-info-circle mr-2"></i>You can assign this liability to a specific room, a room type, or leave it at hotel level.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Specific Room</label>
+                        {{ form.room }}
+                        {% if form.room.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.room.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-xs text-slate-400 mt-1">Assign to a specific room only</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Room Type (Template)</label>
+                        {{ form.room_type }}
+                        {% if form.room_type.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.room_type.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-xs text-slate-400 mt-1">Assign to all rooms of this type</p>
+                    </div>
+                </div>
+                <p class="text-xs text-amber-600 mt-1"><i class="fas fa-exclamation-triangle mr-1"></i>Select either a specific room OR a room type, not both.</p>
+            </div>
+            
+            <!-- Financial Details Section -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-2 pb-2 border-b border-slate-200">
+                    <i class="fas fa-chart-line text-amber-600"></i>
+                    <h3 class="font-semibold text-slate-800">Financial Details</h3>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">
+                            Principal Amount (UGX) <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">UGX</span>
+                            {{ form.principal_amount }}
+                        </div>
+                        {% if form.principal_amount.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.principal_amount.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Interest Rate (%)</label>
+                        <div class="relative">
+                            {{ form.interest_rate }}
+                            <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400">%</span>
+                        </div>
+                        {% if form.interest_rate.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.interest_rate.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-xs text-slate-400 mt-1">Annual interest rate (0 for no interest)</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">
+                            Start Date <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.start_date }}
+                        {% if form.start_date.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.start_date.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Due Date</label>
+                        {{ form.due_date }}
+                        {% if form.due_date.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.due_date.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-xs text-slate-400 mt-1">Optional final due date</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Payment Frequency</label>
+                        {{ form.payment_frequency }}
+                        {% if form.payment_frequency.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.payment_frequency.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notes Section -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-2 pb-2 border-b border-slate-200">
+                    <i class="fas fa-sticky-note text-amber-600"></i>
+                    <h3 class="font-semibold text-slate-800">Additional Notes</h3>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Notes</label>
+                    {{ form.notes }}
+                    {% if form.notes.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.notes.errors.0 }}</p>
+                    {% endif %}
+                    <p class="text-xs text-slate-400 mt-1">Any additional information about this liability</p>
+                </div>
+            </div>
+            
+            <!-- Payment Calculation Preview (for loans) -->
+            <div id="paymentPreview" class="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-4 border border-indigo-200 hidden">
+                <h4 class="font-semibold text-indigo-800 mb-2"><i class="fas fa-calculator mr-2"></i>Estimated Monthly Payment</h4>
+                <div class="flex justify-between items-center">
+                    <span class="text-indigo-700">Calculated monthly payment:</span>
+                    <span class="text-2xl font-bold text-indigo-900" id="monthlyPayment">UGX 0</span>
+                </div>
+                <p class="text-xs text-indigo-600 mt-2">*Based on principal amount, interest rate, and 5-year term (adjustable in the system after creation)</p>
+            </div>
+            
+            <!-- Form Actions -->
+            <div class="flex gap-3 pt-4 border-t border-slate-200">
+                <button type="submit" class="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 text-white hover:shadow-lg transition-all font-semibold">
+                    <i class="fas fa-save mr-2"></i>
+                    {% if form.instance.pk %}Update Liability{% else %}Create Liability{% endif %}
+                </button>
+                <a href="{% url 'rooms:liability_list' %}" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-center font-medium">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Help Section -->
+    <div class="mt-6 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-5 border border-amber-200">
+        <h4 class="font-semibold text-amber-800 mb-3"><i class="fas fa-lightbulb mr-2"></i>Understanding Liabilities</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div class="space-y-2">
+                <p class="text-amber-800"><i class="fas fa-check-circle text-xs mr-2"></i> <strong>Loans:</strong> Bank loans, mortgages, equipment financing</p>
+                <p class="text-amber-800"><i class="fas fa-check-circle text-xs mr-2"></i> <strong>Maintenance:</strong> Outstanding maintenance/repair costs</p>
+                <p class="text-amber-800"><i class="fas fa-check-circle text-xs mr-2"></i> <strong>Renovation:</strong> Renovation project costs</p>
+            </div>
+            <div class="space-y-2">
+                <p class="text-amber-800"><i class="fas fa-check-circle text-xs mr-2"></i> <strong>Supplier:</strong> Unpaid supplier invoices</p>
+                <p class="text-amber-800"><i class="fas fa-check-circle text-xs mr-2"></i> <strong>Tax:</strong> Tax liabilities</p>
+                <p class="text-amber-800"><i class="fas fa-check-circle text-xs mr-2"></i> <strong>Insurance:</strong> Insurance premium payments</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Calculate monthly payment preview for loans
+    const principalInput = document.querySelector('#id_principal_amount');
+    const interestInput = document.querySelector('#id_interest_rate');
+    const liabilityTypeSelect = document.querySelector('#id_liability_type');
+    const paymentPreview = document.getElementById('paymentPreview');
+    const monthlyPaymentSpan = document.getElementById('monthlyPayment');
+    
+    function calculateMonthlyPayment() {
+        if (!principalInput || !interestInput || !liabilityTypeSelect) return;
+        
+        const liabilityType = liabilityTypeSelect.value;
+        const principal = parseFloat(principalInput.value) || 0;
+        const interestRate = parseFloat(interestInput.value) || 0;
+        
+        // Only show preview for loans
+        if (liabilityType === 'loan' && principal > 0) {
+            paymentPreview.classList.remove('hidden');
+            
+            // Simple calculation for 5-year term
+            const termMonths = 60;
+            const monthlyRate = (interestRate / 100) / 12;
+            
+            let monthlyPayment = 0;
+            if (monthlyRate > 0) {
+                monthlyPayment = principal * (monthlyRate * Math.pow(1 + monthlyRate, termMonths)) / (Math.pow(1 + monthlyRate, termMonths) - 1);
+            } else {
+                monthlyPayment = principal / termMonths;
+            }
+            
+            monthlyPaymentSpan.textContent = `UGX ${monthlyPayment.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}`;
+        } else {
+            paymentPreview.classList.add('hidden');
+        }
+    }
+    
+    if (principalInput && interestInput && liabilityTypeSelect) {
+        principalInput.addEventListener('input', calculateMonthlyPayment);
+        interestInput.addEventListener('input', calculateMonthlyPayment);
+        liabilityTypeSelect.addEventListener('change', calculateMonthlyPayment);
+        calculateMonthlyPayment(); // Initial calculation
+    }
+    
+    // Form validation for room/room_type selection
+    const roomSelect = document.querySelector('#id_room');
+    const roomTypeSelect = document.querySelector('#id_room_type');
+    
+    function validateLocationSelection() {
+        if (roomSelect && roomTypeSelect) {
+            if (roomSelect.value && roomTypeSelect.value) {
+                alert('Please select either a specific room OR a room type, not both.');
+                if (roomSelect.value === roomSelect.value) {
+                    roomTypeSelect.value = '';
+                }
+            }
+        }
+    }
+    
+    if (roomSelect) {
+        roomSelect.addEventListener('change', function() {
+            if (this.value && roomTypeSelect.value) {
+                roomTypeSelect.value = '';
+            }
+        });
+    }
+    
+    if (roomTypeSelect) {
+        roomTypeSelect.addEventListener('change', function() {
+            if (this.value && roomSelect.value) {
+                roomSelect.value = '';
+            }
+        });
+    }
+</script>
+{% endblock %}

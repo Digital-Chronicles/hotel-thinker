@@ -1,6 +1,6 @@
 # rooms/views.py
-from __future__ import annotations
 
+from __future__ import annotations
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -18,9 +18,16 @@ from django.core.exceptions import ValidationError
 
 from hotel_thinker.utils import get_active_hotel_for_user, require_hotel_role
 from .models import Room, RoomType, RoomImage, RoomImageGallery
+# Import all the new models
+from .models import RoomAsset, RoomLiability, AssetCategory, AssetDepreciationSchedule, LiabilityPayment
+
+# Import all forms including the filter forms
 from .forms import (
     RoomTypeForm, RoomForm, RoomImageForm, RoomImageGalleryForm, 
-    BulkRoomImageUploadForm, RoomImageFilterForm
+    BulkRoomImageUploadForm, RoomImageFilterForm,
+    # Asset and Liability forms
+    AssetCategoryForm, RoomAssetForm, RoomLiabilityForm, 
+    LiabilityPaymentForm, AssetFilterForm, LiabilityFilterForm,
 )
 
 class HotelScopedQuerysetMixin:
@@ -259,6 +266,8 @@ class RoomListView(HotelScopedQuerysetMixin, ListView):
         return ctx
 
 
+# rooms/views.py - Fix the RoomDetailView
+
 @method_decorator(login_required, name="dispatch")
 class RoomDetailView(HotelScopedQuerysetMixin, DetailView):
     model = Room
@@ -266,10 +275,11 @@ class RoomDetailView(HotelScopedQuerysetMixin, DetailView):
     context_object_name = "room"
 
     def get_queryset(self):
+        # Remove the 'galleries' prefetch - it doesn't exist on Room model
         return super().get_queryset().prefetch_related(
             Prefetch("images", queryset=RoomImage.objects.filter(is_active=True).order_by("order", "-created_at")),
-            "room_type__galleries",
-            "galleries",
+            "room_type__galleries",  # This is correct - galleries on room_type
+            # Remove this line: "galleries",  # This doesn't exist on Room
         )
 
     def get_context_data(self, **kwargs):
@@ -316,7 +326,8 @@ class RoomDetailView(HotelScopedQuerysetMixin, DetailView):
         # Primary image
         ctx["primary_image"] = self.object.images.filter(is_primary=True, is_active=True).first()
         
-        # Galleries containing this room
+        # Fix: Get galleries that contain images from this room
+        # Since galleries are linked to images, not directly to rooms
         ctx["room_galleries"] = RoomImageGallery.objects.filter(
             hotel=self.object.hotel,
             images__room=self.object,
@@ -324,7 +335,7 @@ class RoomDetailView(HotelScopedQuerysetMixin, DetailView):
         ).distinct()
         
         return ctx
-
+    
 
 @method_decorator(login_required, name="dispatch")
 class RoomCreateView(CreateView):
@@ -1054,3 +1065,504 @@ def room_images_api(request, room_id):
     }
     
     return JsonResponse(data)
+
+# rooms/views.py - Add these new views
+
+# ============================================================
+# ASSET MANAGEMENT VIEWS
+# ============================================================
+
+@method_decorator(login_required, name="dispatch")
+class AssetListView(HotelScopedQuerysetMixin, ListView):
+    model = RoomAsset
+    template_name = "rooms/assets/asset_list.html"
+    context_object_name = "assets"
+    paginate_by = 20
+    
+    def get_queryset(self):
+        qs = super().get_queryset().select_related('category', 'room', 'room_type')
+        
+        # Apply filters
+        status = self.request.GET.get('status')
+        if status:
+            qs = qs.filter(status=status)
+        
+        category = self.request.GET.get('category')
+        if category:
+            qs = qs.filter(category_id=category)
+        
+        room = self.request.GET.get('room')
+        if room:
+            qs = qs.filter(room_id=room)
+        
+        depreciation_method = self.request.GET.get('depreciation_method')
+        if depreciation_method:
+            qs = qs.filter(depreciation_method=depreciation_method)
+        
+        # Search
+        search = self.request.GET.get('search', '').strip()
+        if search:
+            qs = qs.filter(
+                Q(name__icontains=search) |
+                Q(serial_number__icontains=search) |
+                Q(brand__icontains=search)
+            )
+        
+        return qs.order_by('-purchase_date')
+    
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        hotel = self.get_hotel()
+        
+        ctx['filter_form'] = AssetFilterForm(self.request.GET, hotel=hotel)
+        ctx['categories'] = AssetCategory.objects.filter(hotel=hotel, is_active=True)
+        
+        # Statistics
+        assets_qs = RoomAsset.objects.filter(hotel=hotel)
+        ctx['total_assets'] = assets_qs.count()
+        ctx['total_value'] = assets_qs.aggregate(total=models.Sum('current_value'))['total'] or 0
+        ctx['total_depreciation'] = assets_qs.aggregate(total=models.Sum('total_depreciation'))['total'] or 0
+        ctx['active_assets'] = assets_qs.filter(status='active').count()
+        
+        # Assets by room
+        ctx['assets_by_room'] = assets_qs.filter(room__isnull=False).values('room__number').annotate(
+            count=models.Count('id'),
+            value=models.Sum('current_value')
+        ).order_by('-value')[:10]
+        
+        return ctx
+
+
+@method_decorator(login_required, name="dispatch")
+class AssetCreateView(CreateView):
+    model = RoomAsset
+    form_class = RoomAssetForm
+    template_name = "rooms/assets/asset_form.html"
+    
+    def dispatch(self, request, *args, **kwargs):
+        require_hotel_role(request.user, {"admin", "general_manager", "operations_manager"})
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['hotel'] = get_active_hotel_for_user(self.request.user)
+        return kwargs
+    
+    def form_valid(self, form):
+        form.instance.hotel = get_active_hotel_for_user(self.request.user)
+        messages.success(self.request, f"Asset '{form.instance.name}' created successfully.")
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse("rooms:asset_list")
+
+
+@method_decorator(login_required, name="dispatch")
+class AssetUpdateView(HotelScopedQuerysetMixin, UpdateView):
+    model = RoomAsset
+    form_class = RoomAssetForm
+    template_name = "rooms/assets/asset_form.html"
+    context_object_name = "asset"
+    
+    def dispatch(self, request, *args, **kwargs):
+        require_hotel_role(request.user, {"admin", "general_manager", "operations_manager"})
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['hotel'] = get_active_hotel_for_user(self.request.user)
+        return kwargs
+    
+    def form_valid(self, form):
+        messages.success(self.request, f"Asset '{form.instance.name}' updated successfully.")
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse("rooms:asset_list")
+
+
+@method_decorator(login_required, name="dispatch")
+class AssetDetailView(HotelScopedQuerysetMixin, DetailView):
+    model = RoomAsset
+    template_name = "rooms/assets/asset_detail.html"
+    context_object_name = "asset"
+    
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        
+        # Calculate depreciation for this year
+        current_year = date.today().year
+        ctx['yearly_depreciation'] = self.object.get_annual_depreciation()
+        ctx['appreciation_potential'] = self.object.get_appreciation_potential()
+        
+        # Depreciation schedule
+        ctx['depreciation_schedule'] = self.object.depreciation_schedule.all()[:12]
+        
+        # Remaining useful life
+        months_used = relativedelta(date.today(), self.object.purchase_date).years * 12 + relativedelta(date.today(), self.object.purchase_date).months
+        total_months = self.object.useful_life_years * 12
+        ctx['remaining_months'] = max(0, total_months - months_used)
+        ctx['depreciation_percentage'] = (self.object.total_depreciation / self.object.purchase_price * 100) if self.object.purchase_price > 0 else 0
+        
+        return ctx
+
+
+@login_required
+def asset_calculate_depreciation(request, pk):
+    """Manually trigger depreciation calculation for an asset"""
+    hotel = get_active_hotel_for_user(request.user)
+    asset = get_object_or_404(RoomAsset, pk=pk, hotel=hotel)
+    
+    old_value = asset.current_value
+    asset.update_current_value()
+    
+    messages.success(
+        request,
+        f"Depreciation calculated for {asset.name}. Value changed from {old_value} to {asset.current_value}"
+    )
+    
+    return redirect("rooms:asset_detail", pk=asset.pk)
+
+
+@login_required
+@require_POST
+def asset_bulk_depreciation(request):
+    """Calculate depreciation for all active assets"""
+    hotel = get_active_hotel_for_user(request.user)
+    
+    assets = RoomAsset.objects.filter(hotel=hotel, status='active')
+    updated_count = 0
+    
+    for asset in assets:
+        old_value = asset.current_value
+        asset.update_current_value()
+        if old_value != asset.current_value:
+            updated_count += 1
+    
+    messages.success(request, f"Depreciation calculated for {updated_count} out of {assets.count()} assets.")
+    
+    return redirect("rooms:asset_list")
+
+
+@login_required
+@require_POST
+def asset_delete(request, pk):
+    """Delete an asset"""
+    hotel = get_active_hotel_for_user(request.user)
+    asset = get_object_or_404(RoomAsset, pk=pk, hotel=hotel)
+    
+    name = asset.name
+    asset.delete()
+    
+    messages.success(request, f"Asset '{name}' deleted successfully.")
+    return redirect("rooms:asset_list")
+
+
+# ============================================================
+# LIABILITY MANAGEMENT VIEWS
+# ============================================================
+# Add this to your rooms/views.py
+
+@method_decorator(login_required, name="dispatch")
+class LiabilityListView(HotelScopedQuerysetMixin, ListView):
+    model = RoomLiability
+    template_name = "rooms/liabilities/liability_list.html"
+    context_object_name = "liabilities"
+    paginate_by = 20
+    
+    def get_queryset(self):
+        qs = super().get_queryset().select_related('room', 'room_type')
+        
+        # Apply filters
+        status = self.request.GET.get('status')
+        if status:
+            qs = qs.filter(status=status)
+        
+        liability_type = self.request.GET.get('liability_type')
+        if liability_type:
+            qs = qs.filter(liability_type=liability_type)
+        
+        room = self.request.GET.get('room')
+        if room:
+            qs = qs.filter(room_id=room)
+        
+        # Search
+        search = self.request.GET.get('search', '').strip()
+        if search:
+            qs = qs.filter(Q(name__icontains=search) | Q(description__icontains=search))
+        
+        return qs.order_by('-start_date', 'status')
+    
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        hotel = self.get_hotel()
+        
+        from .forms import LiabilityFilterForm
+        ctx['filter_form'] = LiabilityFilterForm(self.request.GET, hotel=hotel)
+        
+        # Statistics
+        liabilities_qs = RoomLiability.objects.filter(hotel=hotel)
+        ctx['total_liabilities'] = liabilities_qs.count()
+        ctx['total_balance'] = liabilities_qs.aggregate(total=Sum('remaining_balance'))['total'] or 0
+        ctx['active_liabilities'] = liabilities_qs.filter(status='active').count()
+        ctx['overdue_liabilities'] = sum(1 for l in liabilities_qs if l.is_overdue())
+        
+        # Liabilities by room
+        ctx['liabilities_by_room'] = liabilities_qs.filter(room__isnull=False).values('room__number').annotate(
+            count=Count('id'),
+            balance=Sum('remaining_balance')
+        ).order_by('-balance')[:10]
+        
+        return ctx
+
+@method_decorator(login_required, name="dispatch")
+class LiabilityCreateView(CreateView):
+    model = RoomLiability
+    form_class = RoomLiabilityForm
+    template_name = "rooms/liabilities/liability_form.html"
+    
+    def dispatch(self, request, *args, **kwargs):
+        require_hotel_role(request.user, {"admin", "general_manager", "operations_manager"})
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['hotel'] = get_active_hotel_for_user(self.request.user)
+        return kwargs
+    
+    def form_valid(self, form):
+        form.instance.hotel = get_active_hotel_for_user(self.request.user)
+        messages.success(self.request, f"Liability '{form.instance.name}' created successfully.")
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse("rooms:liability_list")
+
+
+@method_decorator(login_required, name="dispatch")
+class LiabilityUpdateView(HotelScopedQuerysetMixin, UpdateView):
+    model = RoomLiability
+    form_class = RoomLiabilityForm
+    template_name = "rooms/liabilities/liability_form.html"
+    context_object_name = "liability"
+    
+    def dispatch(self, request, *args, **kwargs):
+        require_hotel_role(request.user, {"admin", "general_manager", "operations_manager"})
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['hotel'] = get_active_hotel_for_user(self.request.user)
+        return kwargs
+    
+    def form_valid(self, form):
+        messages.success(self.request, f"Liability '{form.instance.name}' updated successfully.")
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse("rooms:liability_list")
+
+
+@method_decorator(login_required, name="dispatch")
+class LiabilityDetailView(HotelScopedQuerysetMixin, DetailView):
+    model = RoomLiability
+    template_name = "rooms/liabilities/liability_detail.html"
+    context_object_name = "liability"
+    
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        
+        ctx['payment_form'] = LiabilityPaymentForm()
+        ctx['payments'] = self.object.payments.all()[:20]
+        ctx['total_paid'] = self.object.payments.aggregate(total=models.Sum('amount'))['total'] or 0
+        ctx['percent_paid'] = (ctx['total_paid'] / self.object.principal_amount * 100) if self.object.principal_amount > 0 else 0
+        
+        # Calculate projected payoff date
+        if self.object.monthly_payment > 0 and self.object.remaining_balance > 0:
+            months_to_payoff = self.object.remaining_balance / self.object.monthly_payment
+            ctx['projected_payoff_date'] = date.today() + relativedelta(months=int(months_to_payoff))
+        
+        return ctx
+
+
+@login_required
+def liability_make_payment(request, pk):
+    """Record a payment against a liability"""
+    hotel = get_active_hotel_for_user(request.user)
+    liability = get_object_or_404(RoomLiability, pk=pk, hotel=hotel)
+    
+    if request.method == "POST":
+        form = LiabilityPaymentForm(request.POST)
+        
+        if form.is_valid():
+            payment = form.save(commit=False)
+            payment.liability = liability
+            payment.save()
+            
+            messages.success(request, f"Payment of {payment.amount} recorded successfully.")
+            
+            if liability.remaining_balance == 0:
+                messages.info(request, f"Liability '{liability.name}' has been fully paid!")
+            
+            return redirect("rooms:liability_detail", pk=liability.pk)
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    
+    return redirect("rooms:liability_detail", pk=liability.pk)
+
+
+@login_required
+@require_POST
+def liability_delete(request, pk):
+    """Delete a liability"""
+    hotel = get_active_hotel_for_user(request.user)
+    liability = get_object_or_404(RoomLiability, pk=pk, hotel=hotel)
+    
+    name = liability.name
+    liability.delete()
+    
+    messages.success(request, f"Liability '{name}' deleted successfully.")
+    return redirect("rooms:liability_list")
+
+
+@login_required
+def liability_mark_paid(request, pk):
+    """Mark a liability as fully paid"""
+    hotel = get_active_hotel_for_user(request.user)
+    liability = get_object_or_404(RoomLiability, pk=pk, hotel=hotel)
+    
+    liability.remaining_balance = 0
+    liability.status = 'paid'
+    liability.paid_date = date.today()
+    liability.save(update_fields=['remaining_balance', 'status', 'paid_date'])
+    
+    messages.success(request, f"Liability '{liability.name}' marked as paid.")
+    return redirect("rooms:liability_detail", pk=liability.pk)
+
+
+# ============================================================
+# ASSET CATEGORY VIEWS
+# ============================================================
+
+@method_decorator(login_required, name="dispatch")
+class AssetCategoryListView(HotelScopedQuerysetMixin, ListView):
+    model = AssetCategory
+    template_name = "rooms/assets/category_list.html"
+    context_object_name = "categories"
+    
+    def get_queryset(self):
+        return super().get_queryset().annotate(
+            asset_count=models.Count('assets')
+        ).order_by('name')
+    
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['form'] = AssetCategoryForm()
+        return ctx
+
+
+@login_required
+@require_POST
+def asset_category_create(request):
+    """Create a new asset category via AJAX/post"""
+    hotel = get_active_hotel_for_user(request.user)
+    
+    form = AssetCategoryForm(request.POST)
+    
+    if form.is_valid():
+        category = form.save(commit=False)
+        category.hotel = hotel
+        category.save()
+        messages.success(request, f"Category '{category.name}' created successfully.")
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                messages.error(request, f"{field}: {error}")
+    
+    return redirect("rooms:asset_category_list")
+
+
+# ============================================================
+# FINANCIAL DASHBOARD
+# ============================================================
+
+@method_decorator(login_required, name="dispatch")
+class RoomsFinancialDashboardView(TemplateView):
+    template_name = "rooms/financial_dashboard.html"
+    
+    def dispatch(self, request, *args, **kwargs):
+        require_hotel_role(request.user, {"admin", "general_manager", "operations_manager"})
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_hotel(self):
+        return get_active_hotel_for_user(self.request.user)
+    
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        hotel = self.get_hotel()
+        
+        # Asset summary
+        assets_qs = RoomAsset.objects.filter(hotel=hotel)
+        ctx['total_asset_value'] = assets_qs.aggregate(total=models.Sum('current_value'))['total'] or 0
+        ctx['total_asset_cost'] = assets_qs.aggregate(total=models.Sum('purchase_price'))['total'] or 0
+        ctx['total_depreciation'] = assets_qs.aggregate(total=models.Sum('total_depreciation'))['total'] or 0
+        ctx['asset_count'] = assets_qs.count()
+        
+        # Liability summary
+        liabilities_qs = RoomLiability.objects.filter(hotel=hotel)
+        ctx['total_liability_balance'] = liabilities_qs.aggregate(total=models.Sum('remaining_balance'))['total'] or 0
+        ctx['total_liability_principal'] = liabilities_qs.aggregate(total=models.Sum('principal_amount'))['total'] or 0
+        ctx['liability_count'] = liabilities_qs.count()
+        
+        # Net room value
+        ctx['net_room_value'] = ctx['total_asset_value'] - ctx['total_liability_balance']
+        
+        # Assets by room (top 10 by value)
+        ctx['assets_by_room'] = assets_qs.filter(room__isnull=False).values(
+            'room__number', 'room__id'
+        ).annotate(
+            total_value=models.Sum('current_value'),
+            asset_count=models.Count('id')
+        ).order_by('-total_value')[:10]
+        
+        # Liabilities by room (top 10 by balance)
+        ctx['liabilities_by_room'] = liabilities_qs.filter(room__isnull=False).values(
+            'room__number', 'room__id'
+        ).annotate(
+            total_balance=models.Sum('remaining_balance'),
+            liability_count=models.Count('id')
+        ).order_by('-total_balance')[:10]
+        
+        # Depreciation by category
+        ctx['depreciation_by_category'] = assets_qs.values('category__name').annotate(
+            total_depreciation=models.Sum('total_depreciation'),
+            total_value=models.Sum('current_value')
+        ).order_by('-total_depreciation')
+        
+        # Assets by type
+        ctx['assets_by_type'] = assets_qs.values('category__asset_type').annotate(
+            count=models.Count('id'),
+            total_value=models.Sum('current_value')
+        ).order_by('-total_value')
+        
+        # Recent assets
+        ctx['recent_assets'] = assets_qs.select_related('category', 'room').order_by('-created_at')[:10]
+        
+        # Upcoming liability payments
+        today = date.today()
+        ctx['upcoming_payments'] = liabilities_qs.filter(
+            status__in=['active', 'pending'],
+            next_payment_date__gte=today,
+            next_payment_date__lte=today + timedelta(days=30)
+        ).order_by('next_payment_date')[:10]
+        
+        # Overdue liabilities
+        overdue = []
+        for liability in liabilities_qs.filter(status__in=['active', 'pending']):
+            if liability.is_overdue():
+                overdue.append(liability)
+        ctx['overdue_liabilities'] = overdue
+        
+        return ctx

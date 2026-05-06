@@ -1,0 +1,194 @@
+{# rooms/templates/rooms/assets/asset_detail.html #}
+{% extends "base.html" %}
+
+{% block title %}{{ asset.name }} - Asset Details{% endblock %}
+
+{% block breadcrumb %}
+<li><span class="mx-2">/</span></li>
+<li><a href="{% url 'rooms:asset_list' %}" class="text-indigo-600">Assets</a></li>
+<li><span class="mx-2">/</span></li>
+<li>{{ asset.name }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-800">{{ asset.name }}</h1>
+            <p class="text-slate-500 mt-1">{{ asset.category.name }}</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{% url 'rooms:asset_update' asset.pk %}" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50">
+                <i class="fas fa-edit mr-2"></i>Edit
+            </a>
+            <a href="{% url 'rooms:asset_calculate_depreciation' asset.pk %}" class="px-4 py-2 rounded-xl bg-amber-600 text-white hover:bg-amber-700">
+                <i class="fas fa-calculator mr-2"></i>Calculate Depreciation
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white rounded-2xl p-5 shadow-card border border-slate-100">
+            <p class="text-slate-500 text-sm">Current Value</p>
+            <p class="text-3xl font-bold text-emerald-600">${{ asset.current_value|floatformat:2 }}</p>
+            <p class="text-xs text-slate-400 mt-1">Purchase: ${{ asset.purchase_price|floatformat:2 }}</p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 shadow-card border border-slate-100">
+            <p class="text-slate-500 text-sm">Total Depreciation</p>
+            <p class="text-3xl font-bold text-amber-600">${{ asset.total_depreciation|floatformat:2 }}</p>
+            <p class="text-xs text-slate-400 mt-1">{{ depreciation_percentage|floatformat:1 }}% depreciated</p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 shadow-card border border-slate-100">
+            <p class="text-slate-500 text-sm">Annual Depreciation</p>
+            <p class="text-3xl font-bold text-indigo-600">${{ yearly_depreciation|floatformat:2 }}</p>
+            <p class="text-xs text-slate-400 mt-1">{{ remaining_months }} months remaining</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column - Details -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Asset Details Card -->
+            <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+                <div class="border-b border-slate-200 px-6 py-4">
+                    <h3 class="font-semibold text-slate-800"><i class="fas fa-info-circle mr-2 text-indigo-600"></i>Asset Details</h3>
+                </div>
+                <div class="p-6">
+                    <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <dt class="text-xs font-semibold text-slate-400">Status</dt>
+                            <dd class="mt-1">
+                                <span class="inline-flex px-2 py-1 rounded-full text-xs font-semibold
+                                    {% if asset.status == 'active' %}bg-emerald-100 text-emerald-700
+                                    {% elif asset.status == 'maintenance' %}bg-amber-100 text-amber-700
+                                    {% elif asset.status == 'broken' %}bg-red-100 text-red-700
+                                    {% else %}bg-slate-100 text-slate-700{% endif %}">
+                                    {{ asset.get_status_display }}
+                                </span>
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-semibold text-slate-400">Location</dt>
+                            <dd class="mt-1 font-medium">
+                                {% if asset.room %}Room {{ asset.room.number }}, {{ asset.room.hotel.name }}
+                                {% elif asset.room_type %}{{ asset.room_type.name }} (Template)
+                                {% else %}Hotel Level{% endif %}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-semibold text-slate-400">Serial Number</dt>
+                            <dd class="mt-1 font-mono text-sm">{{ asset.serial_number|default:"Not specified" }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-semibold text-slate-400">Model/Brand</dt>
+                            <dd class="mt-1">{{ asset.model_number|default:"-" }} / {{ asset.brand|default:"-" }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-semibold text-slate-400">Purchase Date</dt>
+                            <dd class="mt-1">{{ asset.purchase_date|date:"M d, Y" }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-semibold text-slate-400">Warranty Expiry</dt>
+                            <dd class="mt-1">{{ asset.warranty_expiry|date:"M d, Y"|default:"Not specified" }}</dd>
+                        </div>
+                    </dl>
+                    {% if asset.notes %}
+                    <div class="mt-4 pt-4 border-t">
+                        <dt class="text-xs font-semibold text-slate-400">Notes</dt>
+                        <dd class="mt-1 text-slate-600">{{ asset.notes|linebreaks }}</dd>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Depreciation Method Card -->
+            <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+                <div class="border-b border-slate-200 px-6 py-4">
+                    <h3 class="font-semibold text-slate-800"><i class="fas fa-chart-line mr-2 text-indigo-600"></i>Depreciation Method</h3>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <p class="text-xs text-slate-400">Method</p>
+                            <p class="font-semibold">{{ asset.get_depreciation_method_display }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-400">Useful Life</p>
+                            <p class="font-semibold">{{ asset.useful_life_years }} years</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-400">Salvage Value</p>
+                            <p class="font-semibold">${{ asset.salvage_value|floatformat:2 }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-400">Last Depreciation Date</p>
+                            <p class="font-semibold">{{ asset.last_depreciation_date|date:"M d, Y"|default:"Never" }}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Depreciation Progress Bar -->
+                    <div class="mt-4">
+                        <div class="flex justify-between text-xs text-slate-500 mb-1">
+                            <span>Depreciation Progress</span>
+                            <span>{{ depreciation_percentage|floatformat:1 }}%</span>
+                        </div>
+                        <div class="h-2 bg-slate-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-amber-500 rounded-full" style="width: {{ depreciation_percentage }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Appreciation & Schedule -->
+        <div class="space-y-6">
+            <!-- Appreciation Potential -->
+            <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+                <div class="border-b border-slate-200 px-6 py-4">
+                    <h3 class="font-semibold text-slate-800"><i class="fas fa-arrow-trend-up mr-2 text-emerald-600"></i>Appreciation Potential</h3>
+                </div>
+                <div class="p-6 text-center">
+                    <p class="text-3xl font-bold text-emerald-600">${{ appreciation_potential|floatformat:2 }}</p>
+                    <p class="text-sm text-slate-500 mt-2">Potential appreciation value for collectible assets</p>
+                </div>
+            </div>
+
+            <!-- Recent Depreciation Schedule -->
+            <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+                <div class="border-b border-slate-200 px-6 py-4">
+                    <h3 class="font-semibold text-slate-800"><i class="fas fa-history mr-2 text-indigo-600"></i>Recent Depreciation History</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs">Period</th>
+                                <th class="px-4 py-2 text-right text-xs">Amount</th>
+                                <th class="px-4 py-2 text-right text-xs">Book Value</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {% for schedule in depreciation_schedule %}
+                            <tr>
+                                <td class="px-4 py-2 text-sm">{{ schedule.period_start|date:"M Y" }}</td>
+                                <td class="px-4 py-2 text-right text-sm text-amber-600">-${{ schedule.depreciation_amount|floatformat:2 }}</td>
+                                <td class="px-4 py-2 text-right text-sm">${{ schedule.book_value_after|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="px-4 py-8 text-center text-slate-400 text-sm">
+                                    No depreciation history yet
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
