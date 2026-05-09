@@ -1,103 +1,216 @@
 {# rooms/templates/rooms/financial_dashboard.html #}
 {% extends "base.html" %}
+{% load math_filters %}
+{% load currency_filters %}
 
 {% block title %}Financial Dashboard - Room Assets & Liabilities{% endblock %}
 
+{% block extra_css %}
+<style>
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .stat-card {
+        animation: fadeInUp 0.4s ease-out;
+        animation-fill-mode: both;
+        transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-card:nth-child(1) { animation-delay: 0.05s; }
+    .stat-card:nth-child(2) { animation-delay: 0.1s; }
+    .stat-card:nth-child(3) { animation-delay: 0.15s; }
+    .stat-card:nth-child(4) { animation-delay: 0.2s; }
+    
+    .table-container {
+        animation: fadeInUp 0.4s ease-out;
+    }
+    
+    .progress-bar {
+        transition: width 0.8s ease-out;
+    }
+    
+    .hover-lift:hover {
+        transform: translateY(-2px);
+        transition: transform 0.2s ease;
+    }
+    
+    .number-value {
+        font-feature-settings: "tnum";
+        font-variant-numeric: tabular-nums;
+    }
+    
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
 {% block breadcrumb %}
 <li><span class="mx-2">/</span></li>
-<li><a href="{% url 'rooms:financial_dashboard' %}" class="text-indigo-600">Financial Dashboard</a></li>
+<li><a href="{% url 'rooms:financial_dashboard' %}" class="text-blue-600 font-medium hover:text-blue-800">Financial Dashboard</a></li>
 {% endblock %}
 
 {% block content %}
 <div class="space-y-6">
     <!-- Header -->
-    <div>
-        <h1 class="text-2xl md:text-3xl font-bold text-slate-800">Room Financial Dashboard</h1>
-        <p class="text-slate-500 mt-1">Monitor asset values, liabilities, and net room worth</p>
-    </div>
-
-    <!-- Overview Stats -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl p-5 shadow-card">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-emerald-700 text-sm font-semibold">Total Asset Value</p>
-                    <p class="text-3xl font-bold text-emerald-800">${{ total_asset_value|floatformat:2 }}</p>
-                </div>
-                <div class="h-12 w-12 rounded-full bg-emerald-200 flex items-center justify-center">
-                    <i class="fas fa-building-columns text-emerald-700 text-xl"></i>
-                </div>
+    <div class="bg-gradient-to-r from-blue-700 to-indigo-700 rounded-xl p-6 text-white shadow-lg">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold">Financial Dashboard</h1>
+                <p class="text-blue-100 text-sm mt-1">Monitor asset values, liabilities, and net room worth</p>
             </div>
-            <p class="text-xs text-emerald-600 mt-2">Original cost: ${{ total_asset_cost|floatformat:2 }}</p>
-        </div>
-        
-        <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-5 shadow-card">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-red-700 text-sm font-semibold">Total Liabilities</p>
-                    <p class="text-3xl font-bold text-red-800">${{ total_liability_balance|floatformat:2 }}</p>
-                </div>
-                <div class="h-12 w-12 rounded-full bg-red-200 flex items-center justify-center">
-                    <i class="fas fa-file-invoice-dollar text-red-700 text-xl"></i>
-                </div>
+            <div class="flex gap-3">
+                <a href="{% url 'rooms:asset_list' %}" class="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg hover:bg-white/30 transition text-sm">
+                    <i class="fas fa-boxes mr-2"></i>Manage Assets
+                </a>
+                <a href="{% url 'rooms:liability_list' %}" class="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg hover:bg-white/30 transition text-sm">
+                    <i class="fas fa-file-invoice-dollar mr-2"></i>Manage Liabilities
+                </a>
             </div>
-            <p class="text-xs text-red-600 mt-2">Principal: ${{ total_liability_principal|floatformat:2 }}</p>
-        </div>
-        
-        <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 shadow-card">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-blue-700 text-sm font-semibold">Net Room Value</p>
-                    <p class="text-3xl font-bold text-blue-800">${{ net_room_value|floatformat:2 }}</p>
-                </div>
-                <div class="h-12 w-12 rounded-full bg-blue-200 flex items-center justify-center">
-                    <i class="fas fa-chart-line text-blue-700 text-xl"></i>
-                </div>
-            </div>
-            <p class="text-xs text-blue-600 mt-2">Assets - Liabilities</p>
-        </div>
-        
-        <div class="bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl p-5 shadow-card">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-amber-700 text-sm font-semibold">Total Depreciation</p>
-                    <p class="text-3xl font-bold text-amber-800">${{ total_depreciation|floatformat:2 }}</p>
-                </div>
-                <div class="h-12 w-12 rounded-full bg-amber-200 flex items-center justify-center">
-                    <i class="fas fa-chart-line text-amber-700 text-xl"></i>
-                </div>
-            </div>
-            <p class="text-xs text-amber-600 mt-2">Over {{ asset_count }} assets</p>
         </div>
     </div>
 
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <!-- Total Asset Value -->
+        <div class="stat-card bg-white rounded-xl p-5 shadow-sm border-l-4 border-blue-500 hover:shadow-md">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <i class="fas fa-building-columns text-blue-600 text-xl"></i>
+                </div>
+                <span class="badge bg-blue-50 text-blue-700">Assets</span>
+            </div>
+            <div>
+                <p class="text-gray-500 text-xs uppercase tracking-wide mb-1">Total Asset Value</p>
+                <p class="text-2xl font-bold text-gray-800 number-value">UGX {{ total_asset_value|floatformat:0|default:"0"|format_ugx }}</p>
+                <p class="text-xs text-gray-400 mt-2">
+                    Original cost: UGX {{ total_asset_cost|floatformat:0|default:"0"|format_ugx }}
+                </p>
+            </div>
+        </div>
+        
+        <!-- Total Liabilities -->
+        <div class="stat-card bg-white rounded-xl p-5 shadow-sm border-l-4 border-orange-500 hover:shadow-md">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center">
+                    <i class="fas fa-file-invoice-dollar text-orange-600 text-xl"></i>
+                </div>
+                <span class="badge bg-orange-50 text-orange-700">Liabilities</span>
+            </div>
+            <div>
+                <p class="text-gray-500 text-xs uppercase tracking-wide mb-1">Total Liabilities</p>
+                <p class="text-2xl font-bold text-gray-800 number-value">UGX {{ total_liability_balance|floatformat:0|default:"0"|format_ugx }}</p>
+                <p class="text-xs text-gray-400 mt-2">
+                    Principal: UGX {{ total_liability_principal|floatformat:0|default:"0"|format_ugx }}
+                </p>
+            </div>
+        </div>
+        
+        <!-- Net Room Value -->
+        <div class="stat-card bg-white rounded-xl p-5 shadow-sm border-l-4 border-green-500 hover:shadow-md">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
+                    <i class="fas fa-chart-line text-green-600 text-xl"></i>
+                </div>
+                <span class="badge bg-green-50 text-green-700">Net Worth</span>
+            </div>
+            <div>
+                <p class="text-gray-500 text-xs uppercase tracking-wide mb-1">Net Room Value</p>
+                <p class="text-2xl font-bold {% if net_room_value >= 0 %}text-green-600{% else %}text-red-600{% endif %} number-value">
+                    UGX {{ net_room_value|floatformat:0|default:"0"|format_ugx }}
+                </p>
+                <p class="text-xs text-gray-400 mt-2">
+                    Assets - Liabilities
+                </p>
+            </div>
+        </div>
+        
+        <!-- Total Depreciation -->
+        <div class="stat-card bg-white rounded-xl p-5 shadow-sm border-l-4 border-purple-500 hover:shadow-md">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center">
+                    <i class="fas fa-chart-simple text-purple-600 text-xl"></i>
+                </div>
+                <span class="badge bg-purple-50 text-purple-700">Depreciation</span>
+            </div>
+            <div>
+                <p class="text-gray-500 text-xs uppercase tracking-wide mb-1">Total Depreciation</p>
+                <p class="text-2xl font-bold text-gray-800 number-value">UGX {{ total_depreciation|floatformat:0|default:"0"|format_ugx }}</p>
+                <p class="text-xs text-gray-400 mt-2">
+                    Over {{ asset_count }} asset{{ asset_count|pluralize:"s" }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Tables -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Assets by Room -->
-        <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
-            <div class="border-b border-slate-200 px-6 py-4">
-                <h3 class="font-semibold text-slate-800"><i class="fas fa-door-open mr-2 text-emerald-600"></i>Assets by Room</h3>
+        <div class="table-container bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="border-b border-gray-200 px-6 py-4 bg-gradient-to-r from-gray-50 to-white">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-semibold text-gray-800">
+                        <i class="fas fa-door-open mr-2 text-blue-600"></i>Assets by Room
+                    </h3>
+                    <span class="text-xs text-gray-400">{{ assets_by_room|length }} rooms</span>
+                </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full">
-                    <thead class="bg-slate-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-slate-600">Room</th>
-                            <th class="px-6 py-3 text-center text-xs font-semibold text-slate-600">Assets</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-slate-600">Total Value</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-slate-600">Avg/Asset</th>
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-200">
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Room</th>
+                            <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Assets</th>
+                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Total Value</th>
+                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Average</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody class="divide-y divide-gray-100">
                         {% for room in assets_by_room %}
-                        <tr class="hover:bg-slate-50">
-                            <td class="px-6 py-3 font-medium">Room {{ room.room__number }}</td>
-                            <td class="px-6 py-3 text-center">{{ room.asset_count }}</td>
-                            <td class="px-6 py-3 text-right font-semibold text-emerald-600">${{ room.total_value|floatformat:2 }}</td>
-                            <td class="px-6 py-3 text-right">${{ room.total_value|div:room.asset_count|floatformat:0 }}</td>
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="px-6 py-4 font-medium text-gray-900">
+                                <span class="inline-flex items-center gap-2">
+                                    <i class="fas fa-hashtag text-gray-400 text-xs"></i>
+                                    Room {{ room.room__number }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="badge bg-blue-50 text-blue-700">{{ room.asset_count }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-right font-semibold text-gray-900 number-value">
+                                UGX {{ room.total_value|floatformat:0|default:"0"|format_ugx }}
+                            </td>
+                            <td class="px-6 py-4 text-right text-gray-600 number-value">
+                                UGX {{ room.avg_value|floatformat:0|default:"0"|format_ugx }}
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="px-6 py-8 text-center text-slate-400">No assets assigned to rooms</td>
+                            <td colspan="4" class="px-6 py-12 text-center text-gray-400">
+                                <i class="fas fa-box-open text-3xl mb-2 block"></i>
+                                No assets assigned to rooms
+                                <div class="mt-2">
+                                    <a href="{% url 'rooms:asset_create' %}" class="text-blue-600 text-sm hover:underline">Add Asset →</a>
+                                </div>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -106,31 +219,53 @@
         </div>
 
         <!-- Liabilities by Room -->
-        <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
-            <div class="border-b border-slate-200 px-6 py-4">
-                <h3 class="font-semibold text-slate-800"><i class="fas fa-file-invoice mr-2 text-red-600"></i>Liabilities by Room</h3>
+        <div class="table-container bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="border-b border-gray-200 px-6 py-4 bg-gradient-to-r from-gray-50 to-white">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-semibold text-gray-800">
+                        <i class="fas fa-file-invoice mr-2 text-orange-600"></i>Liabilities by Room
+                    </h3>
+                    <span class="text-xs text-gray-400">{{ liabilities_by_room|length }} rooms</span>
+                </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full">
-                    <thead class="bg-slate-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-slate-600">Room</th>
-                            <th class="px-6 py-3 text-center text-xs font-semibold text-slate-600">Liabilities</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-slate-600">Total Balance</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-slate-600">Avg/Liability</th>
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-200">
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Room</th>
+                            <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Liabilities</th>
+                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Total Balance</th>
+                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Average</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody class="divide-y divide-gray-100">
                         {% for room in liabilities_by_room %}
-                        <tr class="hover:bg-slate-50">
-                            <td class="px-6 py-3 font-medium">Room {{ room.room__number }}</td>
-                            <td class="px-6 py-3 text-center">{{ room.liability_count }}</td>
-                            <td class="px-6 py-3 text-right font-semibold text-red-600">${{ room.total_balance|floatformat:2 }}</td>
-                            <td class="px-6 py-3 text-right">${{ room.total_balance|div:room.liability_count|floatformat:0 }}</td>
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="px-6 py-4 font-medium text-gray-900">
+                                <span class="inline-flex items-center gap-2">
+                                    <i class="fas fa-hashtag text-gray-400 text-xs"></i>
+                                    Room {{ room.room__number }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="badge bg-orange-50 text-orange-700">{{ room.liability_count }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-right font-semibold text-gray-900 number-value">
+                                UGX {{ room.total_balance|floatformat:0|default:"0"|format_ugx }}
+                            </td>
+                            <td class="px-6 py-4 text-right text-gray-600 number-value">
+                                UGX {{ room.avg_balance|floatformat:0|default:"0"|format_ugx }}
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="px-6 py-8 text-center text-slate-400">No liabilities assigned to rooms</td>
+                            <td colspan="4" class="px-6 py-12 text-center text-gray-400">
+                                <i class="fas fa-file-invoice text-3xl mb-2 block"></i>
+                                No liabilities assigned to rooms
+                                <div class="mt-2">
+                                    <a href="{% url 'rooms:liability_create' %}" class="text-orange-600 text-sm hover:underline">Add Liability →</a>
+                                </div>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -139,35 +274,52 @@
         </div>
     </div>
 
+    <!-- Second Row -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Depreciation by Category -->
-        <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
-            <div class="border-b border-slate-200 px-6 py-4">
-                <h3 class="font-semibold text-slate-800"><i class="fas fa-chart-pie mr-2 text-amber-600"></i>Depreciation by Category</h3>
+        <div class="table-container bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="border-b border-gray-200 px-6 py-4 bg-gradient-to-r from-gray-50 to-white">
+                <h3 class="font-semibold text-gray-800">
+                    <i class="fas fa-chart-pie mr-2 text-purple-600"></i>Depreciation by Category
+                </h3>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full">
-                    <thead class="bg-slate-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-slate-600">Category</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-slate-600">Depreciation</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-slate-600">Current Value</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-slate-600">Depreciation %</th>
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-200">
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Category</th>
+                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Depreciation</th>
+                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Current Value</th>
+                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Depreciation %</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody class="divide-y divide-gray-100">
                         {% for cat in depreciation_by_category %}
-                        <tr>
-                            <td class="px-6 py-3">{{ cat.category__name }}</td>
-                            <td class="px-6 py-3 text-right text-amber-600">${{ cat.total_depreciation|floatformat:2 }}</td>
-                            <td class="px-6 py-3 text-right">${{ cat.total_value|floatformat:2 }}</td>
-                            <td class="px-6 py-3 text-right">
-                                {% widthratio cat.total_depreciation cat.total_value|add:cat.total_depreciation 100 %}%
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="px-6 py-4 font-medium text-gray-900">
+                                <i class="fas fa-tag text-purple-500 text-xs mr-2"></i>
+                                {{ cat.category__name|default:"Uncategorized" }}
+                            </td>
+                            <td class="px-6 py-4 text-right text-purple-600 font-semibold number-value">
+                                UGX {{ cat.total_depreciation|floatformat:0|default:"0"|format_ugx }}
+                            </td>
+                            <td class="px-6 py-4 text-right text-gray-700 number-value">
+                                UGX {{ cat.total_value|floatformat:0|default:"0"|format_ugx }}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    <div class="w-20 bg-gray-200 rounded-full h-2">
+                                        <div class="progress-bar bg-purple-500 h-2 rounded-full" style="width: {% widthratio cat.total_depreciation cat.total_value|add:cat.total_depreciation 100 %}%"></div>
+                                    </div>
+                                    <span class="text-xs font-semibold text-purple-600">
+                                        {% widthratio cat.total_depreciation cat.total_value|add:cat.total_depreciation 100 %}%
+                                    </span>
+                                </div>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="px-6 py-8 text-center text-slate-400">No depreciation data available</td>
+                            <td colspan="4" class="px-6 py-12 text-center text-gray-400">No depreciation data available</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -176,29 +328,41 @@
         </div>
 
         <!-- Assets by Type -->
-        <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
-            <div class="border-b border-slate-200 px-6 py-4">
-                <h3 class="font-semibold text-slate-800"><i class="fas fa-tags mr-2 text-indigo-600"></i>Assets by Type</h3>
+        <div class="table-container bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="border-b border-gray-200 px-6 py-4 bg-gradient-to-r from-gray-50 to-white">
+                <h3 class="font-semibold text-gray-800">
+                    <i class="fas fa-tags mr-2 text-green-600"></i>Assets by Type
+                </h3>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full">
-                    <thead class="bg-slate-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-slate-600">Asset Type</th>
-                            <th class="px-6 py-3 text-center text-xs font-semibold text-slate-600">Count</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-slate-600">Total Value</th>
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-200">
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Asset Type</th>
+                            <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Count</th>
+                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Total Value</th>
+                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Average</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody class="divide-y divide-gray-100">
                         {% for type in assets_by_type %}
-                        <tr>
-                            <td class="px-6 py-3">{{ type.category__asset_type|title }}</td>
-                            <td class="px-6 py-3 text-center">{{ type.count }}</td>
-                            <td class="px-6 py-3 text-right font-semibold">${{ type.total_value|floatformat:2 }}</td>
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="px-6 py-4 font-medium text-gray-900">
+                                {{ type.category__asset_type|title }}
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="badge bg-green-50 text-green-700">{{ type.count }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-right font-semibold text-gray-900 number-value">
+                                UGX {{ type.total_value|floatformat:0|default:"0"|format_ugx }}
+                            </td>
+                            <td class="px-6 py-4 text-right text-gray-600 number-value">
+                                UGX {{ type.avg_value|floatformat:0|default:"0"|format_ugx }}
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="3" class="px-6 py-8 text-center text-slate-400">No asset type data available</td>
+                            <td colspan="4" class="px-6 py-12 text-center text-gray-400">No asset type data available</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -211,20 +375,47 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Upcoming Payments -->
         {% if upcoming_payments %}
-        <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
-            <div class="border-b border-slate-200 px-6 py-4 bg-amber-50">
-                <h3 class="font-semibold text-amber-800"><i class="fas fa-bell mr-2"></i>Upcoming Payments (Next 30 Days)</h3>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="border-b border-gray-200 px-6 py-4 bg-gradient-to-r from-amber-50 to-white">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-semibold text-amber-800">
+                        <i class="fas fa-bell mr-2"></i>Upcoming Payments
+                    </h3>
+                    <span class="badge bg-amber-100 text-amber-700">Next 30 days</span>
+                </div>
             </div>
-            <div class="divide-y divide-slate-100">
+            <div class="divide-y divide-gray-100">
                 {% for payment in upcoming_payments %}
-                <div class="p-4 flex justify-between items-center">
-                    <div>
-                        <p class="font-semibold text-slate-800">{{ payment.name }}</p>
-                        <p class="text-xs text-slate-500">Due {{ payment.next_payment_date|date:"M d, Y" }}</p>
+                <div class="p-5 hover:bg-gray-50 transition">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-900">{{ payment.name }}</p>
+                            <div class="flex items-center gap-3 mt-1">
+                                <span class="text-xs text-amber-600">
+                                    <i class="far fa-calendar-alt mr-1"></i>
+                                    Due {{ payment.next_payment_date|date:"M d, Y" }}
+                                </span>
+                                {% if payment.room %}
+                                <span class="text-xs text-gray-500">
+                                    <i class="fas fa-door-open"></i> Room {{ payment.room.number }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-amber-700 text-lg">UGX {{ payment.monthly_payment|floatformat:0|format_ugx }}</p>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Remaining: UGX {{ payment.remaining_balance|floatformat:0|format_ugx }}
+                            </p>
+                        </div>
                     </div>
-                    <div class="text-right">
-                        <p class="font-bold text-amber-600">${{ payment.monthly_payment|floatformat:2 }}</p>
-                        <p class="text-xs text-slate-400">Remaining: ${{ payment.remaining_balance|floatformat:2 }}</p>
+                    <div class="mt-3">
+                        <div class="w-full bg-gray-100 rounded-full h-2">
+                            <div class="progress-bar bg-amber-500 h-2 rounded-full" style="width: {% widthratio payment.remaining_balance payment.principal_amount 100 %}%"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">
+                            {% widthratio payment.remaining_balance payment.principal_amount 100 %}% remaining
+                        </p>
                     </div>
                 </div>
                 {% endfor %}
@@ -234,20 +425,39 @@
 
         <!-- Overdue Liabilities -->
         {% if overdue_liabilities %}
-        <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
-            <div class="border-b border-slate-200 px-6 py-4 bg-red-50">
-                <h3 class="font-semibold text-red-800"><i class="fas fa-exclamation-triangle mr-2"></i>Overdue Liabilities</h3>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="border-b border-gray-200 px-6 py-4 bg-gradient-to-r from-red-50 to-white">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-semibold text-red-800">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>Overdue Liabilities
+                    </h3>
+                    <span class="badge bg-red-100 text-red-700">Action Required</span>
+                </div>
             </div>
-            <div class="divide-y divide-slate-100">
+            <div class="divide-y divide-gray-100">
                 {% for liability in overdue_liabilities %}
-                <div class="p-4 flex justify-between items-center">
-                    <div>
-                        <p class="font-semibold text-slate-800">{{ liability.name }}</p>
-                        <p class="text-xs text-red-600">Overdue since {{ liability.due_date|date:"M d, Y" }}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="font-bold text-red-600">${{ liability.remaining_balance|floatformat:2 }}</p>
-                        <a href="{% url 'rooms:liability_detail' liability.pk %}" class="text-xs text-indigo-600 hover:underline">View Details</a>
+                <div class="p-5 hover:bg-gray-50 transition">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-semibold text-gray-900">{{ liability.name }}</p>
+                            <div class="flex items-center gap-3 mt-1">
+                                <span class="text-xs text-red-600">
+                                    <i class="fas fa-clock mr-1"></i>
+                                    Overdue since {{ liability.due_date|date:"M d, Y" }}
+                                </span>
+                                {% if liability.room %}
+                                <span class="text-xs text-gray-500">
+                                    <i class="fas fa-door-open"></i> Room {{ liability.room.number }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-red-700 text-lg">UGX {{ liability.remaining_balance|floatformat:0|format_ugx }}</p>
+                            <a href="{% url 'rooms:liability_detail' liability.pk %}" class="text-blue-600 text-sm hover:underline mt-1 inline-block">
+                                View Details →
+                            </a>
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
@@ -257,38 +467,81 @@
     </div>
 
     <!-- Recent Assets -->
-    <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
-        <div class="border-b border-slate-200 px-6 py-4">
-            <h3 class="font-semibold text-slate-800"><i class="fas fa-clock mr-2 text-indigo-600"></i>Recently Added Assets</h3>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="border-b border-gray-200 px-6 py-4 bg-gradient-to-r from-gray-50 to-white">
+            <div class="flex items-center justify-between">
+                <h3 class="font-semibold text-gray-800">
+                    <i class="fas fa-history mr-2 text-blue-600"></i>Recently Added Assets
+                </h3>
+                <a href="{% url 'rooms:asset_list' %}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">View All →</a>
+            </div>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full">
-                <thead class="bg-slate-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-slate-600">Asset</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-slate-600">Category</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-slate-600">Location</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-slate-600">Value</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-slate-600">Added</th>
+                <thead>
+                    <tr class="bg-gray-50 border-b border-gray-200">
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Asset</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Category</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Location</th>
+                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Current Value</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Added</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody class="divide-y divide-gray-100">
                     {% for asset in recent_assets %}
-                    <tr class="hover:bg-slate-50">
-                        <td class="px-6 py-3">
-                            <a href="{% url 'rooms:asset_detail' asset.pk %}" class="font-medium text-indigo-600 hover:underline">{{ asset.name }}</a>
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4">
+                            <a href="{% url 'rooms:asset_detail' asset.pk %}" class="font-medium text-blue-600 hover:text-blue-800 hover:underline">
+                                {{ asset.name }}
+                            </a>
                         </td>
-                        <td class="px-6 py-3">{{ asset.category.name }}</td>
-                        <td class="px-6 py-3">{% if asset.room %}Room {{ asset.room.number }}{% else %}{{ asset.room_type.name|default:"Hotel Level" }}{% endif %}</td>
-                        <td class="px-6 py-3 text-right font-semibold">${{ asset.current_value|floatformat:2 }}</td>
-                        <td class="px-6 py-3 text-sm text-slate-500">{{ asset.created_at|date:"M d, Y" }}</td>
+                        <td class="px-6 py-4">
+                            <span class="badge bg-gray-100 text-gray-700">{{ asset.category.name }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-gray-600">
+                            {% if asset.room %}
+                            <i class="fas fa-door-open text-gray-400 mr-1"></i> Room {{ asset.room.number }}
+                            {% else %}
+                            <i class="fas fa-building text-gray-400 mr-1"></i> {{ asset.room_type.name|default:"Hotel Level" }}
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-right font-semibold text-green-600 number-value">
+                            UGX {{ asset.current_value|floatformat:0|format_ugx }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            <i class="far fa-calendar-alt text-gray-400 mr-1"></i>
+                            {{ asset.created_at|date:"M d, Y" }}
+                        </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="5" class="px-6 py-8 text-center text-slate-400">No assets added yet</td></tr>
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center text-gray-400">
+                            <i class="fas fa-box-open text-3xl mb-2 block"></i>
+                            No assets added yet
+                            <div class="mt-2">
+                                <a href="{% url 'rooms:asset_create' %}" class="text-blue-600 text-sm hover:underline">Add Your First Asset →</a>
+                            </div>
+                        </td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const progressBars = document.querySelectorAll('.progress-bar');
+        progressBars.forEach(bar => {
+            const width = bar.style.width;
+            bar.style.width = '0%';
+            setTimeout(() => {
+                bar.style.width = width;
+            }, 200);
+        });
+    });
+</script>
 {% endblock %}

@@ -1,106 +1,462 @@
 {% extends "base.html" %}
-{% block title %}Dining Areas - Restaurant Setup{% endblock %}
+
+{% block title %}Dining Areas - Restaurant Management{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Custom animations */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  .area-card {
+    animation: fadeInUp 0.5s ease-out;
+    animation-fill-mode: both;
+  }
+  
+  .area-card:nth-child(1) { animation-delay: 0.05s; }
+  .area-card:nth-child(2) { animation-delay: 0.1s; }
+  .area-card:nth-child(3) { animation-delay: 0.15s; }
+  .area-card:nth-child(4) { animation-delay: 0.2s; }
+  .area-card:nth-child(5) { animation-delay: 0.25s; }
+  .area-card:nth-child(6) { animation-delay: 0.3s; }
+  
+  /* Stat card hover effect */
+  .stat-card {
+    transition: all 0.3s ease;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Table counter badge */
+  .table-count-badge {
+    transition: all 0.2s ease;
+  }
+  
+  .group:hover .table-count-badge {
+    background: linear-gradient(135deg, #3b82f6, #4f46e5);
+    color: white;
+  }
+  
+  /* Modal animation */
+  .modal-enter {
+    animation: fadeInUp 0.3s ease-out;
+  }
+  
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+  
+  .loading-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
-  <!-- Header -->
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-    <div>
-      <div class="flex items-center gap-3">
-        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
-          <i class="fas fa-map-marker-alt text-white text-lg"></i>
+<div class="min-h-screen bg-gray-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header Section -->
+    <div class="mb-8">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg">
+            <i class="fas fa-map-marker-alt text-white text-xl"></i>
+          </div>
+          <div>
+            <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">Dining Areas</h1>
+            <p class="text-sm text-gray-500 mt-1">Manage restaurant sections, zones, and seating arrangements</p>
+          </div>
         </div>
-        <div>
-          <h1 class="text-2xl font-bold text-slate-800">Dining Areas</h1>
-          <p class="text-sm text-slate-500 mt-1">Manage restaurant dining sections and zones</p>
+        
+        <div class="flex gap-3">
+          <!-- Search Bar -->
+          <div class="relative">
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+            <input type="text" 
+                   id="searchAreas"
+                   placeholder="Search areas..." 
+                   class="pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64">
+          </div>
+          
+          <a href="{% url 'restaurant:area_create' %}" 
+             class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-200">
+            <i class="fas fa-plus text-sm"></i>
+            <span>Add New Area</span>
+          </a>
         </div>
       </div>
     </div>
-    <a href="{% url 'restaurant:area_create' %}" 
-       class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold hover:shadow-lg transition-all">
-      <i class="fas fa-plus text-sm"></i>
-      <span>Add New Area</span>
-    </a>
-  </div>
 
-  <!-- Areas Grid -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-    {% for area in areas %}
-    <div class="group relative bg-white rounded-2xl border border-slate-200 hover:shadow-xl transition-all duration-300 overflow-hidden">
-      <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/5 to-indigo-500/5 rounded-full blur-2xl"></div>
-      <div class="relative p-5">
-        <div class="flex items-start justify-between mb-4">
-          <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
-            <i class="fas fa-utensils text-blue-600 text-xl"></i>
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div class="stat-card bg-white rounded-xl border border-gray-200 p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500 mb-1">Total Areas</p>
+            <p class="text-2xl font-bold text-gray-900">{{ areas|length }}</p>
           </div>
-          <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
-            {{ area.tables.count }} tables
+          <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+            <i class="fas fa-map-marker-alt text-blue-600"></i>
+          </div>
+        </div>
+      </div>
+      
+      <div class="stat-card bg-white rounded-xl border border-gray-200 p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500 mb-1">Active Areas</p>
+            <p class="text-2xl font-bold text-gray-900">{{ areas|length }}</p>
+          </div>
+          <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+            <i class="fas fa-check-circle text-green-600"></i>
+          </div>
+        </div>
+      </div>
+      
+      <div class="stat-card bg-white rounded-xl border border-gray-200 p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500 mb-1">Total Tables</p>
+            <p class="text-2xl font-bold text-gray-900">{{ total_tables|default:0 }}</p>
+          </div>
+          <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+            <i class="fas fa-chair text-purple-600"></i>
+          </div>
+        </div>
+      </div>
+      
+      <div class="stat-card bg-white rounded-xl border border-gray-200 p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500 mb-1">Total Capacity</p>
+            <p class="text-2xl font-bold text-gray-900">{{ total_capacity|default:0 }}</p>
+          </div>
+          <div class="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+            <i class="fas fa-users text-orange-600"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Areas Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="areasGrid">
+      {% for area in areas %}
+      <div class="area-card group relative bg-white rounded-xl border border-gray-200 hover:shadow-xl transition-all duration-300 overflow-hidden" data-area-name="{{ area.name|lower }}">
+        <!-- Status Badge -->
+        <div class="absolute top-4 right-4 z-10">
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if area.is_active %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+            <span class="w-1.5 h-1.5 rounded-full {% if area.is_active %}bg-green-500{% else %}bg-gray-400{% endif %} mr-1.5"></span>
+            {% if area.is_active %}Active{% else %}Inactive{% endif %}
           </span>
         </div>
         
-        <h3 class="text-lg font-bold text-slate-900 mb-2">{{ area.name }}</h3>
+        <!-- Background Decoration -->
+        <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/5 to-indigo-500/5 rounded-full blur-2xl"></div>
         
-        {% if area.description %}
-        <p class="text-sm text-slate-600 mb-4">{{ area.description|truncatewords:20 }}</p>
+        <div class="relative p-5">
+          <!-- Icon and Quick Stats -->
+          <div class="flex items-start justify-between mb-4">
+            <div class="h-14 w-14 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <i class="fas fa-utensils text-blue-600 text-2xl"></i>
+            </div>
+            <div class="table-count-badge px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold">
+              <i class="fas fa-chair mr-1 text-xs"></i>
+              {{ area.tables.count }} Tables
+            </div>
+          </div>
+          
+          <!-- Area Details -->
+          <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+            {{ area.name }}
+          </h3>
+          
+          {% if area.description %}
+          <p class="text-sm text-gray-600 mb-4 line-clamp-2">{{ area.description }}</p>
+          {% else %}
+          <p class="text-sm text-gray-400 italic mb-4">No description provided</p>
+          {% endif %}
+          
+          <!-- Quick Actions -->
+          <div class="flex items-center gap-2 pt-4 border-t border-gray-100">
+            <a href="{% url 'restaurant:area_update' area.pk %}" 
+               class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-50 text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-all text-sm font-medium group">
+              <i class="fas fa-edit text-xs group-hover:scale-110 transition-transform"></i>
+              <span>Edit</span>
+            </a>
+            <button type="button" 
+                    onclick="showDeleteModal({{ area.pk }}, '{{ area.name|escapejs }}', {{ area.tables.count }})"
+                    class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all text-sm font-medium group">
+              <i class="fas fa-trash-alt text-xs group-hover:scale-110 transition-transform"></i>
+              <span>Delete</span>
+            </button>
+          </div>
+          
+          <!-- View Tables Link (if tables exist) -->
+          {% if area.tables.count > 0 %}
+          <div class="mt-3 pt-2">
+            <a href="{% url 'restaurant:table_list' %}?area={{ area.id }}" 
+               class="text-xs text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1">
+              <i class="fas fa-eye"></i>
+              View {{ area.tables.count }} table{{ area.tables.count|pluralize }}
+              <i class="fas fa-arrow-right text-xs"></i>
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% empty %}
+      <!-- Empty State -->
+      <div class="col-span-full">
+        <div class="text-center py-16 bg-white rounded-xl border border-gray-200">
+          <div class="w-24 h-24 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+            <i class="fas fa-map-marker-alt text-gray-400 text-4xl"></i>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">No dining areas yet</h3>
+          <p class="text-sm text-gray-600 mb-6 max-w-md mx-auto">
+            Create your first dining area to start organizing your restaurant floor plan and manage tables efficiently.
+          </p>
+          <a href="{% url 'restaurant:area_create' %}" 
+             class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold hover:shadow-lg transition-all">
+            <i class="fas fa-plus text-sm"></i>
+            <span>Create Your First Dining Area</span>
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="flex justify-center mt-8">
+      <nav class="flex gap-2" aria-label="Pagination">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" 
+           class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition text-sm font-medium">
+          <i class="fas fa-chevron-left mr-1"></i> Previous
+        </a>
         {% endif %}
         
-        <div class="flex items-center gap-2 pt-4 border-t border-slate-100">
-          <a href="{% url 'restaurant:area_update' area.pk %}" 
-             class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-all text-sm font-medium">
-            <i class="fas fa-edit text-xs"></i>
-            <span>Edit</span>
-          </a>
-          <button type="button" 
-                  onclick="confirmDelete({{ area.pk }}, '{{ area.name|escapejs }}')"
-                  class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-rose-50 hover:text-rose-600 transition-all text-sm font-medium">
-            <i class="fas fa-trash-alt text-xs"></i>
-            <span>Delete</span>
-          </button>
+        <div class="flex gap-1">
+          {% for num in page_obj.paginator.page_range %}
+            {% if num == page_obj.number %}
+            <span class="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium">
+              {{ num }}
+            </span>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <a href="?page={{ num }}" 
+               class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition text-sm font-medium">
+              {{ num }}
+            </a>
+            {% endif %}
+          {% endfor %}
         </div>
-      </div>
-    </div>
-    {% empty %}
-    <div class="col-span-full">
-      <div class="text-center py-12 bg-white rounded-2xl border border-slate-200">
-        <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
-          <i class="fas fa-map-marker-alt text-slate-400 text-3xl"></i>
-        </div>
-        <h3 class="text-lg font-semibold text-slate-800 mb-2">No dining areas yet</h3>
-        <p class="text-sm text-slate-600 mb-6">Create your first dining area to start organizing tables</p>
-        <a href="{% url 'restaurant:area_create' %}" 
-           class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold hover:shadow-lg transition-all">
-          <i class="fas fa-plus text-sm"></i>
-          <span>Create Dining Area</span>
+        
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" 
+           class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition text-sm font-medium">
+          Next <i class="fas fa-chevron-right ml-1"></i>
         </a>
+        {% endif %}
+      </nav>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm hidden items-center justify-center z-50 p-4" style="display: none;">
+  <div class="bg-white rounded-xl max-w-md w-full shadow-2xl modal-enter">
+    <div class="p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+          <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">Delete Dining Area</h3>
+          <p class="text-sm text-gray-500">This action cannot be undone</p>
+        </div>
+      </div>
+      
+      <div class="mb-6">
+        <p class="text-gray-700 mb-3">
+          Are you sure you want to delete <strong class="text-gray-900" id="modalAreaName"></strong>?
+        </p>
+        <div id="tablesWarning" class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 hidden">
+          <div class="flex gap-2">
+            <i class="fas fa-exclamation-circle text-yellow-600 mt-0.5"></i>
+            <div class="text-sm text-yellow-800">
+              <p class="font-medium mb-1">Warning: Contains Tables</p>
+              <p id="tablesCountText"></p>
+              <p class="text-xs mt-1">All tables in this area will also be deleted.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex gap-3 justify-end">
+        <button onclick="hideDeleteModal()" 
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+          Cancel
+        </button>
+        <form id="deleteForm" method="post" action="">
+          {% csrf_token %}
+          <button type="submit" 
+                  class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition">
+            <i class="fas fa-trash-alt mr-2"></i>
+            Delete Area
+          </button>
+        </form>
       </div>
     </div>
-    {% endfor %}
   </div>
-
-  <!-- Pagination -->
-  {% if is_paginated %}
-  <div class="flex justify-center mt-8">
-    <div class="flex gap-2">
-      {% if page_obj.has_previous %}
-      <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition">Previous</a>
-      {% endif %}
-      
-      <span class="px-4 py-2 rounded-lg bg-blue-600 text-white">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-      
-      {% if page_obj.has_next %}
-      <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition">Next</a>
-      {% endif %}
-    </div>
-  </div>
-  {% endif %}
 </div>
 
 <script>
-function confirmDelete(id, name) {
-  if (confirm(`Delete dining area "${name}"? This will also delete all tables in this area.`)) {
-    // Add delete form dynamically or redirect to delete URL
-    window.location.href = `/restaurant/manage/areas/${id}/delete/`;
+  // Search functionality
+  const searchInput = document.getElementById('searchAreas');
+  const areaCards = document.querySelectorAll('.area-card');
+  
+  if (searchInput) {
+    searchInput.addEventListener('input', function(e) {
+      const searchTerm = e.target.value.toLowerCase();
+      
+      areaCards.forEach(card => {
+        const areaName = card.getAttribute('data-area-name');
+        if (areaName && areaName.includes(searchTerm)) {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+      
+      // Check if no results visible
+      const visibleCards = Array.from(areaCards).filter(card => card.style.display !== 'none');
+      const emptyState = document.querySelector('.col-span-full .text-center');
+      
+      if (visibleCards.length === 0 && areaCards.length > 0) {
+        // Show "no results" message if it doesn't exist
+        if (!document.getElementById('noResultsMsg')) {
+          const grid = document.getElementById('areasGrid');
+          const noResultsDiv = document.createElement('div');
+          noResultsDiv.id = 'noResultsMsg';
+          noResultsDiv.className = 'col-span-full';
+          noResultsDiv.innerHTML = `
+            <div class="text-center py-12 bg-white rounded-xl border border-gray-200">
+              <i class="fas fa-search text-gray-400 text-4xl mb-3"></i>
+              <h3 class="text-lg font-semibold text-gray-900 mb-2">No matching areas</h3>
+              <p class="text-sm text-gray-600">Try adjusting your search criteria</p>
+            </div>
+          `;
+          grid.appendChild(noResultsDiv);
+        }
+      } else {
+        const noResultsMsg = document.getElementById('noResultsMsg');
+        if (noResultsMsg) noResultsMsg.remove();
+      }
+    });
   }
-}
+  
+  // Modal functions
+  let currentDeleteUrl = '';
+  
+  function showDeleteModal(id, name, tablesCount) {
+    const modal = document.getElementById('deleteModal');
+    const modalAreaName = document.getElementById('modalAreaName');
+    const tablesWarning = document.getElementById('tablesWarning');
+    const tablesCountText = document.getElementById('tablesCountText');
+    const deleteForm = document.getElementById('deleteForm');
+    
+    modalAreaName.textContent = name;
+    currentDeleteUrl = `/restaurant/manage/areas/${id}/delete/`;
+    deleteForm.action = currentDeleteUrl;
+    
+    if (tablesCount > 0) {
+      tablesWarning.classList.remove('hidden');
+      tablesCountText.textContent = `This area has ${tablesCount} table${tablesCount > 1 ? 's' : ''} assigned to it.`;
+    } else {
+      tablesWarning.classList.add('hidden');
+    }
+    
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    // Add escape key listener
+    document.addEventListener('keydown', handleEscapeKey);
+  }
+  
+  function hideDeleteModal() {
+    const modal = document.getElementById('deleteModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+    document.removeEventListener('keydown', handleEscapeKey);
+  }
+  
+  function handleEscapeKey(e) {
+    if (e.key === 'Escape') {
+      hideDeleteModal();
+    }
+  }
+  
+  // Close modal when clicking outside
+  document.getElementById('deleteModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+      hideDeleteModal();
+    }
+  });
+  
+  // Quick status indicator animation
+  areaCards.forEach(card => {
+    card.addEventListener('mouseenter', function() {
+      this.style.transform = 'translateY(-4px)';
+    });
+    card.addEventListener('mouseleave', function() {
+      this.style.transform = 'translateY(0)';
+    });
+  });
 </script>
+
+{% block extra_js %}
+{% if messages %}
+<script>
+  // Auto-hide messages after 3 seconds
+  setTimeout(() => {
+    const messages = document.querySelectorAll('.message');
+    messages.forEach(msg => {
+      msg.style.transition = 'opacity 0.3s';
+      msg.style.opacity = '0';
+      setTimeout(() => msg.remove(), 300);
+    });
+  }, 3000);
+</script>
+{% endif %}
+{% endblock %}
 {% endblock %}
