@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import transaction
+from django.db import models, transaction
 from django.db.models import Count, Sum, Q, Avg
 from django.utils import timezone
 from datetime import timedelta
@@ -199,14 +199,14 @@ class RestaurantStatisticsSerializer(serializers.Serializer):
         orders = self.get_orders_queryset(hotel_id, period)
         
         total_orders = orders.count()
-        completed_orders = orders.filter(status=RestaurantOrder.Status.COMPLETED).count()
+        completed_orders = orders.filter(status=RestaurantOrder.Status.PAID).count()
         pending_orders = orders.filter(
-            status__in=[RestaurantOrder.Status.PENDING, RestaurantOrder.Status.KITCHEN]
+            status__in=[RestaurantOrder.Status.OPEN, RestaurantOrder.Status.KITCHEN]
         ).count()
         cancelled_orders = orders.filter(status=RestaurantOrder.Status.CANCELLED).count()
         
         total_revenue = orders.filter(
-            status=RestaurantOrder.Status.COMPLETED
+            status=RestaurantOrder.Status.PAID
         ).aggregate(total=Sum("total"))["total"] or 0
         
         avg_order_value = total_revenue / completed_orders if completed_orders > 0 else 0
@@ -214,7 +214,7 @@ class RestaurantStatisticsSerializer(serializers.Serializer):
         # Top selling items
         top_items = RestaurantOrderItem.objects.filter(
             order__in=orders,
-            order__status=RestaurantOrder.Status.COMPLETED
+            order__status=RestaurantOrder.Status.PAID
         ).values(
             "item__name"
         ).annotate(
@@ -224,7 +224,7 @@ class RestaurantStatisticsSerializer(serializers.Serializer):
         
         # Orders by hour (for heatmap)
         orders_by_hour = orders.filter(
-            status=RestaurantOrder.Status.COMPLETED
+            status=RestaurantOrder.Status.PAID
         ).extra(
             {"hour": "EXTRACT(hour FROM created_at)"}
         ).values("hour").annotate(
@@ -282,7 +282,7 @@ class BarStatisticsSerializer(serializers.Serializer):
         
         total_orders = orders.count()
         served_orders = orders.filter(status=BarOrder.Status.SERVED).count()
-        pending_orders = orders.filter(status=BarOrder.Status.PENDING).count()
+        pending_orders = orders.filter(status=BarOrder.Status.OPEN).count()
         cancelled_orders = orders.filter(status=BarOrder.Status.CANCELLED).count()
         
         total_revenue = orders.filter(
@@ -346,15 +346,15 @@ class DashboardStatisticsSerializer(serializers.Serializer):
         
         # Today's totals
         today_orders = restaurant_today.count() + bar_today.count()
-        today_revenue = (restaurant_today.filter(status=RestaurantOrder.Status.COMPLETED).aggregate(t=Sum("total"))["t"] or 0) + \
+        today_revenue = (restaurant_today.filter(status=RestaurantOrder.Status.PAID).aggregate(t=Sum("total"))["t"] or 0) + \
                        (bar_today.filter(status=BarOrder.Status.SERVED).aggregate(t=Sum("total"))["t"] or 0)
         
         # Active orders
         active_restaurant_orders = restaurant_orders.filter(
-            status__in=[RestaurantOrder.Status.PENDING, RestaurantOrder.Status.KITCHEN]
+            status__in=[RestaurantOrder.Status.OPEN, RestaurantOrder.Status.KITCHEN]
         ).count()
         active_bar_orders = bar_orders.filter(
-            status=BarOrder.Status.PENDING
+            status=BarOrder.Status.OPEN
         ).count()
         
         return {

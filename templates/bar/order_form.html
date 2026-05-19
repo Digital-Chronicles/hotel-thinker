@@ -17,8 +17,7 @@
 {% block content %}
 <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
   <div class="max-w-full mx-auto px-4 py-6">
-    
-    <!-- Header Section -->
+
     <div class="mb-8 animate-fade-in-up">
       <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div class="flex items-center gap-4">
@@ -53,7 +52,6 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-      <!-- Main Form -->
       <div class="lg:col-span-2">
         <div class="bg-white rounded-2xl border border-slate-200/60 shadow-xl overflow-hidden">
           <div class="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-slate-50/50 to-white">
@@ -67,8 +65,7 @@
                 </div>
                 <p class="text-xs text-slate-500 mt-1">Fill in the order details below. Add items after creation.</p>
               </div>
-              
-              <!-- Live Status Badge -->
+
               <div class="shrink-0">
                 <span id="statusBadge"
                       class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold bg-slate-100 text-slate-700">
@@ -82,6 +79,10 @@
           <form method="post" novalidate class="p-6">
             {% csrf_token %}
 
+            <!-- IMPORTANT: These fields are hidden, not removed, so Django form validation can still create the order. -->
+            <input type="hidden" name="discount" value="0">
+            <input type="hidden" name="tax" value="0">
+
             {% if form.non_field_errors %}
               <div class="mb-6 rounded-xl bg-rose-50 border border-rose-200 px-4 py-3">
                 {% for error in form.non_field_errors %}
@@ -92,7 +93,6 @@
               </div>
             {% endif %}
 
-            <!-- Order Type Toggle -->
             <div class="mb-6 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
               <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
@@ -119,15 +119,12 @@
             </div>
 
             <div class="space-y-5">
-              <!-- Booking Field -->
               <div>
                 <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
                   <i class="fas fa-calendar-check mr-1 text-blue-500"></i>Booking Reference
                   <span class="text-xs font-normal text-slate-400 ml-1">(Optional)</span>
                 </label>
-                <div class="relative">
-                  {{ form.booking }}
-                </div>
+                <div class="relative">{{ form.booking }}</div>
                 <p class="text-xs text-slate-500 mt-1">
                   <i class="fas fa-info-circle text-[10px] mr-1"></i>
                   Link to hotel guest for room charge option.
@@ -137,15 +134,12 @@
                 {% endif %}
               </div>
 
-              <!-- Guest Name Field -->
               <div>
                 <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
                   <i class="fas fa-user mr-1 text-blue-500"></i>Guest Name
                   <span id="guestNameRequired" class="text-xs font-normal text-amber-600 ml-1">*Required for walk-ins</span>
                 </label>
-                <div class="relative">
-                  {{ form.guest_name }}
-                </div>
+                <div class="relative">{{ form.guest_name }}</div>
                 <p class="text-xs text-slate-500 mt-1">
                   <i class="fas fa-info-circle text-[10px] mr-1"></i>
                   For walk-in customers or order identification.
@@ -155,12 +149,9 @@
                 {% endif %}
               </div>
 
-              <!-- Room Charge Checkbox -->
               <div class="p-4 rounded-xl bg-gradient-to-r from-slate-50 to-slate-100/50 border border-slate-200">
                 <label class="flex items-start gap-3 cursor-pointer">
-                  <div class="relative mt-0.5">
-                    {{ form.room_charge }}
-                  </div>
+                  <div class="relative mt-0.5">{{ form.room_charge }}</div>
                   <div class="flex-1">
                     <div class="flex items-center gap-2 flex-wrap">
                       <span class="text-sm font-semibold text-slate-700">Charge to Room</span>
@@ -168,7 +159,7 @@
                         For guests
                       </span>
                     </div>
-                    <p class="text-xs text-slate-500 mt-0.5">Post this order to the guest's room bill for checkout settlement</p>
+                    <p class="text-xs text-slate-500 mt-0.5">Post this order to the guest's room bill for checkout settlement.</p>
                   </div>
                 </label>
                 {% if form.room_charge.errors %}
@@ -176,16 +167,11 @@
                 {% endif %}
               </div>
 
-              <!-- Order Status -->
               <div>
                 <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
                   <i class="fas fa-tag mr-1 text-blue-500"></i>Order Status
                 </label>
-                <div class="relative">
-                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  </div>
-                  {{ form.status }}
-                </div>
+                <div class="relative">{{ form.status }}</div>
                 <p class="text-xs text-slate-500 mt-1">
                   Recommended: <span class="font-semibold text-blue-600">Open</span>. You'll add items after creation.
                 </p>
@@ -193,56 +179,21 @@
                   <p class="text-xs text-rose-500 mt-1">{{ form.status.errors.0 }}</p>
                 {% endif %}
               </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <!-- Discount -->
-                <div>
-                  <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
-                    Discount (UGX)
-                  </label>
-                  <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    </div>
-                    {{ form.discount }}
-                  </div>
-                  <p class="text-xs text-slate-500 mt-1">Enter 0 if no discount applied.</p>
-                  {% if form.discount.errors %}
-                    <p class="text-xs text-rose-500 mt-1">{{ form.discount.errors.0 }}</p>
-                  {% endif %}
-                </div>
-
-                <!-- Tax -->
-                <div>
-                  <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
-                    Tax (UGX)
-                  </label>
-                  <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    </div>
-                    {{ form.tax }}
-                  </div>
-                  <p class="text-xs text-slate-500 mt-1">Enter 0 if no tax applicable.</p>
-                  {% if form.tax.errors %}
-                    <p class="text-xs text-rose-500 mt-1">{{ form.tax.errors.0 }}</p>
-                  {% endif %}
-                </div>
-              </div>
             </div>
 
-            <!-- Form Actions -->
             <div class="mt-8 pt-5 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div class="text-xs text-slate-500">
                 <i class="fas fa-lock text-[10px] mr-1"></i>
                 You'll be able to add bar items after creating the order.
               </div>
-              
+
               <div class="flex items-center gap-3">
                 <a href="{% url 'bar:order_list' %}"
                    class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border-2 border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all hover:border-slate-300">
                   <i class="fas fa-times text-sm"></i>
                   <span>Cancel</span>
                 </a>
-                
+
                 <button type="submit"
                         class="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold shadow-md hover:shadow-xl transition-all">
                   <i class="fas fa-save text-sm"></i>
@@ -254,10 +205,7 @@
         </div>
       </div>
 
-      <!-- Right Panel - Information & Tips -->
       <div class="space-y-6">
-        
-        <!-- Quick Tips Card -->
         <div class="bg-white rounded-2xl border border-slate-200/60 shadow-lg overflow-hidden">
           <div class="px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-indigo-50">
             <div class="flex items-center gap-2">
@@ -265,7 +213,7 @@
               <h3 class="text-sm font-semibold text-slate-800">Quick Tips</h3>
             </div>
           </div>
-          
+
           <div class="p-5">
             <ul class="space-y-3 text-sm">
               <li class="flex gap-3">
@@ -288,7 +236,6 @@
           </div>
         </div>
 
-        <!-- Default Values Card -->
         <div class="bg-white rounded-2xl border border-slate-200/60 shadow-lg overflow-hidden">
           <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/50">
             <div class="flex items-center gap-2">
@@ -296,23 +243,19 @@
               <h3 class="text-sm font-semibold text-slate-800">Default Values</h3>
             </div>
           </div>
-          
+
           <div class="p-5">
             <div class="space-y-3">
               <div class="flex justify-between items-center py-2 border-b border-slate-100">
                 <span class="text-sm text-slate-600">Order Status</span>
                 <span class="text-sm font-semibold text-blue-600">Open</span>
               </div>
-              <div class="flex justify-between items-center py-2 border-b border-slate-100">
-                <span class="text-sm text-slate-600">Discount</span>
-                <span class="text-sm font-semibold text-slate-700">0.00</span>
-              </div>
               <div class="flex justify-between items-center py-2">
-                <span class="text-sm text-slate-600">Tax</span>
-                <span class="text-sm font-semibold text-slate-700">0.00</span>
+                <span class="text-sm text-slate-600">Tax / Discount</span>
+                <span class="text-sm font-semibold text-slate-700">Hidden, defaults to 0</span>
               </div>
             </div>
-            
+
             <div class="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-3">
               <div class="flex items-start gap-2">
                 <i class="fas fa-info-circle text-amber-600 text-sm mt-0.5"></i>
@@ -324,6 +267,7 @@
           </div>
         </div>
       </div>
+
     </div>
   </div>
 </div>
@@ -338,14 +282,17 @@
   const roomChargeCheckbox = document.querySelector("input[name='room_charge']");
   const btnBooking = document.getElementById("btnBooking");
   const btnWalkIn = document.getElementById("btnWalkIn");
+  const currentDateTime = document.getElementById("currentDateTime");
 
-  // Status badge update
+  function updateClock() {
+    if (!currentDateTime) return;
+    currentDateTime.textContent = new Date().toLocaleString();
+  }
+
   function updateStatusBadge() {
     if (!statusSelect || !badge) return;
-
     const val = statusSelect.value || "";
     const label = statusSelect.options[statusSelect.selectedIndex]?.text || "—";
-
     const statusConfig = {
       "paid": { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" },
       "billed": { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500" },
@@ -353,19 +300,14 @@
       "cancelled": { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-500" },
       "open": { bg: "bg-slate-100", text: "text-slate-700", dot: "bg-slate-400" }
     };
-
     const config = statusConfig[val] || statusConfig.open;
-    
     badge.className = `inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${config.bg} ${config.text}`;
     badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${config.dot}"></span>Status: ${label}`;
   }
 
-  // Update guest name requirement based on booking selection
   function updateGuestNameRequirement() {
     if (!bookingSelect || !guestNameField || !guestNameRequired) return;
-    
     const hasBooking = bookingSelect.value && bookingSelect.value !== "";
-    
     if (hasBooking) {
       guestNameField.required = false;
       guestNameRequired.textContent = '(Optional - Will use booking guest)';
@@ -379,12 +321,9 @@
     }
   }
 
-  // Room charge checkbox state
   function updateRoomChargeState() {
     if (!roomChargeCheckbox || !bookingSelect) return;
-    
     const hasBooking = bookingSelect.value && bookingSelect.value !== "";
-    
     if (!hasBooking) {
       roomChargeCheckbox.checked = false;
       roomChargeCheckbox.disabled = true;
@@ -395,10 +334,8 @@
     }
   }
 
-  // Button styling for order type
   function updateButtonStyles(isBookingMode) {
     if (!btnBooking || !btnWalkIn) return;
-
     if (isBookingMode) {
       btnBooking.classList.add("bg-blue-600", "text-white", "border-blue-600");
       btnBooking.classList.remove("bg-white", "text-slate-700", "border-slate-300");
@@ -412,19 +349,13 @@
     }
   }
 
-  // Handle booking mode
   if (btnBooking) {
     btnBooking.addEventListener("click", () => {
       updateButtonStyles(true);
-      if (bookingSelect) {
-        bookingSelect.disabled = false;
-        bookingSelect.classList.remove("bg-slate-100", "cursor-not-allowed", "opacity-75");
-        bookingSelect.focus();
-      }
+      if (bookingSelect) bookingSelect.focus();
     });
   }
-  
-  // Handle walk-in mode
+
   if (btnWalkIn) {
     btnWalkIn.addEventListener("click", () => {
       updateButtonStyles(false);
@@ -432,36 +363,26 @@
         bookingSelect.value = "";
         updateGuestNameRequirement();
         updateRoomChargeState();
-        if (guestNameField) {
-          guestNameField.focus();
-        }
       }
+      if (guestNameField) guestNameField.focus();
     });
   }
 
-  // Event listeners
-  if (statusSelect) {
-    statusSelect.addEventListener("change", updateStatusBadge);
-  }
-
+  if (statusSelect) statusSelect.addEventListener("change", updateStatusBadge);
   if (bookingSelect) {
     bookingSelect.addEventListener("change", () => {
       updateGuestNameRequirement();
       updateRoomChargeState();
+      updateButtonStyles(Boolean(bookingSelect.value));
     });
   }
 
-  // Initial state
+  updateClock();
+  setInterval(updateClock, 1000);
   updateStatusBadge();
   updateGuestNameRequirement();
   updateRoomChargeState();
-
-  // Set initial button state based on booking value
-  if (bookingSelect && bookingSelect.value && bookingSelect.value !== "") {
-    updateButtonStyles(true);
-  } else {
-    updateButtonStyles(false);
-  }
+  updateButtonStyles(Boolean(bookingSelect && bookingSelect.value));
 })();
 </script>
 
@@ -470,19 +391,19 @@
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  
+
   @keyframes float {
     0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-5px); }
   }
-  
+
   .animate-fade-in-up { animation: fadeInUp 0.5s ease-out; }
   .animate-float { animation: float 3s ease-in-out infinite; }
-  
+
   input, select, textarea {
     transition: all 0.2s ease;
   }
-  
+
   input:focus, select:focus, textarea:focus {
     outline: none;
   }

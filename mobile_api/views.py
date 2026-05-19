@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import update_session_auth_hash
-
+from django.db.models import Sum, Count, Avg
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
@@ -488,14 +488,14 @@ class UserStatisticsAPIView(APIView):
         bar_orders = BarOrder.objects.filter(created_by=user)
         
         total_orders = restaurant_orders.count() + bar_orders.count()
-        completed_orders = restaurant_orders.filter(status='completed').count() + bar_orders.filter(status='served').count()
+        completed_orders = restaurant_orders.filter(status='paid').count() + bar_orders.filter(status='served').count()
         
         # Calculate completion rate
         completion_rate = (completed_orders / total_orders * 100) if total_orders > 0 else 0
         
         # Calculate total revenue
         total_revenue = (
-            restaurant_orders.filter(status='completed').aggregate(Sum('total'))['total__sum'] or 0
+            restaurant_orders.filter(status='paid').aggregate(Sum('total'))['total__sum'] or 0
         ) + (
             bar_orders.filter(status='served').aggregate(Sum('total'))['total__sum'] or 0
         )

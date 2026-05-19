@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-22x%$0e#6s3o%k*7wl**%xc5gfs94=5gr=jzhgf==ne55#_fc=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['hotelthinker.site', 'www.hotelthinker.site', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['hotelthinker.site', 'www.hotelthinker.site', 'localhost', '127.0.0.1', '192.168.1.138']
 
 
 # Application definition
@@ -48,7 +48,9 @@ INSTALLED_APPS = [
     "django_filters",
     "rest_framework.authtoken",
     "mobile_api.apps.MobileApiConfig",
+    "public_api.apps.PublicApiConfig",
     "corsheaders",
+    "widget_tweaks",
     "bar",
     "services",
     "store",    
@@ -109,24 +111,24 @@ WSGI_APPLICATION = 'hotel_thinker.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 # Database configuration
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'hotel_thinker_db',
-        'USER': 'postgres',
-        'PASSWORD': 'atwanzire',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'hotel_thinker_db',
+#         'USER': 'postgres',
+#         'PASSWORD': 'atwanzire',
+#         'HOST': 'localhost',
+#         'PORT': '5432',
+#     }
+# }
 
 
 # Password validation
@@ -202,3 +204,9 @@ CORS_ALLOW_METHODS = [
     "POST",
     "PUT",
 ]
+
+CORS_ALLOW_CREDENTIALS = True
+
+LOGIN_URL = "/accounts/login/"
+LOGIN_REDIRECT_URL = "/accounts/dashboard/"
+LOGOUT_REDIRECT_URL = "/accounts/login/"

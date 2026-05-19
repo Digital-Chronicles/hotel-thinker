@@ -81,6 +81,29 @@ def render_order_items_response(order: RestaurantOrder, request: HttpRequest) ->
     }
 
 
+
+
+def is_ajax_request(request: HttpRequest) -> bool:
+    """Return True when the request expects a JSON/AJAX response."""
+    return (
+        request.headers.get("x-requested-with") == "XMLHttpRequest"
+        or "application/json" in request.headers.get("accept", "").lower()
+        or request.POST.get("ajax") == "1"
+    )
+
+
+def order_detail_redirect(pk: int) -> HttpResponse:
+    """Redirect helper used after normal browser form submissions."""
+    return redirect("restaurant:order_detail", pk=pk)
+
+
+def order_error_response(request: HttpRequest, pk: int, message: str, status: int = 400) -> HttpResponse:
+    """Return JSON for AJAX requests, otherwise flash message and redirect."""
+    if is_ajax_request(request):
+        return JsonResponse({"ok": False, "errors": {"__all__": [message]}}, status=status)
+    messages.error(request, message)
+    return order_detail_redirect(pk)
+
 def ajax_login_required(view_func):
     """Decorator that returns JSON response for AJAX login required"""
     @wraps(view_func)
@@ -148,10 +171,14 @@ class OrderListView(StaffRequiredMixin, HotelScopedQuerysetMixin, ListView):
     paginate_by = 50
 
     def get_queryset(self):
+        # IMPORTANT:
+        # Do not slice the queryset inside Prefetch here. Django still needs to
+        # apply the relationship filter while rendering the template, and a sliced
+        # queryset causes: "Cannot filter a query once a slice has been taken."
         qs = super().get_queryset().select_related(
             "table", "table__area"
         ).prefetch_related(
-            Prefetch("items", queryset=RestaurantOrderItem.objects.select_related("item")[:5])
+            Prefetch("items", queryset=RestaurantOrderItem.objects.select_related("item").order_by("-id"))
         ).order_by("-created_at")
         
         # Apply filters
@@ -422,101 +449,126 @@ def menu_items_api(request: HttpRequest) -> JsonResponse:
 
 @login_required
 @require_POST
-def order_add_item_ajax(request: HttpRequest, pk: int) -> JsonResponse:
-    """Add item to order via AJAX"""
+def order_add_item_ajax(request: HttpRequest, pk: int) -> HttpResponse:
+    """
+    Add an item to an order.
+
+    Works with both normal HTML forms and AJAX/fetch requests:
+    - AJAX requests receive JSON with refreshed items HTML and totals.
+    - Normal browser form submissions redirect back to the order detail page.
+    """
     require_staff_role(request)
     order = get_order_or_404(request, pk)
-    
-    # Check if order can be modified
+
     if order.status in {RestaurantOrder.Status.PAID, RestaurantOrder.Status.CANCELLED}:
-        return JsonResponse(
-            {"ok": False, "errors": {"__all__": ["Order is closed and cannot be modified."]}},
-            status=400
-        )
-    
+        return order_error_response(request, pk, "Order is closed and cannot be modified.")
+
     form = RestaurantOrderItemForm(request.POST, hotel=order.hotel, order=order)
     if not form.is_valid():
-        return JsonResponse({"ok": False, "errors": form.errors}, status=400)
-    
+        if is_ajax_request(request):
+            return JsonResponse({"ok": False, "errors": form.errors}, status=400)
+
+        for field, errors in form.errors.items():
+            for error in errors:
+                messages.error(request, f"{field}: {error}" if field != "__all__" else error)
+        return order_detail_redirect(pk)
+
     try:
         with transaction.atomic():
             order_item = form.save(commit=False)
             order_item.order = order
             order_item.unit_price = order_item.item.price
             order_item.save()
-            
-            # Auto-advance from OPEN to KITCHEN when first item added
+
             if order.status == RestaurantOrder.Status.OPEN:
                 order.status = RestaurantOrder.Status.KITCHEN
                 order.save(update_fields=["status", "updated_at"])
-        
+
         messages.success(request, f"Added {order_item.qty} x {order_item.item.name} to order.")
-        return JsonResponse(render_order_items_response(order, request))
-        
+
+        if is_ajax_request(request):
+            return JsonResponse(render_order_items_response(order, request))
+        return order_detail_redirect(pk)
+
     except ValidationError as e:
-        return JsonResponse({"ok": False, "errors": {"__all__": list(e.messages)}}, status=400)
+        errors = getattr(e, "messages", [str(e)])
+        if is_ajax_request(request):
+            return JsonResponse({"ok": False, "errors": {"__all__": errors}}, status=400)
+        for error in errors:
+            messages.error(request, error)
+        return order_detail_redirect(pk)
+    except Exception as e:
+        return order_error_response(request, pk, f"Error adding item: {str(e)}")
 
 
 @login_required
 @require_POST
-def order_remove_item_ajax(request: HttpRequest, pk: int, item_id: int) -> JsonResponse:
-    """Remove item from order via AJAX"""
+def order_remove_item_ajax(request: HttpRequest, pk: int, item_id: int) -> HttpResponse:
+    """Remove an item from an order using either AJAX or normal form submit."""
     require_staff_role(request)
     order = get_order_or_404(request, pk)
-    
+
     if order.status in {RestaurantOrder.Status.PAID, RestaurantOrder.Status.CANCELLED}:
-        return JsonResponse(
-            {"ok": False, "errors": {"__all__": ["Order is closed and cannot be modified."]}},
-            status=400
-        )
-    
+        return order_error_response(request, pk, "Order is closed and cannot be modified.")
+
     order_item = get_object_or_404(RestaurantOrderItem, pk=item_id, order=order)
     item_name = order_item.item.name
-    
-    with transaction.atomic():
-        order_item.delete()
-    
-    messages.success(request, f"Removed {item_name} from order.")
-    return JsonResponse(render_order_items_response(order, request))
+
+    try:
+        with transaction.atomic():
+            order_item.delete()
+
+        messages.success(request, f"Removed {item_name} from order.")
+
+        if is_ajax_request(request):
+            return JsonResponse(render_order_items_response(order, request))
+        return order_detail_redirect(pk)
+
+    except Exception as e:
+        return order_error_response(request, pk, f"Error removing item: {str(e)}")
 
 
 @login_required
 @require_POST
-def order_update_item_qty_ajax(request: HttpRequest, pk: int, item_id: int) -> JsonResponse:
-    """Update item quantity via AJAX"""
+def order_update_item_qty_ajax(request: HttpRequest, pk: int, item_id: int) -> HttpResponse:
+    """Update item quantity using either AJAX or normal form submit."""
     require_staff_role(request)
     order = get_order_or_404(request, pk)
-    
+
     if order.status in {RestaurantOrder.Status.PAID, RestaurantOrder.Status.CANCELLED}:
-        return JsonResponse(
-            {"ok": False, "errors": {"__all__": ["Order is closed and cannot be modified."]}},
-            status=400
-        )
-    
+        return order_error_response(request, pk, "Order is closed and cannot be modified.")
+
     try:
         qty = int(request.POST.get("qty", "0"))
     except ValueError:
-        return JsonResponse({"ok": False, "errors": {"qty": ["Invalid quantity value."]}}, status=400)
-    
+        return order_error_response(request, pk, "Invalid quantity value.")
+
     if qty <= 0:
-        return JsonResponse({"ok": False, "errors": {"qty": ["Quantity must be at least 1."]}}, status=400)
-    
+        return order_error_response(request, pk, "Quantity must be at least 1.")
+
     if qty > 999:
-        return JsonResponse({"ok": False, "errors": {"qty": ["Quantity cannot exceed 999."]}}, status=400)
-    
+        return order_error_response(request, pk, "Quantity cannot exceed 999.")
+
     order_item = get_object_or_404(RestaurantOrderItem, pk=item_id, order=order)
-    
-    # Check stock if tracking is enabled
+
     if order_item.item.track_stock and order_item.item.stock_qty < qty:
-        return JsonResponse({
-            "ok": False, 
-            "errors": {"qty": [f"Insufficient stock. Available: {order_item.item.stock_qty}"]}
-        }, status=400)
-    
-    order_item.qty = qty
-    order_item.save(update_fields=["qty", "updated_at"])
-    
-    return JsonResponse(render_order_items_response(order, request))
+        return order_error_response(
+            request,
+            pk,
+            f"Insufficient stock. Available: {order_item.item.stock_qty}",
+        )
+
+    try:
+        order_item.qty = qty
+        order_item.save(update_fields=["qty", "updated_at"])
+        messages.success(request, f"Updated {order_item.item.name} quantity to {qty}.")
+
+        if is_ajax_request(request):
+            return JsonResponse(render_order_items_response(order, request))
+        return order_detail_redirect(pk)
+
+    except Exception as e:
+        return order_error_response(request, pk, f"Error updating quantity: {str(e)}")
 
 
 # ============================================================================
