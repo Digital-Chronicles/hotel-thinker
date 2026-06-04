@@ -1,52 +1,34 @@
-# hotel_thinker/urls.py
-
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, include
 from django.contrib.auth import views as auth_views
+from django.urls import include, path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
 
-    # Public-facing hotel profiles
-    path("", include("hotels.public_urls", namespace="hotel_public")),
+    # Public authentication aliases used by older templates.
+    path("login/", auth_views.LoginView.as_view(template_name="registration/login.html"), name="login"),
+    path("logout/", auth_views.LogoutView.as_view(next_page="/"), name="logout"),
 
-    # Authentication
-    path(
-        "accounts/login/",
-        auth_views.LoginView.as_view(
-            template_name="accounts/login.html",
-            redirect_authenticated_user=True,
-        ),
-        name="login",
-    ),
-    path(
-        "accounts/logout/",
-        auth_views.LogoutView.as_view(
-            next_page="/accounts/login/",
-        ),
-        name="logout",
-    ),
+    # Register the hotels app under BOTH namespaces because existing templates
+    # use both {% url 'hotel:...' %} and {% url 'hotels:...' %}.
+    path("", include(("hotels.urls", "hotel"), namespace="hotel")),
+    path("", include(("hotels.urls", "hotels"), namespace="hotels")),
 
-    # Core apps
-    path("accounts/", include("accounts.urls", namespace="accounts")),
-    path("hotel/", include("hotels.urls", namespace="hotels")),
-    path("rooms/", include("rooms.urls", namespace="rooms")),
-    path("bookings/", include("bookings.urls", namespace="bookings")),
-    path("finance/", include("finance.urls", namespace="finance")),
-
-    # Operations
-    path("restaurant/", include("restaurant.urls", namespace="restaurant")),
-    path("bar/", include("bar.urls", namespace="bar")),
-    path("store/", include("store.urls", namespace="store")),
-    path("services/", include("services.urls", namespace="services")),
-
-    # Reports
-    path("reports/", include("reports.urls", namespace="reports")),
-    path("bulk/", include("bulk.urls", namespace="bulk")),
-
-    # APIs
-    path("api/mobile/", include("mobile_api.urls", namespace="mobile_api")),
-    path("api/public/", include("public_api.urls", namespace="public_api")),
+    path("accounts/", include("accounts.urls")),
+    path("rooms/", include("rooms.urls")),
+    path("bookings/", include("bookings.urls")),
+    path("finance/", include("finance.urls")),
+    path("restaurant/", include("restaurant.urls")),
+    path("bar/", include("bar.urls")),
+    path("store/", include("store.urls")),
+    path("services/", include("services.urls")),
+    path("reports/", include("reports.urls")),
+    path("bulk/", include("bulk.urls")),
+    path("api/mobile/", include("mobile_api.urls")),
+    path("api/public/", include("public_api.urls")),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

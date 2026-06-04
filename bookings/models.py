@@ -45,6 +45,14 @@ class Guest(models.Model):
         OTHER = "other", _("Other")
 
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name="guests")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="guest_profiles",
+        help_text="Optional login account linked to this guest profile.",
+    )
 
     guest_id = models.CharField(max_length=50, unique=True, editable=False)
 

@@ -518,3 +518,114 @@ class UserStatisticsAPIView(APIView):
         })
 
 
+
+
+# =========================
+# SUPERUSER HOTEL REGISTRATION / SETUP API
+# =========================
+
+from rest_framework import viewsets
+from rooms.models import RoomType, Room
+from .serializers import (
+    SuperuserHotelSerializer,
+    SuperuserRoomTypeSerializer,
+    SuperuserRoomSerializer,
+    SuperuserMenuCategorySerializer,
+    SuperuserMenuItemSerializer,
+    HotelRegistrationSerializer,
+)
+
+
+class IsSuperUser(permissions.BasePermission):
+    message = "Only superusers can use this API."
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.is_superuser)
+
+
+class HotelRegistrationAPIView(APIView):
+    """Create one hotel and optionally create its room types, rooms, menu categories, and menu items in one request."""
+    permission_classes = [IsSuperUser]
+
+    def post(self, request):
+        serializer = HotelRegistrationSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        result = serializer.save()
+        return Response(serializer.to_representation(result), status=status.HTTP_201_CREATED)
+
+
+class SuperuserHotelViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsSuperUser]
+    serializer_class = SuperuserHotelSerializer
+    queryset = Hotel.objects.all().select_related("hotel_chain", "category").order_by("name")
+    search_fields = ["name", "slug", "email", "phone", "city", "country"]
+    ordering_fields = ["name", "created_at", "updated_at", "city", "country"]
+
+
+class SuperuserRoomTypeViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsSuperUser]
+    serializer_class = SuperuserRoomTypeSerializer
+    queryset = RoomType.objects.all().select_related("hotel").order_by("hotel__name", "name")
+    search_fields = ["name", "hotel__name"]
+    ordering_fields = ["name", "base_price"]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        hotel_id = self.request.query_params.get("hotel")
+        if hotel_id:
+            qs = qs.filter(hotel_id=hotel_id)
+        return qs
+
+
+class SuperuserRoomViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsSuperUser]
+    serializer_class = SuperuserRoomSerializer
+    queryset = Room.objects.all().select_related("hotel", "room_type").order_by("hotel__name", "number")
+    search_fields = ["number", "floor", "hotel__name", "room_type__name"]
+    ordering_fields = ["number", "floor", "status"]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        hotel_id = self.request.query_params.get("hotel")
+        status_value = self.request.query_params.get("status")
+        if hotel_id:
+            qs = qs.filter(hotel_id=hotel_id)
+        if status_value:
+            qs = qs.filter(status=status_value)
+        return qs
+
+
+class SuperuserMenuCategoryViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsSuperUser]
+    serializer_class = SuperuserMenuCategorySerializer
+    queryset = MenuCategory.objects.all().select_related("hotel").order_by("hotel__name", "sort_order", "name")
+    search_fields = ["name", "hotel__name"]
+    ordering_fields = ["name", "sort_order", "created_at"]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        hotel_id = self.request.query_params.get("hotel")
+        if hotel_id:
+            qs = qs.filter(hotel_id=hotel_id)
+        return qs
+
+
+class SuperuserMenuItemViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsSuperUser]
+    serializer_class = SuperuserMenuItemSerializer
+    queryset = MenuItem.objects.all().select_related("hotel", "category").order_by("hotel__name", "category__sort_order", "name")
+    search_fields = ["name", "description", "hotel__name", "category__name"]
+    ordering_fields = ["name", "price", "preparation_time", "created_at"]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        hotel_id = self.request.query_params.get("hotel")
+        category_id = self.request.query_params.get("category")
+        if hotel_id:
+            qs = qs.filter(hotel_id=hotel_id)
+        if category_id:
+            qs = qs.filter(category_id=category_id)
+        return qs

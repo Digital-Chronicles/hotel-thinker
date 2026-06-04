@@ -1,9 +1,20 @@
-from django.urls import path
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter
 from . import views
 
 app_name = "mobile_api"
 
+router = DefaultRouter()
+router.register(r"admin/hotels", views.SuperuserHotelViewSet, basename="admin-hotels")
+router.register(r"admin/room-types", views.SuperuserRoomTypeViewSet, basename="admin-room-types")
+router.register(r"admin/rooms", views.SuperuserRoomViewSet, basename="admin-rooms")
+router.register(r"admin/menu-categories", views.SuperuserMenuCategoryViewSet, basename="admin-menu-categories")
+router.register(r"admin/menu-items", views.SuperuserMenuItemViewSet, basename="admin-menu-items")
+
+
 urlpatterns = [
+    path("admin/register-hotel/", views.HotelRegistrationAPIView.as_view(), name="admin_register_hotel"),
+    path("", include(router.urls)),
     # Authentication
     path("login/", views.LoginAPIView.as_view(), name="login"),
     path("me/", views.MeAPIView.as_view(), name="me"),

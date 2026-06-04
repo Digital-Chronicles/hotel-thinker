@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +26,7 @@ SECRET_KEY = 'django-insecure-22x%$0e#6s3o%k*7wl**%xc5gfs94=5gr=jzhgf==ne55#_fc=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['hotelthinker.site', 'www.hotelthinker.site', 'localhost', '127.0.0.1', '192.168.1.138']
+ALLOWED_HOSTS = ['hotelthinker.site', 'www.hotelthinker.site', 'localhost', '127.0.0.1', '192.168.1.137', '192.168.1.138']
 
 
 # Application definition
@@ -164,17 +165,11 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
-
-STATIC_URL = "/static/"
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
-
-STATIC_ROOT = BASE_DIR / "staticfiles"
-
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 
 CORS_ALLOWED_ORIGINS = [

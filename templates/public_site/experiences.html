@@ -1,0 +1,657 @@
+{% extends "public_site/base_public.html" %}
+{% load static %}
+
+{% block title %}Guest Experiences & Local Activities | Hotel Thinker{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Premium Experiences Aesthetics */
+  .blur-glass {
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(16px) saturate(120%);
+    -webkit-backdrop-filter: blur(16px) saturate(120%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+  }
+  
+  .experience-card {
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  
+  @keyframes fadeInUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .experience-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.08);
+  }
+
+  .experience-card:hover .grid-image {
+    transform: scale(1.05);
+  }
+
+  .grid-image {
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Star Animation */
+  .star-glow {
+    text-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+  }
+
+  /* File upload dropzone pulse */
+  .dropzone-active {
+    border-color: #6366f1 !important;
+    background-color: rgba(99, 102, 241, 0.03) !important;
+  }
+  
+  /* Polaroid image borders for collection */
+  .collage-container {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    background-color: #f1f5f9;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="min-h-screen bg-slate-50/50 pb-20 pt-32 font-sans text-slate-800">
+  
+  <!-- Hero Section -->
+  <section class="max-w-7xl mx-auto px-4 md:px-8 mb-16 relative">
+    <div class="absolute inset-0 -top-24 -z-10 overflow-hidden">
+      <div class="absolute top-0 left-1/4 w-96 h-96 bg-indigo-200/40 rounded-full blur-3xl"></div>
+      <div class="absolute top-12 right-1/4 w-96 h-96 bg-sky-200/40 rounded-full blur-3xl"></div>
+    </div>
+
+    <div class="text-center max-w-3xl mx-auto">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-xs font-bold text-indigo-700 mb-6 uppercase tracking-wider">
+        <i class="fa-solid fa-compass animate-spin-slow"></i> Guest Chronicles & Adventures
+      </div>
+      <h1 class="text-4xl md:text-6xl font-black text-slate-900 tracking-tight leading-tight">
+        Real Stays. <span class="bg-gradient-to-r from-indigo-600 via-purple-600 to-sky-600 bg-clip-text text-transparent">Real Experiences.</span>
+      </h1>
+      <p class="mt-6 text-lg text-slate-600 leading-relaxed">
+        Discover places visited and activities completed by our global community of travellers. Browse real stories or share your own memories.
+      </p>
+
+      <div class="mt-8 flex flex-wrap justify-center gap-4">
+        <button onclick="openFormModal()" class="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/35 transition-all flex items-center gap-2 group">
+          Share Your Experience
+          <i class="fa-solid fa-plus transition-transform group-hover:rotate-90"></i>
+        </button>
+        <a href="#explore-stories" class="px-6 py-3.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-bold rounded-2xl transition-all">
+          Browse Stories
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Filter & Search Toolbar -->
+  <section id="explore-stories" class="max-w-7xl mx-auto px-4 md:px-8 mb-12 scroll-mt-28">
+    <div class="blur-glass p-5 rounded-3xl shadow-sm flex flex-col lg:flex-row items-center justify-between gap-4">
+      
+      <!-- Search Form -->
+      <form method="GET" action="{% url 'hotel:experiences_list' %}" class="w-full lg:w-auto flex flex-col md:flex-row items-stretch md:items-center gap-3 flex-grow">
+        <div class="relative flex-grow max-w-xl">
+          <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <input type="text" name="q" value="{{ q|default:'' }}" 
+                 placeholder="Search places (e.g. Mount Rwenzori), activities, or hotels..." 
+                 class="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all text-slate-800">
+        </div>
+
+        <div class="relative w-full md:w-56">
+          <i class="fa-solid fa-hotel absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <select name="hotel_id" onchange="this.form.submit()" 
+                  class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all text-slate-800 appearance-none">
+            <option value="">All Hotels</option>
+            {% for h in active_hotels %}
+              <option value="{{ h.id }}" {% if selected_hotel_id|add:"0" == h.id %}selected{% endif %}>{{ h.name }}</option>
+            {% endfor %}
+          </select>
+          <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
+        </div>
+
+        <button type="submit" class="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-2xl transition-all">
+          Search
+        </button>
+
+        {% if q or selected_hotel_id %}
+          <a href="{% url 'hotel:experiences_list' %}" class="text-xs font-bold text-slate-500 hover:text-indigo-600 flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-slate-100">
+            <i class="fa-solid fa-xmark"></i> Clear Filters
+          </a>
+        {% endif %}
+      </form>
+
+      <!-- Stats display -->
+      <div class="text-xs font-medium text-slate-400 self-end lg:self-center">
+        Showing <span class="font-bold text-slate-700">{{ page_obj.paginator.count }}</span> experiences
+      </div>
+    </div>
+  </section>
+
+  <!-- Experiences Grid -->
+  <section class="max-w-7xl mx-auto px-4 md:px-8">
+    {% if experiences %}
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for exp in experiences %}
+          <article class="experience-card bg-white rounded-3xl overflow-hidden border border-slate-100 flex flex-col h-full shadow-sm" style="animation-delay: {% widthratio forloop.counter 1 0.05 %}s">
+            
+            <!-- Photo Collection Grid (Masonry / Adaptive Layout) -->
+            {% if exp.images.all %}
+              <div class="collage-container h-64 w-full">
+                {% with count=exp.images.all.count %}
+                  {% if count == 1 %}
+                    <!-- 1 Photo -->
+                    <div class="w-full h-full relative cursor-pointer" onclick="openPhotoViewer({{ exp.id }})">
+                      <img src="{{ exp.images.all.0.image.url }}" alt="{{ exp.place_visited }}" class="w-full h-full object-cover grid-image">
+                    </div>
+                  {% elif count == 2 %}
+                    <!-- 2 Photos split 50/50 -->
+                    <div class="grid grid-cols-2 h-full gap-0.5 cursor-pointer" onclick="openPhotoViewer({{ exp.id }})">
+                      {% for img in exp.images.all %}
+                        <div class="w-full h-full relative overflow-hidden">
+                          <img src="{{ img.image.url }}" alt="{{ exp.place_visited }}" class="w-full h-full object-cover grid-image">
+                        </div>
+                      {% endfor %}
+                    </div>
+                  {% elif count == 3 %}
+                    <!-- 3 Photos: 1 main left, 2 stacked right -->
+                    <div class="grid grid-cols-3 h-full gap-0.5 cursor-pointer" onclick="openPhotoViewer({{ exp.id }})">
+                      <div class="col-span-2 w-full h-full relative overflow-hidden">
+                        <img src="{{ exp.images.all.0.image.url }}" alt="{{ exp.place_visited }}" class="w-full h-full object-cover grid-image">
+                      </div>
+                      <div class="grid grid-rows-2 gap-0.5 h-full">
+                        <div class="w-full h-full overflow-hidden">
+                          <img src="{{ exp.images.all.1.image.url }}" alt="{{ exp.place_visited }}" class="w-full h-full object-cover grid-image">
+                        </div>
+                        <div class="w-full h-full overflow-hidden">
+                          <img src="{{ exp.images.all.2.image.url }}" alt="{{ exp.place_visited }}" class="w-full h-full object-cover grid-image">
+                        </div>
+                      </div>
+                    </div>
+                  {% else %}
+                    <!-- 4+ Photos: 1 main left, stacked right with overlays -->
+                    <div class="grid grid-cols-3 h-full gap-0.5 cursor-pointer" onclick="openPhotoViewer({{ exp.id }})">
+                      <div class="col-span-2 w-full h-full relative overflow-hidden">
+                        <img src="{{ exp.images.all.0.image.url }}" alt="{{ exp.place_visited }}" class="w-full h-full object-cover grid-image">
+                      </div>
+                      <div class="grid grid-rows-2 gap-0.5 h-full">
+                        <div class="w-full h-full overflow-hidden">
+                          <img src="{{ exp.images.all.1.image.url }}" alt="{{ exp.place_visited }}" class="w-full h-full object-cover grid-image">
+                        </div>
+                        <div class="w-full h-full overflow-hidden relative">
+                          <img src="{{ exp.images.all.2.image.url }}" alt="{{ exp.place_visited }}" class="w-full h-full object-cover grid-image">
+                          <div class="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center text-white font-black text-sm tracking-wide">
+                            +{{ count|add:"-2" }} PHOTOS
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endwith %}
+              </div>
+            {% else %}
+              <!-- Fallback visual if no photos are attached -->
+              <div class="h-48 w-full bg-gradient-to-br from-indigo-50 to-sky-50 flex flex-col items-center justify-center text-indigo-400 gap-3 border-b border-slate-100">
+                <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
+                  <i class="fa-solid fa-map-pin text-indigo-600 text-lg"></i>
+                </div>
+                <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Adventure Logged</span>
+              </div>
+            {% endif %}
+
+            <!-- Card Content -->
+            <div class="p-6 flex flex-col flex-grow">
+              
+              <!-- Location Header -->
+              <div class="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <h3 class="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors leading-snug">
+                    {{ exp.place_visited }}
+                  </h3>
+                  <div class="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 mt-1">
+                    <i class="fa-solid fa-hiking text-indigo-500"></i>
+                    <span>{{ exp.activity }}</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-xl text-amber-700 font-black text-xs border border-amber-100">
+                  <i class="fa-solid fa-star text-amber-500 star-glow"></i>
+                  <span>{{ exp.rating|floatformat:1 }}</span>
+                </div>
+              </div>
+
+              <!-- Experience text -->
+              <p class="text-slate-600 text-sm leading-relaxed mb-6 font-sans flex-grow">
+                "{{ exp.experience_text|truncatewords:45 }}"
+              </p>
+
+              <!-- Divider -->
+              <div class="w-full h-px bg-slate-100 my-4"></div>
+
+              <!-- Footer details -->
+              <div class="flex items-center justify-between mt-auto">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-sky-500 flex items-center justify-center text-white font-bold text-xs uppercase shadow-sm">
+                    {{ exp.guest_name|slice:":1" }}
+                  </div>
+                  <div>
+                    <span class="text-xs font-bold text-slate-800 block leading-tight">{{ exp.guest_name }}</span>
+                    <span class="text-[10px] text-slate-400 font-medium leading-none">{{ exp.created_at|date:"M d, Y" }}</span>
+                  </div>
+                </div>
+
+                <!-- Hotel details badge -->
+                <a href="{% url 'hotel:hotel_profile' exp.hotel.slug %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800 text-[11px] font-bold transition-all">
+                  <i class="fa-solid fa-hotel text-slate-400 text-[9px]"></i>
+                  {{ exp.hotel.name|truncatechars:18 }}
+                </a>
+              </div>
+
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+
+      <!-- Pagination Controls -->
+      {% if page_obj.has_other_pages %}
+        <nav class="mt-16 flex justify-center gap-2">
+          {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if selected_hotel_id %}&hotel_id={{ selected_hotel_id }}{% endif %}" class="w-10 h-10 rounded-xl bg-white border border-slate-200 hover:border-indigo-600 hover:text-indigo-600 flex items-center justify-center transition font-bold text-xs">
+              <i class="fa-solid fa-chevron-left"></i>
+            </a>
+          {% endif %}
+
+          {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+              <span class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-md shadow-indigo-600/10">
+                {{ num }}
+              </span>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+              <a href="?page={{ num }}{% if q %}&q={{ q }}{% endif %}{% if selected_hotel_id %}&hotel_id={{ selected_hotel_id }}{% endif %}" class="w-10 h-10 rounded-xl bg-white border border-slate-200 hover:border-indigo-600 hover:text-indigo-600 flex items-center justify-center transition font-bold text-xs text-slate-500">
+                {{ num }}
+              </a>
+            {% endif %}
+          {% endfor %}
+
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if selected_hotel_id %}&hotel_id={{ selected_hotel_id }}{% endif %}" class="w-10 h-10 rounded-xl bg-white border border-slate-200 hover:border-indigo-600 hover:text-indigo-600 flex items-center justify-center transition font-bold text-xs">
+              <i class="fa-solid fa-chevron-right"></i>
+            </a>
+          {% endif %}
+        </nav>
+      {% endif %}
+
+    {% else %}
+      <!-- Empty state -->
+      <div class="text-center py-20 bg-white rounded-3xl border border-slate-100 max-w-2xl mx-auto shadow-sm">
+        <div class="w-16 h-16 bg-slate-50 border border-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <i class="fa-solid fa-compass-drafting text-slate-400 text-2xl"></i>
+        </div>
+        <h3 class="text-2xl font-black text-slate-900 tracking-tight">No experiences found</h3>
+        <p class="text-slate-500 text-sm mt-3 max-w-md mx-auto leading-relaxed">
+          We couldn't find any stories matching your filters. Be the first to share an adventure at one of our hotels!
+        </p>
+        <button onclick="openFormModal()" class="mt-8 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/10 hover:shadow-indigo-600/20 transition-all text-sm inline-flex items-center gap-2">
+          Share Your Experience <i class="fa-solid fa-plus"></i>
+        </button>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Submit Experience Modal (Slide-over/overlay styling) -->
+  <div id="formModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+      
+      <!-- Background overlay -->
+      <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" aria-hidden="true" onclick="closeFormModal()"></div>
+
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+      <!-- Modal panel -->
+      <div class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-100">
+        
+        <!-- Header -->
+        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div>
+            <h3 class="text-lg font-black text-slate-900 tracking-tight">Share Your Experience</h3>
+            <p class="text-xs text-slate-400 font-medium mt-1">Post about places you visited and things you did during your stay.</p>
+          </div>
+          <button onclick="closeFormModal()" class="w-8 h-8 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition">
+            <i class="fa-solid fa-xmark text-sm"></i>
+          </button>
+        </div>
+
+        <!-- Form -->
+        <form method="POST" enctype="multipart/form-data" action="{% url 'hotel:experiences_list' %}" class="p-6">
+          {% csrf_token %}
+
+          {% if form.errors %}
+            <div class="mb-6 p-4 bg-rose-50 border border-rose-100 text-rose-800 rounded-2xl text-xs space-y-1">
+              <span class="font-bold block text-rose-900">Please fix the following validation errors:</span>
+              {{ form.non_field_errors }}
+              {% for field in form %}
+                {% if field.errors %}
+                  <div><strong>{{ field.label }}:</strong> {{ field.errors|striptags }}</div>
+                {% endif %}
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Guest Name</label>
+              {{ form.guest_name }}
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Email Address</label>
+              {{ form.guest_email }}
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
+            <div class="md:col-span-2">
+              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Hotel Stayed At</label>
+              {{ form.hotel }}
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Rating</label>
+              {{ form.rating }}
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Place Visited</label>
+              {{ form.place_visited }}
+              <span class="text-[10px] text-slate-400 mt-1 block">e.g. Mount Rwenzori, Queen Elizabeth National Park</span>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Activity Performed</label>
+              {{ form.activity }}
+              <span class="text-[10px] text-slate-400 mt-1 block">e.g. Mountain Climbing, Wildlife Safari</span>
+            </div>
+          </div>
+
+          <div class="mb-5">
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Your Experience Story</label>
+            {{ form.experience_text }}
+          </div>
+
+          <!-- Multiple Image Dropzone Collection -->
+          <div class="mb-6">
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Photo Collection (Upload Multiple)</label>
+            <div id="dropzone" class="border-2 border-dashed border-slate-200 hover:border-indigo-400 bg-slate-50/50 rounded-2xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center group">
+              <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-indigo-500 group-hover:scale-110 transition mb-3">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+              </div>
+              <span class="text-sm font-bold text-slate-800">Select Multiple Photos</span>
+              <span class="text-xs text-slate-400 mt-1">PNG, JPG or JPEG allowed</span>
+              
+              <!-- Hidden input accepting multiple files -->
+              <input type="file" name="images" id="images-input" multiple accept="image/*" class="hidden">
+            </div>
+            
+            <!-- File Previews Container -->
+            <div id="previews-container" class="grid grid-cols-4 gap-3 mt-4"></div>
+          </div>
+
+          <!-- Footer Buttons -->
+          <div class="flex items-center justify-end gap-3 pt-5 border-t border-slate-100 bg-slate-50/20 -mx-6 -mb-6 px-6 pb-6 mt-6 rounded-b-3xl">
+            <button type="button" onclick="closeFormModal()" class="px-5 py-2.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-sm font-bold rounded-xl transition">
+              Cancel
+            </button>
+            <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-md shadow-indigo-600/10 hover:shadow-indigo-600/20 transition">
+              Submit Experience
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Photo Viewer / Slider Lightbox -->
+  <div id="photoViewer" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md hidden flex flex-col justify-between" role="dialog" aria-modal="true">
+    
+    <!-- Topbar -->
+    <div class="px-6 py-4 flex items-center justify-between text-white border-b border-white/5">
+      <div>
+        <h4 id="viewer-title" class="font-bold text-sm tracking-wide">Photo Gallery</h4>
+        <p id="viewer-counter" class="text-xs text-white/50 font-semibold mt-0.5">Image 1 of 1</p>
+      </div>
+      <button onclick="closePhotoViewer()" class="w-10 h-10 rounded-full hover:bg-white/10 text-white/80 hover:text-white flex items-center justify-center transition">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+
+    <!-- Main Image Holder & Navigation Controls -->
+    <div class="flex-grow flex items-center justify-center relative px-10">
+      
+      <!-- Prev Button -->
+      <button id="viewer-prev" onclick="prevPhoto()" class="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/5 hover:bg-white/15 text-white/80 hover:text-white flex items-center justify-center transition">
+        <i class="fa-solid fa-chevron-left text-lg"></i>
+      </button>
+
+      <!-- Current Image Display -->
+      <div class="max-h-[70vh] max-w-[85vw] flex items-center justify-center overflow-hidden rounded-2xl border border-white/10 shadow-2xl relative">
+        <img id="viewer-image" src="" alt="Viewing photo" class="max-h-[70vh] max-w-[85vw] object-contain transition-all duration-300">
+      </div>
+
+      <!-- Next Button -->
+      <button id="viewer-next" onclick="nextPhoto()" class="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/5 hover:bg-white/15 text-white/80 hover:text-white flex items-center justify-center transition">
+        <i class="fa-solid fa-chevron-right text-lg"></i>
+      </button>
+    </div>
+
+    <!-- Thumbnail Strip -->
+    <div class="px-6 py-4 bg-slate-900 border-t border-white/5 flex justify-center gap-2.5 overflow-x-auto" id="viewer-thumbnails">
+      <!-- Thumbnail templates populated by JS -->
+    </div>
+  </div>
+
+</main>
+
+<!-- JS Controller logic -->
+<script>
+  // Open & Close Experience Submit Modal
+  function openFormModal() {
+    const modal = document.getElementById('formModal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeFormModal() {
+    const modal = document.getElementById('formModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  // Pre-load / Trigger Modal if open_modal parameter is passed from context
+  {% if open_modal %}
+    openFormModal();
+  {% endif %}
+
+  // Handle Drag and Drop for Multiple Image Dropzone
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('images-input');
+  const previewsContainer = document.getElementById('previews-container');
+
+  dropzone.addEventListener('click', () => fileInput.click());
+
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('dropzone-active');
+  });
+
+  dropzone.addEventListener('dragleave', () => {
+    dropzone.classList.remove('dropzone-active');
+  });
+
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dropzone-active');
+    
+    if (e.dataTransfer.files.length) {
+      fileInput.files = e.dataTransfer.files;
+      updatePreviews();
+    }
+  });
+
+  fileInput.addEventListener('change', updatePreviews);
+
+  // File Preview Renderer
+  function updatePreviews() {
+    previewsContainer.innerHTML = '';
+    const files = Array.from(fileInput.files);
+    
+    files.forEach((file, index) => {
+      if (!file.type.startsWith('image/')) return;
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const previewDiv = document.createElement('div');
+        previewDiv.className = 'relative w-full aspect-square rounded-xl overflow-hidden shadow-sm border border-slate-100 group';
+        
+        previewDiv.innerHTML = `
+          <img src="${e.target.result}" class="w-full h-full object-cover">
+          <button type="button" onclick="removeSelectedFile(${index})" class="absolute top-1.5 right-1.5 w-6 h-6 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
+            <i class="fa-solid fa-xmark text-[10px]"></i>
+          </button>
+        `;
+        previewsContainer.appendChild(previewDiv);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Remove single file from files selection list
+  function removeSelectedFile(index) {
+    const dt = new DataTransfer();
+    const files = fileInput.files;
+    
+    for (let i = 0; i < files.length; i++) {
+      if (i !== index) dt.items.add(files[i]);
+    }
+    
+    fileInput.files = dt.files;
+    updatePreviews();
+  }
+
+  // Image collections dataset mapping
+  const experiencesImages = {
+    {% for exp in experiences %}
+      {% if exp.images.all %}
+        "{{ exp.id }}": {
+          "place": "{{ exp.place_visited|escapejs }}",
+          "images": [
+            {% for img in exp.images.all %}
+              "{{ img.image.url }}"{% if not forloop.last %},{% endif %}
+            {% endfor %}
+          ]
+        },
+      {% endif %}
+    {% endfor %}
+  };
+
+  // Lightbox Photo Viewer variables
+  let activeExperienceId = null;
+  let activeImageIndex = 0;
+
+  function openPhotoViewer(expId) {
+    const data = experiencesImages[expId];
+    if (!data) return;
+
+    activeExperienceId = expId;
+    activeImageIndex = 0;
+
+    document.getElementById('viewer-title').innerText = data.place;
+    document.getElementById('photoViewer').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    renderActivePhoto();
+    renderThumbnails();
+  }
+
+  function closePhotoViewer() {
+    document.getElementById('photoViewer').classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  function renderActivePhoto() {
+    const data = experiencesImages[activeExperienceId];
+    const imageUrl = data.images[activeImageIndex];
+    const imageEl = document.getElementById('viewer-image');
+
+    // Fade out-in transition effect
+    imageEl.style.opacity = 0;
+    setTimeout(() => {
+      imageEl.src = imageUrl;
+      imageEl.style.opacity = 1;
+    }, 150);
+
+    document.getElementById('viewer-counter').innerText = `Image ${activeImageIndex + 1} of ${data.images.length}`;
+
+    // Navigation button status toggles
+    document.getElementById('viewer-prev').style.visibility = (activeImageIndex === 0) ? 'hidden' : 'visible';
+    document.getElementById('viewer-next').style.visibility = (activeImageIndex === data.images.length - 1) ? 'hidden' : 'visible';
+  }
+
+  function renderThumbnails() {
+    const data = experiencesImages[activeExperienceId];
+    const container = document.getElementById('viewer-thumbnails');
+    container.innerHTML = '';
+
+    if (data.images.length <= 1) {
+      container.style.display = 'none';
+      return;
+    }
+    container.style.display = 'flex';
+
+    data.images.forEach((imgUrl, index) => {
+      const thumb = document.createElement('button');
+      thumb.className = `w-14 h-14 rounded-lg overflow-hidden border-2 transition-all ${index === activeImageIndex ? 'border-indigo-500 scale-105' : 'border-white/15 opacity-60 hover:opacity-100'}`;
+      thumb.onclick = () => {
+        activeImageIndex = index;
+        renderActivePhoto();
+        renderThumbnails();
+      };
+      thumb.innerHTML = `<img src="${imgUrl}" class="w-full h-full object-cover">`;
+      container.appendChild(thumb);
+    });
+  }
+
+  function prevPhoto() {
+    if (activeImageIndex > 0) {
+      activeImageIndex--;
+      renderActivePhoto();
+      renderThumbnails();
+    }
+  }
+
+  function nextPhoto() {
+    const data = experiencesImages[activeExperienceId];
+    if (activeImageIndex < data.images.length - 1) {
+      activeImageIndex++;
+      renderActivePhoto();
+      renderThumbnails();
+    }
+  }
+
+  // Keyboard controls for lightbox
+  document.addEventListener('keydown', (e) => {
+    const viewer = document.getElementById('photoViewer');
+    if (viewer.classList.contains('hidden')) return;
+
+    if (e.key === 'Escape') closePhotoViewer();
+    if (e.key === 'ArrowLeft') prevPhoto();
+    if (e.key === 'ArrowRight') nextPhoto();
+  });
+</script>
+{% endblock %}

@@ -18,40 +18,57 @@
 <meta property="og:url" content="{{ request.build_absolute_uri }}">
 <meta name="twitter:card" content="summary_large_image">
 
-<!-- Swiper for gallery -->
+<!-- Swiper for gallery slider -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
 <style>
   :root {
-    --brand-primary: {{ hotel.brand_color_primary|default:"#0ea5e9" }};
-    --brand-primary-dark: {{ hotel.brand_color_primary|default:"#0284c7" }};
+    --brand-primary: {{ hotel.brand_color_primary|default:"#2563eb" }};
+    --brand-primary-dark: {{ hotel.brand_color_primary|default:"#1e40af" }};
     --brand-secondary: {{ hotel.brand_color_secondary|default:"#10b981" }};
+    --brand-accent: #f59e0b;
   }
   
+  /* Ken Burns sliding effect */
+  .swiper-slide-active img {
+    animation: kenburns 12s ease-out forwards;
+  }
+  @keyframes kenburns {
+    0% { transform: scale(1.0); }
+    100% { transform: scale(1.08); }
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+  }
+
   .gallery-thumb {
-    transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .gallery-thumb:hover {
-    transform: scale(1.05);
-    box-shadow: 0 20px 25px -12px rgba(0,0,0,0.25);
+    transform: translateY(-4px) scale(1.03);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   }
   
   .room-card {
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .room-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 20px 30px -12px rgba(0,0,0,0.15);
+    box-shadow: 0 22px 35px -12px rgba(15, 23, 42, 0.12);
   }
   
-  .amenity-badge {
-    transition: all 0.2s ease;
+  .amenity-card {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .amenity-badge:hover {
+  .amenity-card:hover {
     transform: translateY(-2px);
-    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    border-color: var(--brand-primary);
+    background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(240,249,255,0.8));
   }
   
   .modal {
@@ -59,43 +76,53 @@
     position: fixed;
     z-index: 1000;
     inset: 0;
-    background-color: rgba(0,0,0,0.95);
-    backdrop-filter: blur(10px);
+    background-color: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     align-items: center;
     justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
   }
-  
   .modal.active {
     display: flex;
+    opacity: 1;
   }
   
+  .modal-container {
+    transform: scale(0.95);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .modal.active .modal-container {
+    transform: scale(1);
+    opacity: 1;
+  }
+
   .tab-btn {
     position: relative;
-    transition: all 0.2s ease;
+    transition: all 0.25s ease;
   }
   .tab-btn.active {
     color: var(--brand-primary);
-    font-weight: 600;
   }
   .tab-btn.active::after {
     content: '';
     position: absolute;
-    bottom: -2px;
-    left: 0;
-    right: 0;
-    height: 2px;
+    bottom: -1px;
+    left: 1.5rem;
+    right: 1.5rem;
+    height: 3px;
     background: linear-gradient(90deg, var(--brand-primary), var(--brand-primary-dark));
-    border-radius: 2px;
+    border-radius: 99px;
   }
   
-  .animate-on-scroll {
-    opacity: 0;
-    transform: translateY(24px);
-    transition: all 0.5s ease-out;
+  .tab-content-panel {
+    animation: tab-fade 0.4s ease forwards;
   }
-  .animate-on-scroll.visible {
-    opacity: 1;
-    transform: translateY(0);
+  @keyframes tab-fade {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
   
   .toast {
@@ -103,131 +130,198 @@
     bottom: 24px;
     right: 24px;
     z-index: 1000;
-    animation: slideInRight 0.3s ease;
+    animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   }
   @keyframes slideInRight {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
   }
   
-  .btn-primary {
+  .btn-brand-primary {
     background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dark));
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .btn-primary:hover {
+  .btn-brand-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px -5px rgba(0,0,0,0.2);
+    box-shadow: 0 12px 24px -6px rgba(37, 99, 235, 0.35);
+    filter: brightness(1.05);
+  }
+
+  .btn-brand-outline {
+    border: 1px solid var(--brand-primary);
+    color: var(--brand-primary);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .btn-brand-outline:hover {
+    background: rgba(37, 99, 235, 0.05);
+    transform: translateY(-1px);
   }
   
-  .swiper-button-next, .swiper-button-prev {
-    background: rgba(255,255,255,0.3);
+  .swiper-custom-next, .swiper-custom-prev {
+    background: rgba(15, 23, 42, 0.4);
     backdrop-filter: blur(8px);
-    width: 40px;
-    height: 40px;
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.15);
+    width: 46px;
+    height: 46px;
     border-radius: 50%;
-  }
-  .swiper-button-next:after, .swiper-button-prev:after {
-    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: white;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    z-index: 10;
+  }
+  .swiper-custom-next:hover, .swiper-custom-prev:hover {
+    background: rgba(15, 23, 42, 0.65);
+    scale: 1.05;
   }
   
   .price-pulse {
-    animation: pulse-green 2s infinite;
+    animation: pulse-emerald 2s infinite;
   }
-  @keyframes pulse-green {
+  @keyframes pulse-emerald {
     0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.03); }
+    50% { transform: scale(1.02); }
+  }
+
+  /* Custom styling for Swiper dots */
+  .swiper-pagination-bullet {
+    background: rgba(255, 255, 255, 0.4) !important;
+    opacity: 1 !important;
+    width: 8px !important;
+    height: 8px !important;
+    transition: all 0.3s ease !important;
+  }
+  .swiper-pagination-bullet-active {
+    background: white !important;
+    width: 24px !important;
+    border-radius: 4px !important;
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Hero Section with Full Width Cover -->
-<section class="relative w-full bg-slate-900">
-  <div class="relative w-full h-[480px] md:h-[560px] lg:h-[70vh] overflow-hidden">
-    <!-- Main Cover Image -->
-    <div class="absolute inset-0 w-full h-full">
-      {% if cover_image and cover_image.image %}
-        <img src="{{ cover_image.image.url }}" alt="{{ hotel.name }}" class="w-full h-full object-cover">
+<!-- Hero Image Swiper Section -->
+<section class="relative w-full bg-slate-950 overflow-hidden">
+  <!-- Cover Images Swiper -->
+  <div class="swiper hero-swiper w-full h-[520px] md:h-[620px] lg:h-[75vh]">
+    <div class="swiper-wrapper">
+      {% if gallery %}
+        {% for image in gallery %}
+        <div class="swiper-slide relative w-full h-full">
+          <img src="{{ image.image.url }}" alt="{{ image.alt_text|default:hotel.name }}" class="w-full h-full object-cover">
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/35 to-transparent"></div>
+        </div>
+        {% endfor %}
       {% elif hotel.cover_image %}
-        <img src="{{ hotel.cover_image.url }}" alt="{{ hotel.name }}" class="w-full h-full object-cover">
-      {% elif gallery %}
-        <img src="{{ gallery.0.image.url }}" alt="{{ hotel.name }}" class="w-full h-full object-cover">
+        <div class="swiper-slide relative w-full h-full">
+          <img src="{{ hotel.cover_image.url }}" alt="{{ hotel.name }}" class="w-full h-full object-cover">
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/35 to-transparent"></div>
+        </div>
       {% else %}
-        <div class="w-full h-full bg-gradient-to-br from-sky-600 to-indigo-800 flex items-center justify-center">
-          <i data-lucide="building-2" class="w-24 h-24 text-white/30"></i>
+        <div class="swiper-slide relative w-full h-full">
+          <div class="w-full h-full bg-gradient-to-br from-slate-800 to-indigo-900 flex items-center justify-center">
+            <i data-lucide="building-2" class="w-24 h-24 text-white/20"></i>
+          </div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
         </div>
       {% endif %}
-      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
     </div>
-    
-    <!-- VR Tour Button -->
-    {% if hotel.latitude and hotel.longitude %}
-    <button onclick="startVirtualTour()" class="absolute top-5 right-5 z-20 bg-white/20 backdrop-blur-md text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-white/30 transition flex items-center gap-2">
-      <i data-lucide="vr" class="w-4 h-4"></i> Virtual Tour
-    </button>
-    {% endif %}
-    
-    <!-- Hero Content -->
-    <div class="absolute bottom-0 left-0 right-0 p-6 md:p-10 text-white z-10">
-      <div class="container mx-auto px-4 max-w-7xl">
-        <!-- Breadcrumb -->
-        <div class="flex items-center gap-2 text-sm text-white/80 mb-4">
+
+    <!-- Swiper Controls -->
+    <div class="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex items-center gap-6">
+      <div class="swiper-custom-prev"><i data-lucide="chevron-left" class="w-5 h-5"></i></div>
+      <div class="hero-swiper-pagination flex gap-2"></div>
+      <div class="swiper-custom-next"><i data-lucide="chevron-right" class="w-5 h-5"></i></div>
+    </div>
+
+    <!-- Top floating buttons -->
+    <div class="absolute top-6 left-6 right-6 z-20 flex justify-between items-center pointer-events-none">
+      <div class="pointer-events-auto">
+        <a href="{% url 'hotel:hotels_list' %}" class="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-xs font-semibold border border-white/10 hover:bg-slate-900/80 hover:translate-x-[-2px] transition">
+          <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Back to Hotels
+        </a>
+      </div>
+      {% if hotel.latitude and hotel.longitude %}
+      <div class="pointer-events-auto">
+        <button onclick="startVirtualTour()" class="flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-md text-white text-xs font-bold border border-white/10 hover:bg-white/25 hover:scale-[1.03] transition">
+          <i data-lucide="compass" class="w-4 h-4 animate-spin-slow"></i> Virtual VR Tour
+        </button>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Hero Content Overlay -->
+    <div class="absolute bottom-24 left-0 right-0 z-10 pointer-events-none text-white">
+      <div class="container mx-auto px-6 max-w-7xl">
+        <!-- Breadcrumbs -->
+        <div class="flex items-center gap-2 text-xs md:text-sm text-slate-300/90 mb-3 pointer-events-auto">
           <a href="{% url 'hotel:home' %}" class="hover:text-white transition">Home</a>
-          <i data-lucide="chevron-right" class="w-3 h-3"></i>
+          <i data-lucide="chevron-right" class="w-3 h-3 text-slate-400"></i>
           <a href="{% url 'hotel:hotels_list' %}" class="hover:text-white transition">Hotels</a>
-          <i data-lucide="chevron-right" class="w-3 h-3"></i>
-          <span class="text-white">{{ hotel.name|truncatechars:40 }}</span>
+          <i data-lucide="chevron-right" class="w-3 h-3 text-slate-400"></i>
+          <span class="text-white font-medium">{{ hotel.name|truncatechars:35 }}</span>
         </div>
-        
-        <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 leading-tight">{{ hotel.name }}</h1>
-        
-        <div class="flex flex-wrap items-center gap-3 text-sm">
-          <div class="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5">
-            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-sky-300"></i>
-            <span>{{ hotel.city|default:"Prime Location" }}, {{ hotel.country|default:"Worldwide" }}</span>
+
+        <h1 class="text-3xl md:text-5xl lg:text-6xl font-black mb-4 tracking-tight drop-shadow-md font-sans">
+          {{ hotel.name }}
+        </h1>
+
+        <!-- Badges / Info row -->
+        <div class="flex flex-wrap items-center gap-3 text-xs md:text-sm pointer-events-auto">
+          <div class="flex items-center gap-1.5 bg-white/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-white/10">
+            <i data-lucide="map-pin" class="w-4 h-4 text-sky-400"></i>
+            <span class="font-medium">{{ hotel.city|default:"Prime Destination" }}, {{ hotel.country|default:"Worldwide" }}</span>
           </div>
-          <div class="flex items-center gap-1 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5">
-            {% if hotel.star_rating %}
-              {% for i in "12345"|make_list %}
-                {% if forloop.counter <= hotel.star_rating %}
-                  <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-400"></i>
-                {% endif %}
-              {% endfor %}
-            {% else %}
-              <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-400"></i>
-              <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-400"></i>
-              <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-400"></i>
-              <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-400"></i>
-              <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-400"></i>
-            {% endif %}
-            <span>{{ hotel.star_rating|default:"5" }}-Star Hotel</span>
+
+          <div class="flex items-center gap-1.5 bg-white/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-white/10">
+            <div class="flex items-center gap-0.5">
+              {% if hotel.star_rating %}
+                {% for i in "12345"|make_list %}
+                  {% if forloop.counter <= hotel.star_rating %}
+                    <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i>
+                  {% endif %}
+                {% endfor %}
+              {% else %}
+                <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i>
+                <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i>
+                <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i>
+                <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i>
+                <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i>
+              {% endif %}
+            </div>
+            <span class="font-semibold text-slate-100">{{ hotel.star_rating|default:"5" }} Stars</span>
           </div>
+
           {% if review_summary.avg_rating %}
-          <div class="flex items-center gap-1.5 bg-emerald-500/80 backdrop-blur-sm rounded-full px-3 py-1.5">
-            <i data-lucide="star" class="w-3 h-3 fill-white text-white"></i>
-            <span class="font-bold">{{ review_summary.avg_rating|floatformat:1 }}</span>
-            <span class="text-xs">({{ review_summary.total_reviews }} reviews)</span>
+          <div class="flex items-center gap-2 bg-emerald-500/90 backdrop-blur-md rounded-full px-3 py-1.5 text-white shadow-lg">
+            <i data-lucide="award" class="w-4 h-4"></i>
+            <span class="font-bold">{{ review_summary.avg_rating|floatformat:1 }} Excellent</span>
+            <span class="text-emerald-100 text-xs">({{ review_summary.total_reviews }} Reviews)</span>
           </div>
           {% endif %}
         </div>
       </div>
     </div>
   </div>
-  
-  <!-- Gallery Thumbnails Strip -->
+
+  <!-- Interactive Gallery strip overlaying hero footer -->
   {% if gallery %}
-  <div class="container mx-auto px-4 -mt-16 relative z-20">
-    <div class="flex gap-3 overflow-x-auto pb-3 scrollbar-thin" id="galleryThumbs">
+  <div class="container mx-auto px-6 -mt-10 relative z-20 max-w-7xl">
+    <div class="flex gap-4 overflow-x-auto pb-4 scrollbar-none" id="galleryThumbs">
       {% for image in gallery|slice:":8" %}
-      <div class="gallery-thumb flex-shrink-0 rounded-xl overflow-hidden shadow-xl cursor-pointer" onclick="openLightbox({{ forloop.counter0 }})">
-        <img src="{{ image.image.url }}" alt="{{ image.alt_text|default:hotel.name }}" class="w-28 h-24 md:w-36 md:h-28 object-cover">
+      <div class="gallery-thumb flex-shrink-0 w-24 h-18 md:w-32 md:h-24 rounded-2xl overflow-hidden shadow-2xl cursor-pointer border border-white/20" onclick="openLightbox({{ forloop.counter0 }})">
+        <img src="{{ image.image.url }}" alt="{{ image.alt_text|default:hotel.name }}" class="w-full h-full object-cover">
       </div>
       {% endfor %}
+      
       {% if gallery|length > 8 %}
-      <div class="flex-shrink-0 w-28 h-24 md:w-36 md:h-28 bg-black/70 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center text-white cursor-pointer hover:bg-black/80 transition" onclick="openFullGallery()">
-        <i data-lucide="images" class="w-6 h-6 mb-1"></i>
-        <span class="text-sm font-semibold">+{{ gallery|length|add:"-8" }}</span>
-        <span class="text-xs">View All</span>
+      <div class="flex-shrink-0 w-24 h-18 md:w-32 md:h-24 bg-slate-900/95 backdrop-blur-md rounded-2xl border border-white/10 flex flex-col items-center justify-center text-white cursor-pointer hover:bg-slate-900 hover:scale-[1.02] transition" onclick="openFullGallery()">
+        <i data-lucide="images" class="w-5 h-5 mb-1 text-slate-300"></i>
+        <span class="text-xs font-bold text-slate-100">+{{ gallery|length|add:"-8" }} Photos</span>
+        <span class="text-[10px] text-slate-400 font-medium">View All</span>
       </div>
       {% endif %}
     </div>
@@ -235,286 +329,697 @@
   {% endif %}
 </section>
 
-<!-- Main Content -->
-<div class="container mx-auto px-4 py-12 max-w-7xl">
-  <div class="flex flex-col lg:flex-row gap-8">
+<!-- Content Grid -->
+<div class="container mx-auto px-6 py-16 max-w-7xl">
+  <div class="flex flex-col lg:flex-row gap-10">
     
-    <!-- Left Column – Hotel Info -->
-    <div class="lg:flex-1 space-y-8">
+    <!-- Left Column: Hotel Info & Amenities -->
+    <div class="lg:flex-1 space-y-12">
       
-      <!-- About Tabs -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div class="border-b border-slate-200 px-6">
-          <div class="flex gap-6 overflow-x-auto">
-            <button class="tab-btn py-4 font-medium text-slate-600 hover:text-sky-600 transition" data-tab="about">About</button>
-            <button class="tab-btn py-4 font-medium text-slate-600 hover:text-sky-600 transition" data-tab="policies">Policies</button>
-            <button class="tab-btn py-4 font-medium text-slate-600 hover:text-sky-600 transition" data-tab="location">Location</button>
-            <button class="tab-btn py-4 font-medium text-slate-600 hover:text-sky-600 transition" data-tab="contact">Contact</button>
+      <!-- Premium Glassmorphic Tab Container -->
+      <div class="bg-white rounded-3xl shadow-soft border border-slate-100 overflow-hidden">
+        <div class="border-b border-slate-100 px-6 bg-slate-50/50">
+          <div class="flex gap-8 overflow-x-auto scrollbar-none">
+            <button class="tab-btn py-5 px-3 font-semibold text-sm text-slate-500 hover:text-slate-900 transition flex items-center gap-2 active" data-tab="about">
+              <i data-lucide="info" class="w-4 h-4"></i> About
+            </button>
+            <button class="tab-btn py-5 px-3 font-semibold text-sm text-slate-500 hover:text-slate-900 transition flex items-center gap-2" data-tab="policies">
+              <i data-lucide="shield-alert" class="w-4 h-4"></i> Policies
+            </button>
+            <button class="tab-btn py-5 px-3 font-semibold text-sm text-slate-500 hover:text-slate-900 transition flex items-center gap-2" data-tab="location">
+              <i data-lucide="map-pin" class="w-4 h-4"></i> Location
+            </button>
+            <button class="tab-btn py-5 px-3 font-semibold text-sm text-slate-500 hover:text-slate-900 transition flex items-center gap-2" data-tab="contact">
+              <i data-lucide="mail-phone" class="w-4 h-4"></i> Contact
+            </button>
           </div>
         </div>
         
-        <div class="p-6">
+        <div class="p-8">
           <!-- About Tab -->
-          <div id="tab-about" class="tab-content">
-            <h2 class="text-2xl font-bold text-slate-800 mb-4">About {{ hotel.name }}</h2>
-            <div class="prose max-w-none text-slate-600 leading-relaxed">
+          <div id="tab-about" class="tab-content-panel space-y-6">
+            <h2 class="text-2xl font-black text-slate-900 leading-tight">Welcome to {{ hotel.name }}</h2>
+            <div class="prose max-w-none text-slate-600 leading-relaxed font-sans text-sm md:text-base">
               {{ hotel.description|default:"Experience unparalleled luxury and exceptional service at this magnificent property. Perfectly situated in the heart of the city, our hotel offers world-class amenities, elegant accommodations, and unforgettable experiences for both leisure and business travelers."|linebreaks }}
             </div>
             {% if hotel.year_established %}
-            <div class="mt-6 flex items-center gap-3 p-3 bg-slate-50 rounded-xl w-fit">
-              <i data-lucide="calendar" class="w-5 h-5 text-sky-500"></i>
-              <div><span class="text-xs text-slate-500">Established</span><div class="font-semibold">{{ hotel.year_established }}</div></div>
+            <div class="mt-6 flex items-center gap-4 p-4 bg-slate-50 rounded-2xl w-fit border border-slate-100 shadow-sm">
+              <div class="h-10 w-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                <i data-lucide="calendar" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <span class="text-xs text-slate-400 font-medium">Established Since</span>
+                <div class="font-bold text-slate-800 text-sm">{{ hotel.year_established }}</div>
+              </div>
             </div>
             {% endif %}
           </div>
           
           <!-- Policies Tab -->
-          <div id="tab-policies" class="tab-content hidden">
-            <h2 class="text-2xl font-bold text-slate-800 mb-4">Hotel Policies</h2>
-            <div class="space-y-4">
-              <div class="flex gap-3"><i data-lucide="clock" class="w-5 h-5 text-sky-500"></i><div><div class="font-semibold">Check-in / Check-out</div><div class="text-slate-600">Check-in: {{ hotel.check_in_time|time:"g:i A"|default:"3:00 PM" }} | Check-out: {{ hotel.check_out_time|time:"g:i A"|default:"11:00 AM" }}</div></div></div>
-              <div class="flex gap-3"><i data-lucide="ban" class="w-5 h-5 text-rose-500"></i><div><div class="font-semibold">Cancellation Policy</div><div class="text-slate-600">{{ hotel.cancellation_policy|default:"Free cancellation up to 48 hours before check-in." }}</div></div></div>
-              <div class="flex gap-3"><i data-lucide="baby" class="w-5 h-5 text-emerald-500"></i><div><div class="font-semibold">Child Policy</div><div class="text-slate-600">{{ hotel.child_policy|default:"Children of all ages are welcome. Extra beds available upon request." }}</div></div></div>
-              <div class="flex gap-3"><i data-lucide="dog" class="w-5 h-5 text-amber-500"></i><div><div class="font-semibold">Pet Policy</div><div class="text-slate-600">{{ hotel.pet_policy|default:"Pets are not allowed." }}</div></div></div>
+          <div id="tab-policies" class="tab-content-panel hidden space-y-6">
+            <h2 class="text-2xl font-black text-slate-900 leading-tight">Hotel Guidelines & Policies</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="flex gap-4 p-4 rounded-2xl border border-slate-100 hover:border-slate-200 transition">
+                <div class="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0"><i data-lucide="clock" class="w-5 h-5"></i></div>
+                <div>
+                  <div class="font-bold text-slate-800 text-sm mb-1">Check-in / Check-out</div>
+                  <div class="text-xs text-slate-500 leading-relaxed">
+                    Check-in starts: <span class="font-semibold">{{ hotel.check_in_time|time:"g:i A"|default:"2:00 PM" }}</span><br>
+                    Check-out by: <span class="font-semibold">{{ hotel.check_out_time|time:"g:i A"|default:"11:00 AM" }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex gap-4 p-4 rounded-2xl border border-slate-100 hover:border-slate-200 transition">
+                <div class="h-10 w-10 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center flex-shrink-0"><i data-lucide="ban" class="w-5 h-5"></i></div>
+                <div>
+                  <div class="font-bold text-slate-800 text-sm mb-1">Cancellation Policy</div>
+                  <div class="text-xs text-slate-500 leading-relaxed">{{ hotel.cancellation_policy|default:"Free cancellation up to 48 hours before check-in." }}</div>
+                </div>
+              </div>
+
+              <div class="flex gap-4 p-4 rounded-2xl border border-slate-100 hover:border-slate-200 transition">
+                <div class="h-10 w-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center flex-shrink-0"><i data-lucide="smile" class="w-5 h-5"></i></div>
+                <div>
+                  <div class="font-bold text-slate-800 text-sm mb-1">Child Policy</div>
+                  <div class="text-xs text-slate-500 leading-relaxed">{{ hotel.child_policy|default:"Children of all ages are welcome. Extra beds available upon request." }}</div>
+                </div>
+              </div>
+
+              <div class="flex gap-4 p-4 rounded-2xl border border-slate-100 hover:border-slate-200 transition">
+                <div class="h-10 w-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center flex-shrink-0"><i data-lucide="paw-print" class="w-5 h-5"></i></div>
+                <div>
+                  <div class="font-bold text-slate-800 text-sm mb-1">Pet Policy</div>
+                  <div class="text-xs text-slate-500 leading-relaxed">{{ hotel.pet_policy|default:"Pets are not allowed." }}</div>
+                </div>
+              </div>
             </div>
           </div>
           
           <!-- Location Tab -->
-          <div id="tab-location" class="tab-content hidden">
-            <h2 class="text-2xl font-bold text-slate-800 mb-4">Location</h2>
-            <div class="flex gap-3 mb-4">
-              <i data-lucide="map-pin" class="w-5 h-5 text-sky-500"></i>
-              <div class="text-slate-600">{{ hotel.city|default:"City Center" }}, {{ hotel.country|default:"Global Destination" }}</div>
+          <div id="tab-location" class="tab-content-panel hidden space-y-6">
+            <h2 class="text-2xl font-black text-slate-900 leading-tight">Getting Here</h2>
+            <div class="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+              <i data-lucide="map-pin" class="w-5 h-5 text-[var(--brand-primary)]"></i>
+              <span class="text-sm font-medium text-slate-700">{{ hotel.address_line1|default:"" }} {{ hotel.address_line2|default:"" }} {{ hotel.city|default:"City Center" }}, {{ hotel.country|default:"" }}</span>
             </div>
+            
             {% if hotel.latitude and hotel.longitude %}
-            <div class="h-64 rounded-xl overflow-hidden shadow-md mb-3">
-              <div id="map" class="w-full h-full bg-slate-200"></div>
+            <div class="h-72 rounded-2xl overflow-hidden shadow-inner border border-slate-150 relative">
+              <div id="map" class="w-full h-full bg-slate-100"></div>
             </div>
-            <button onclick="getDirections()" class="text-sm font-semibold text-sky-600 hover:text-sky-700 transition flex items-center gap-1"><i data-lucide="navigation" class="w-4 h-4"></i> Get Directions</button>
+            <button onclick="getDirections()" class="btn-brand-outline px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm">
+              <i data-lucide="navigation-2" class="w-4 h-4"></i> Get Navigation Directions
+            </button>
             {% else %}
-            <div class="bg-slate-50 rounded-xl p-6 text-center">
-              <i data-lucide="map" class="w-12 h-12 text-slate-300 mx-auto mb-2"></i>
-              <p class="text-slate-500">Interactive map coming soon</p>
+            <div class="bg-slate-50 rounded-2xl p-8 text-center border border-dashed border-slate-200">
+              <i data-lucide="map" class="w-12 h-12 text-slate-350 mx-auto mb-3"></i>
+              <p class="text-slate-500 text-sm font-medium">Interactive location map coming soon</p>
             </div>
             {% endif %}
           </div>
           
           <!-- Contact Tab -->
-          <div id="tab-contact" class="tab-content hidden">
-            <h2 class="text-2xl font-bold text-slate-800 mb-4">Contact Information</h2>
-            <div class="space-y-4">
+          <div id="tab-contact" class="tab-content-panel hidden space-y-6">
+            <h2 class="text-2xl font-black text-slate-900 leading-tight">Get in Touch</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               {% if hotel.phone %}
-              <div class="flex gap-3"><i data-lucide="phone" class="w-5 h-5 text-emerald-500"></i><div><div class="font-semibold">Phone</div><a href="tel:{{ hotel.phone }}" class="text-sky-600 hover:underline">{{ hotel.phone }}</a></div></div>
+              <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <div class="h-10 w-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center"><i data-lucide="phone" class="w-5 h-5"></i></div>
+                <div>
+                  <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Phone number</span>
+                  <div><a href="tel:{{ hotel.phone }}" class="text-sm font-bold text-slate-800 hover:text-[var(--brand-primary)]">{{ hotel.phone }}</a></div>
+                </div>
+              </div>
               {% endif %}
+
               {% if hotel.email %}
-              <div class="flex gap-3"><i data-lucide="mail" class="w-5 h-5 text-sky-500"></i><div><div class="font-semibold">Email</div><a href="mailto:{{ hotel.email }}" class="text-sky-600 hover:underline">{{ hotel.email }}</a></div></div>
+              <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <div class="h-10 w-10 bg-sky-50 text-sky-600 rounded-xl flex items-center justify-center"><i data-lucide="mail" class="w-5 h-5"></i></div>
+                <div>
+                  <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Email Address</span>
+                  <div><a href="mailto:{{ hotel.email }}" class="text-sm font-bold text-slate-800 hover:text-[var(--brand-primary)]">{{ hotel.email }}</a></div>
+                </div>
+              </div>
               {% endif %}
+
               {% if hotel.website %}
-              <div class="flex gap-3"><i data-lucide="globe" class="w-5 h-5 text-purple-500"></i><div><div class="font-semibold">Website</div><a href="{{ hotel.website }}" target="_blank" class="text-sky-600 hover:underline">{{ hotel.website|truncatechars:40 }}</a></div></div>
+              <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <div class="h-10 w-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center"><i data-lucide="globe" class="w-5 h-5"></i></div>
+                <div>
+                  <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Official Website</span>
+                  <div><a href="{{ hotel.website }}" target="_blank" class="text-sm font-bold text-slate-800 hover:text-[var(--brand-primary)] truncate block max-w-xs">{{ hotel.website }}</a></div>
+                </div>
+              </div>
               {% endif %}
+
               {% if not hotel.phone and not hotel.email and not hotel.website %}
-              <div class="text-center py-6 text-slate-400">No contact information available</div>
+              <div class="col-span-2 text-center py-8 text-slate-450 font-medium">No contact information published yet.</div>
               {% endif %}
             </div>
           </div>
         </div>
       </div>
       
-      <!-- Amenities -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-on-scroll">
-        <h2 class="text-xl font-bold text-slate-800 mb-5 flex items-center gap-2"><i data-lucide="sparkles" class="w-5 h-5 text-sky-500"></i> Amenities & Services</h2>
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <!-- Amenities Block -->
+      <div class="bg-white rounded-3xl shadow-soft border border-slate-100 p-8 space-y-6">
+        <h2 class="text-xl md:text-2xl font-black text-slate-900 flex items-center gap-2.5">
+          <i data-lucide="sparkles" class="w-6 h-6 text-[var(--brand-primary)]"></i> Amenities & Facilities
+        </h2>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
           {% for mapping in amenities|slice:":12" %}
-          <div class="amenity-badge flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl hover:bg-sky-50 transition cursor-pointer">
-            <i data-lucide="{{ mapping.amenity.icon_name|default:'check-circle' }}" class="w-4 h-4 text-sky-500"></i>
-            <span class="text-sm text-slate-700">{{ mapping.amenity.name }}</span>
+          <div class="amenity-card p-4 bg-slate-50/50 rounded-2xl border border-slate-100 flex items-center gap-3.5">
+            <div class="h-8 w-8 bg-sky-50 text-[var(--brand-primary)] rounded-lg flex items-center justify-center flex-shrink-0">
+              <i data-lucide="{{ mapping.amenity.icon_name|default:'check-circle' }}" class="w-4 h-4"></i>
+            </div>
+            <span class="text-xs md:text-sm font-bold text-slate-700">{{ mapping.amenity.name }}</span>
           </div>
           {% empty %}
-          <div class="col-span-full text-center py-8 text-slate-400">No amenities listed</div>
+          <div class="col-span-full text-center py-10 border border-dashed border-slate-200 rounded-2xl">
+            <i data-lucide="coffee" class="w-10 h-10 text-slate-300 mx-auto mb-2"></i>
+            <p class="text-sm text-slate-400 font-medium">Hotel features coming soon</p>
+          </div>
           {% endfor %}
         </div>
       </div>
       
-      <!-- Room Types -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-on-scroll">
-        <h2 class="text-xl font-bold text-slate-800 mb-5 flex items-center gap-2"><i data-lucide="bed" class="w-5 h-5 text-sky-500"></i> Available Rooms</h2>
-        <div class="space-y-4">
+      <!-- Available Room Types Grid -->
+      <div class="bg-white rounded-3xl shadow-soft border border-slate-100 p-8 space-y-6">
+        <h2 class="text-xl md:text-2xl font-black text-slate-900 flex items-center gap-2.5">
+          <i data-lucide="bed-double" class="w-6 h-6 text-[var(--brand-primary)]"></i> Luxury Accommodations
+        </h2>
+        
+        <div class="space-y-6">
           {% for room_type in room_types %}
-          <div class="room-card bg-white rounded-xl border border-slate-100 p-5 hover:shadow-md transition">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div class="flex-1">
-                <div class="flex items-center gap-2 mb-1 flex-wrap">
-                  <h3 class="text-lg font-bold text-slate-800">{{ room_type.name }}</h3>
-                  {% if room_type.rooms_count < 3 and room_type.rooms_count > 0 %}
-                  <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Limited</span>
-                  {% elif room_type.rooms_count == 0 %}
-                  <span class="text-xs bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full">Sold Out</span>
-                  {% endif %}
+          <div class="room-card bg-white rounded-2xl border border-slate-100 overflow-hidden flex flex-col md:flex-row">
+            <!-- Room Image -->
+            <div class="md:w-64 h-48 md:h-auto overflow-hidden relative flex-shrink-0">
+              {% if room_type.image_url %}
+                <img src="{{ room_type.image_url }}" alt="{{ room_type.name }}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105">
+              {% else %}
+                <div class="w-full h-full bg-slate-100 flex items-center justify-center">
+                  <i data-lucide="image" class="w-10 h-10 text-slate-350"></i>
                 </div>
-                <div class="flex flex-wrap gap-4 text-sm text-slate-500 mb-2">
-                  <span><i data-lucide="users" class="w-3.5 h-3.5 inline mr-1"></i> {{ room_type.capacity_adults|default:"2" }} Adults</span>
-                  <span><i data-lucide="maximize" class="w-3.5 h-3.5 inline mr-1"></i> {{ room_type.size|default:"350" }} sq ft</span>
+              {% endif %}
+              
+              <!-- Badges -->
+              <div class="absolute top-4 left-4">
+                {% if room_type.rooms_count < 3 and room_type.rooms_count > 0 %}
+                <span class="text-[10px] uppercase font-bold tracking-wider bg-amber-550 text-white px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
+                  <i data-lucide="alert-circle" class="w-3 h-3"></i> Only {{ room_type.rooms_count }} left
+                </span>
+                {% elif room_type.rooms_count == 0 %}
+                <span class="text-[10px] uppercase font-bold tracking-wider bg-rose-600 text-white px-2.5 py-1 rounded-full shadow-md">
+                  Sold Out
+                </span>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Room Content -->
+            <div class="p-6 flex-1 flex flex-col justify-between gap-6">
+              <div class="space-y-2">
+                <div class="flex items-start justify-between gap-4">
+                  <h3 class="text-lg md:text-xl font-bold text-slate-800 leading-snug">{{ room_type.name }}</h3>
                 </div>
-                <p class="text-slate-500 text-sm">{{ room_type.description|default:"Comfortable and elegantly appointed room with modern amenities."|truncatewords:20 }}</p>
-                <div class="flex flex-wrap gap-1.5 mt-3">
-                  <span class="text-xs bg-slate-100 px-2 py-0.5 rounded-full">Free WiFi</span>
-                  <span class="text-xs bg-slate-100 px-2 py-0.5 rounded-full">AC</span>
-                  <span class="text-xs bg-slate-100 px-2 py-0.5 rounded-full">TV</span>
+                <p class="text-slate-500 text-xs md:text-sm line-clamp-2 leading-relaxed">
+                  {{ room_type.description|default:"Enjoy refined luxury with our customized amenities, designed specifically to deliver exceptional sleep comfort." }}
+                </p>
+                <div class="flex flex-wrap gap-4 pt-1 text-xs text-slate-500 font-semibold">
+                  <span class="flex items-center gap-1"><i data-lucide="users" class="w-3.5 h-3.5 text-slate-400"></i> Up to 2 Guests</span>
+                  <span class="flex items-center gap-1"><i data-lucide="maximize" class="w-3.5 h-3.5 text-slate-400"></i> 350 sq ft</span>
+                  <span class="flex items-center gap-1"><i data-lucide="wifi" class="w-3.5 h-3.5 text-emerald-500"></i> Free High-Speed WiFi</span>
                 </div>
               </div>
-              <div class="text-left md:text-right">
-                <div class="text-2xl font-extrabold text-sky-600">${{ room_type.min_price|floatformat:0|default:"199" }}</div>
-                <div class="text-xs text-slate-400 mb-2">per night</div>
-                <div class="flex gap-2">
-                  <button onclick="showRoomDetails('{{ room_type.id }}')" class="px-3 py-1.5 border border-sky-200 text-sky-600 rounded-lg text-sm font-medium hover:bg-sky-50 transition">Details</button>
-                  <button onclick="bookRoom('{{ room_type.id }}')" class="px-4 py-1.5 bg-sky-600 text-white rounded-lg text-sm font-medium hover:bg-sky-700 transition" {% if room_type.rooms_count == 0 %}disabled{% endif %}>Book</button>
+
+              <!-- Pricing & Actions -->
+              <div class="border-t border-slate-100 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="flex items-baseline gap-1.5">
+                  {% with currency=hotel.default_currency_symbol|default:hotel.default_currency|default:"UGX" %}
+                  <span class="text-2xl font-black text-[var(--brand-primary)] font-sans">{{ currency }} {{ room_type.min_price|floatformat:0|default:"0" }}</span>
+                  {% endwith %}
+                  <span class="text-slate-400 text-xs font-semibold">/ night</span>
+                </div>
+
+                <div class="flex gap-2.5">
+                  <button onclick="showRoomDetails('{{ room_type.id }}')" class="btn-brand-outline px-4 py-2 rounded-xl text-xs font-bold">
+                    Room Details
+                  </button>
+                  <button onclick="bookRoom('{{ room_type.id }}')" class="btn-brand-primary text-white px-5 py-2 rounded-xl text-xs font-bold hover:shadow-lg" {% if room_type.rooms_count == 0 %}disabled{% endif %}>
+                    Reserve Room
+                  </button>
                 </div>
               </div>
             </div>
           </div>
           {% empty %}
-          <div class="text-center py-8 text-slate-400">No room types available</div>
+          <div class="text-center py-10 border border-dashed border-slate-200 rounded-2xl">
+            <i data-lucide="bed" class="w-12 h-12 text-slate-300 mx-auto mb-2"></i>
+            <p class="text-sm text-slate-400 font-semibold">No room packages currently online</p>
+          </div>
           {% endfor %}
         </div>
       </div>
       
-      <!-- Reviews -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-on-scroll">
-        <div class="flex items-center justify-between mb-5">
-          <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="message-circle" class="w-5 h-5 text-sky-500"></i> Guest Reviews</h2>
-          <a href="{% url 'hotel:hotel_reviews' hotel.slug %}" class="text-sm text-sky-600 hover:underline flex items-center gap-1">See all <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i></a>
+      <!-- TripAdvisor-style Reviews Dashboard -->
+      <div class="bg-white rounded-3xl shadow-soft border border-slate-100 p-8 space-y-6 animate-on-scroll">
+        <div class="flex items-center justify-between gap-4 border-b border-slate-100 pb-5">
+          <h2 class="text-xl md:text-2xl font-black text-slate-900 flex items-center gap-2.5">
+            <i data-lucide="message-square-more" class="w-6 h-6 text-[var(--brand-primary)]"></i> Verified Guest Reviews
+          </h2>
+          <a href="{% url 'hotel:hotel_reviews' hotel.slug %}" class="text-xs font-bold text-[var(--brand-primary)] hover:underline flex items-center gap-1">
+            Read all reviews <i data-lucide="arrow-right" class="w-3 h-3"></i>
+          </a>
         </div>
         
         {% if review_summary.total_reviews > 0 %}
-        <div class="bg-gradient-to-r from-sky-50 to-indigo-50 rounded-xl p-5 mb-6">
-          <div class="flex flex-col md:flex-row items-center gap-6">
-            <div class="text-center">
-              <div class="text-5xl font-black text-slate-800">{{ review_summary.avg_rating|floatformat:1 }}</div>
-              <div class="flex items-center gap-0.5 justify-center mt-1">
+        <!-- Reviews Summary Box -->
+        <div class="bg-slate-50/50 rounded-2xl border border-slate-100 p-6 shadow-inner">
+          <div class="flex flex-col md:flex-row items-center gap-8">
+            <div class="text-center flex-shrink-0 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm md:w-44">
+              <div class="text-5xl font-black text-slate-900 tracking-tight">{{ review_summary.avg_rating|floatformat:1 }}</div>
+              
+              <div class="flex items-center gap-0.5 justify-center mt-2">
                 {% for i in "12345"|make_list %}
                   {% if forloop.counter <= review_summary.avg_rating|floatformat:"0"|add:"0" %}
                     <i data-lucide="star" class="w-4 h-4 fill-amber-400 text-amber-400"></i>
                   {% else %}
-                    <i data-lucide="star" class="w-4 h-4 text-slate-300"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-slate-200"></i>
                   {% endif %}
                 {% endfor %}
               </div>
-              <div class="text-xs text-slate-500 mt-1">{{ review_summary.total_reviews }} reviews</div>
+              <div class="text-xs font-bold text-slate-400 mt-2">{{ review_summary.total_reviews }} Ratings</div>
             </div>
-            <div class="flex-1 grid grid-cols-2 gap-2 text-sm">
-              <div class="flex justify-between px-3 py-1.5 bg-white/60 rounded-lg"><span>Cleanliness</span><span class="font-bold">{{ review_summary.cleanliness|floatformat:1|default:"4.5" }}</span></div>
-              <div class="flex justify-between px-3 py-1.5 bg-white/60 rounded-lg"><span>Comfort</span><span class="font-bold">{{ review_summary.comfort|floatformat:1|default:"4.6" }}</span></div>
-              <div class="flex justify-between px-3 py-1.5 bg-white/60 rounded-lg"><span>Location</span><span class="font-bold">{{ review_summary.location|floatformat:1|default:"4.7" }}</span></div>
-              <div class="flex justify-between px-3 py-1.5 bg-white/60 rounded-lg"><span>Staff</span><span class="font-bold">{{ review_summary.staff|floatformat:1|default:"4.8" }}</span></div>
+            
+            <div class="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Cleanliness -->
+              <div class="space-y-1">
+                <div class="flex justify-between text-xs font-bold text-slate-700">
+                  <span>Cleanliness</span>
+                  <span>{{ review_summary.cleanliness|floatformat:1|default:"4.5" }}/5</span>
+                </div>
+                <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                  <div class="h-full bg-emerald-500 rounded-full" style="width: {% widthratio review_summary.cleanliness|default:'4.5' 5 100 %}%"></div>
+                </div>
+              </div>
+              
+              <!-- Comfort -->
+              <div class="space-y-1">
+                <div class="flex justify-between text-xs font-bold text-slate-700">
+                  <span>Comfort</span>
+                  <span>{{ review_summary.comfort|floatformat:1|default:"4.6" }}/5</span>
+                </div>
+                <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                  <div class="h-full bg-[var(--brand-primary)] rounded-full" style="width: {% widthratio review_summary.comfort|default:'4.6' 5 100 %}%"></div>
+                </div>
+              </div>
+              
+              <!-- Location -->
+              <div class="space-y-1">
+                <div class="flex justify-between text-xs font-bold text-slate-700">
+                  <span>Location</span>
+                  <span>{{ review_summary.location|floatformat:1|default:"4.7" }}/5</span>
+                </div>
+                <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                  <div class="h-full bg-indigo-500 rounded-full" style="width: {% widthratio review_summary.location|default:'4.7' 5 100 %}%"></div>
+                </div>
+              </div>
+              
+              <!-- Staff -->
+              <div class="space-y-1">
+                <div class="flex justify-between text-xs font-bold text-slate-700">
+                  <span>Staff Service</span>
+                  <span>{{ review_summary.staff|floatformat:1|default:"4.8" }}/5</span>
+                </div>
+                <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                  <div class="h-full bg-amber-500 rounded-full" style="width: {% widthratio review_summary.staff|default:'4.8' 5 100 %}%"></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
         {% endif %}
         
-        <div class="space-y-4">
+        <!-- Individual Review Items -->
+        <div class="divide-y divide-slate-100">
           {% for review in recent_reviews|slice:":3" %}
-          <div class="border-b border-slate-100 pb-4 last:border-0">
-            <div class="flex gap-3">
-              <div class="w-10 h-10 rounded-full bg-sky-600 flex items-center justify-center text-white font-bold">{{ review.guest_name|first|upper }}</div>
-              <div class="flex-1">
-                <div class="flex items-center justify-between flex-wrap gap-2 mb-1">
-                  <div><span class="font-semibold text-slate-800">{{ review.guest_name }}</span><span class="text-xs text-slate-400 ml-2">{{ review.created_at|date:"M d, Y" }}</span></div>
-                  <div class="flex items-center gap-0.5"><i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-400"></i><span class="font-bold text-sm">{{ review.overall_rating }}</span></div>
+          <div class="py-6 first:pt-0 last:pb-0">
+            <div class="flex gap-4">
+              <div class="w-11 h-11 rounded-full bg-gradient-to-tr from-[var(--brand-primary)] to-indigo-600 flex items-center justify-center text-white font-extrabold text-sm shadow-md flex-shrink-0">
+                {{ review.guest_name|first|upper }}
+              </div>
+              <div class="flex-1 space-y-2">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <span class="font-bold text-slate-800 text-sm block md:inline-block">{{ review.guest_name }}</span>
+                    <span class="text-xs text-slate-400 font-medium md:ml-3">{{ review.created_at|date:"F d, Y" }}</span>
+                  </div>
+                  <div class="flex items-center gap-1 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
+                    <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-500 text-amber-500"></i>
+                    <span class="font-black text-amber-700 text-xs">{{ review.overall_rating }}</span>
+                  </div>
                 </div>
-                <p class="text-slate-600 text-sm">{{ review.review_text|truncatewords:30 }}</p>
+                <p class="text-slate-600 text-sm leading-relaxed font-sans">{{ review.review_text }}</p>
               </div>
             </div>
           </div>
           {% empty %}
-          <div class="text-center py-8"><i data-lucide="message-square" class="w-12 h-12 text-slate-300 mx-auto mb-3"></i><p class="text-slate-400">No reviews yet. Be the first to share!</p><button onclick="writeReview()" class="mt-3 text-sky-600 text-sm font-medium hover:underline">Write a Review</button></div>
+          <div class="text-center py-10 border border-dashed border-slate-200 rounded-2xl">
+            <i data-lucide="messages-square" class="w-12 h-12 text-slate-300 mx-auto mb-2"></i>
+            <p class="text-slate-500 text-sm font-semibold mb-2">No reviews available yet</p>
+            <button onclick="writeReview()" class="text-xs font-bold text-[var(--brand-primary)] hover:underline">Write a Review & Share Your Experience</button>
+          </div>
           {% endfor %}
         </div>
       </div>
     </div>
     
-    <!-- Right Column – Booking Sidebar -->
-    <div class="lg:w-96 space-y-6">
-      <div class="bg-white rounded-2xl shadow-lg border border-slate-100 sticky top-24 overflow-hidden">
-        <div class="bg-gradient-to-r from-sky-600 to-indigo-600 px-5 py-4">
-          <h3 class="text-white font-bold flex items-center gap-2"><i data-lucide="calendar-check" class="w-5 h-5"></i> Check Availability</h3>
-          <p class="text-sky-100 text-xs">Best price guaranteed</p>
+    <!-- Right Column: Sidebar & Sticky Availability Console -->
+    <div class="lg:w-[380px] space-y-6">
+      
+      <!-- Sticky Check Availability Box -->
+      <div class="bg-white rounded-3xl shadow-soft border border-slate-100 sticky top-24 overflow-hidden">
+        <div class="bg-gradient-to-r from-slate-900 to-indigo-950 px-6 py-5 border-b border-white/5">
+          <h3 class="text-white font-extrabold text-base flex items-center gap-2"><i data-lucide="calendar-days" class="w-5 h-5 text-sky-400"></i> Check Availability</h3>
+          <p class="text-slate-400 text-xs font-medium mt-0.5">Secure your premium luxury stay today</p>
         </div>
-        <div class="p-5">
+        
+        <div class="p-6">
           <form id="bookingForm" method="get" action="{% url 'hotel:hotel_profile' hotel.slug %}booking/">
             <div class="space-y-4">
-              <div><label class="block text-sm font-semibold text-slate-700 mb-1 flex items-center gap-1"><i data-lucide="calendar" class="w-3.5 h-3.5 text-sky-500"></i> Check-in</label><input type="date" id="check_in" name="check_in" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:border-sky-400" required></div>
-              <div><label class="block text-sm font-semibold text-slate-700 mb-1 flex items-center gap-1"><i data-lucide="calendar" class="w-3.5 h-3.5 text-sky-500"></i> Check-out</label><input type="date" id="check_out" name="check_out" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:border-sky-400" required></div>
-              <div><label class="block text-sm font-semibold text-slate-700 mb-1 flex items-center gap-1"><i data-lucide="users" class="w-3.5 h-3.5 text-sky-500"></i> Guests</label><select id="guests" name="guests" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl"><option value="1">1 Guest</option><option value="2" selected>2 Guests</option><option value="3">3 Guests</option><option value="4">4 Guests</option></select></div>
-              <div><label class="block text-sm font-semibold text-slate-700 mb-1 flex items-center gap-1"><i data-lucide="ticket" class="w-3.5 h-3.5 text-sky-500"></i> Promo Code</label><input type="text" name="promo_code" placeholder="Enter code" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl"></div>
-              <button type="submit" class="w-full btn-primary text-white py-3 rounded-xl font-semibold hover:shadow-md transition flex items-center justify-center gap-2"><i data-lucide="search" class="w-4 h-4"></i> Check Rates</button>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <i data-lucide="calendar" class="w-3.5 h-3.5 text-[var(--brand-primary)]"></i> Check-in Date
+                </label>
+                <input type="date" id="check_in" name="check_in" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/10 text-sm font-semibold text-slate-700" required>
+              </div>
+              
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <i data-lucide="calendar" class="w-3.5 h-3.5 text-[var(--brand-primary)]"></i> Check-out Date
+                </label>
+                <input type="date" id="check_out" name="check_out" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/10 text-sm font-semibold text-slate-700" required>
+              </div>
+              
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <i data-lucide="users-2" class="w-3.5 h-3.5 text-[var(--brand-primary)]"></i> Guests
+                </label>
+                <select id="guests" name="guests" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/10 text-sm font-semibold text-slate-700">
+                  <option value="1">1 Guest</option>
+                  <option value="2" selected>2 Guests</option>
+                  <option value="3">3 Guests</option>
+                  <option value="4">4 Guests</option>
+                </select>
+              </div>
+              
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <i data-lucide="tag" class="w-3.5 h-3.5 text-[var(--brand-primary)]"></i> Promo Code
+                </label>
+                <input type="text" name="promo_code" placeholder="Enter coupon code" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/10 text-sm placeholder:text-slate-400 font-semibold">
+              </div>
+              
+              <button type="submit" class="w-full btn-brand-primary text-white py-3.5 rounded-xl font-bold hover:shadow-lg flex items-center justify-center gap-2 mt-2">
+                <i data-lucide="search" class="w-4 h-4"></i> Check Room Rates
+              </button>
             </div>
           </form>
         </div>
       </div>
       
-      <div class="bg-emerald-50 rounded-xl p-4 text-center border border-emerald-200 price-pulse">
-        <i data-lucide="badge-dollar-sign" class="w-6 h-6 text-emerald-600 mx-auto mb-1"></i>
-        <p class="font-semibold text-emerald-700">Best Price Guarantee</p>
-        <p class="text-xs text-emerald-600">Found a lower rate? We'll match it.</p>
+      <!-- Trust Badge -->
+      <div class="bg-emerald-50/70 border border-emerald-100 rounded-3xl p-5 text-center price-pulse shadow-sm flex flex-col items-center gap-2">
+        <div class="h-10 w-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shadow-inner">
+          <i data-lucide="check-check" class="w-5 h-5"></i>
+        </div>
+        <p class="font-bold text-emerald-800 text-sm">Best Rate Guarantee</p>
+        <p class="text-xs text-emerald-600/90 leading-relaxed max-w-[240px]">Found a lower rate elsewhere? We will verify and match it with additional rewards.</p>
       </div>
       
       <!-- Contact Card -->
-      <div class="bg-white rounded-xl border border-slate-100 p-5">
-        <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2"><i data-lucide="phone" class="w-4 h-4 text-sky-500"></i> Contact Hotel</h3>
-        <div class="space-y-3">
-          {% if hotel.phone %}<div class="flex items-center gap-3"><div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center"><i data-lucide="phone" class="w-4 h-4 text-emerald-600"></i></div><div><div class="text-xs text-slate-400">Call</div><a href="tel:{{ hotel.phone }}" class="text-sm font-medium text-slate-700 hover:text-sky-600">{{ hotel.phone }}</a></div></div>{% endif %}
-          {% if hotel.email %}<div class="flex items-center gap-3"><div class="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center"><i data-lucide="mail" class="w-4 h-4 text-sky-600"></i></div><div><div class="text-xs text-slate-400">Email</div><a href="mailto:{{ hotel.email }}" class="text-sm font-medium text-slate-700 hover:text-sky-600">{{ hotel.email|truncatechars:25 }}</a></div></div>{% endif %}
-          {% if not hotel.phone and not hotel.email %}<div class="text-center text-slate-400 text-sm py-2">Contact information coming soon</div>{% endif %}
+      <div class="bg-white rounded-3xl border border-slate-100 p-6 space-y-4 shadow-soft">
+        <h3 class="font-bold text-slate-800 flex items-center gap-2 text-sm md:text-base border-b border-slate-50 pb-3">
+          <i data-lucide="phone-call" class="w-4.5 h-4.5 text-[var(--brand-primary)]"></i> Need Quick Help?
+        </h3>
+        <div class="space-y-4">
+          {% if hotel.phone %}
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600"><i data-lucide="phone" class="w-4 h-4"></i></div>
+            <div>
+              <div class="text-[10px] text-slate-400 font-semibold uppercase">Call Desk</div>
+              <a href="tel:{{ hotel.phone }}" class="text-xs font-bold text-slate-700 hover:text-[var(--brand-primary)]">{{ hotel.phone }}</a>
+            </div>
+          </div>
+          {% endif %}
+
+          {% if hotel.email %}
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 bg-sky-50 rounded-xl flex items-center justify-center text-sky-600"><i data-lucide="mail" class="w-4 h-4"></i></div>
+            <div>
+              <div class="text-[10px] text-slate-400 font-semibold uppercase">Send Inquiry</div>
+              <a href="mailto:{{ hotel.email }}" class="text-xs font-bold text-slate-700 hover:text-[var(--brand-primary)] truncate block w-48">{{ hotel.email }}</a>
+            </div>
+          </div>
+          {% endif %}
+
+          {% if not hotel.phone and not hotel.email %}
+          <div class="text-center text-slate-400 text-xs py-2">Help desk links coming soon.</div>
+          {% endif %}
         </div>
       </div>
       
-      <!-- Share -->
-      <div class="bg-white rounded-xl border border-slate-100 p-5">
-        <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2"><i data-lucide="share-2" class="w-4 h-4 text-sky-500"></i> Share Hotel</h3>
+      <!-- Share Hotel Widget -->
+      <div class="bg-white rounded-3xl border border-slate-100 p-6 space-y-4 shadow-soft">
+        <h3 class="font-bold text-slate-800 flex items-center gap-2 text-sm md:text-base border-b border-slate-50 pb-3">
+          <i data-lucide="share-2" class="w-4.5 h-4.5 text-[var(--brand-primary)]"></i> Share this Property
+        </h3>
         <div class="flex gap-2">
-          <button onclick="shareHotel('facebook')" class="flex-1 bg-slate-100 hover:bg-sky-100 p-2 rounded-lg transition"><i data-lucide="facebook" class="w-4 h-4 text-sky-600 mx-auto"></i></button>
-          <button onclick="shareHotel('twitter')" class="flex-1 bg-slate-100 hover:bg-sky-100 p-2 rounded-lg transition"><i data-lucide="twitter" class="w-4 h-4 text-sky-400 mx-auto"></i></button>
-          <button onclick="shareHotel('whatsapp')" class="flex-1 bg-slate-100 hover:bg-emerald-100 p-2 rounded-lg transition"><i data-lucide="message-circle" class="w-4 h-4 text-emerald-600 mx-auto"></i></button>
-          <button onclick="copyHotelLink()" class="flex-1 bg-slate-100 hover:bg-slate-200 p-2 rounded-lg transition"><i data-lucide="link" class="w-4 h-4 text-slate-600 mx-auto"></i></button>
+          <button onclick="shareHotel('facebook')" class="flex-1 bg-slate-50 hover:bg-sky-50 hover:text-sky-600 p-3 rounded-xl transition flex items-center justify-center" aria-label="Share on Facebook">
+            <i class="fa-brands fa-facebook-f text-sm"></i>
+          </button>
+          <button onclick="shareHotel('twitter')" class="flex-1 bg-slate-50 hover:bg-sky-50 hover:text-sky-400 p-3 rounded-xl transition flex items-center justify-center" aria-label="Share on Twitter">
+            <i class="fa-brands fa-x-twitter text-sm"></i>
+          </button>
+          <button onclick="shareHotel('whatsapp')" class="flex-1 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-600 p-3 rounded-xl transition flex items-center justify-center" aria-label="Share on Whatsapp">
+            <i class="fa-brands fa-whatsapp text-sm"></i>
+          </button>
+          <button onclick="copyHotelLink()" class="flex-1 bg-slate-50 hover:bg-slate-100 p-3 rounded-xl transition flex items-center justify-center" aria-label="Copy Page Link">
+            <i data-lucide="link" class="w-4.5 h-4.5 text-slate-500"></i>
+          </button>
         </div>
       </div>
     </div>
   </div>
 </div>
 
+<!-- Experiences Section -->
+<section class="bg-slate-50/50 py-16 border-t border-slate-100 mt-12">
+  <div class="container mx-auto px-6 max-w-7xl">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+      <div>
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-xs font-bold text-indigo-700 uppercase tracking-wider mb-3">
+          <i class="fa-solid fa-compass"></i> Guest Stories & Activities
+        </div>
+        <h2 class="text-3xl font-black text-slate-900 tracking-tight">Experiences shared by guests</h2>
+        <p class="text-sm text-slate-500 mt-2">Discover local places and outdoor activities from travelers who stayed at {{ hotel.name }}.</p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="{% url 'hotel:experiences_list' %}?hotel_id={{ hotel.id }}&write=true" class="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl text-xs shadow-md shadow-indigo-600/10 hover:shadow-indigo-600/25 transition-all">
+          Share Your Experience
+        </a>
+        <a href="{% url 'hotel:experiences_list' %}?hotel_id={{ hotel.id }}" class="px-5 py-3 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-bold rounded-2xl text-xs transition">
+          Browse All Stories
+        </a>
+      </div>
+    </div>
+
+    {% if experiences %}
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for exp in experiences %}
+          <article class="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm flex flex-col hover:-translate-y-2 hover:shadow-xl transition-all duration-300">
+            <!-- Photo Grid -->
+            {% if exp.images.all %}
+              <div class="h-56 relative overflow-hidden bg-slate-100 cursor-pointer" onclick="openExpPhotoViewer({{ exp.id }})">
+                {% with count=exp.images.all.count %}
+                  {% if count == 1 %}
+                    <img src="{{ exp.images.all.0.image.url }}" alt="{{ exp.place_visited }}" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+                  {% elif count == 2 %}
+                    <div class="grid grid-cols-2 h-full gap-0.5">
+                      {% for img in exp.images.all %}
+                        <img src="{{ img.image.url }}" alt="{{ exp.place_visited }}" class="w-full h-full object-cover">
+                      {% endfor %}
+                    </div>
+                  {% elif count == 3 %}
+                    <div class="grid grid-cols-3 h-full gap-0.5">
+                      <div class="col-span-2 h-full overflow-hidden">
+                        <img src="{{ exp.images.all.0.image.url }}" alt="{{ exp.place_visited }}" class="w-full h-full object-cover">
+                      </div>
+                      <div class="grid grid-rows-2 gap-0.5 h-full">
+                        <img src="{{ exp.images.all.1.image.url }}" alt="{{ exp.place_visited }}" class="w-full h-full object-cover">
+                        <img src="{{ exp.images.all.2.image.url }}" alt="{{ exp.place_visited }}" class="w-full h-full object-cover">
+                      </div>
+                    </div>
+                  {% else %}
+                    <div class="grid grid-cols-3 h-full gap-0.5">
+                      <div class="col-span-2 h-full overflow-hidden">
+                        <img src="{{ exp.images.all.0.image.url }}" alt="{{ exp.place_visited }}" class="w-full h-full object-cover">
+                      </div>
+                      <div class="grid grid-rows-2 gap-0.5 h-full">
+                        <img src="{{ exp.images.all.1.image.url }}" alt="{{ exp.place_visited }}" class="w-full h-full object-cover">
+                        <div class="relative w-full h-full overflow-hidden">
+                          <img src="{{ exp.images.all.2.image.url }}" alt="{{ exp.place_visited }}" class="w-full h-full object-cover">
+                          <div class="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold text-xs">
+                            +{{ count|add:"-2" }} PHOTOS
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endwith %}
+              </div>
+            {% else %}
+              <div class="h-40 bg-gradient-to-br from-indigo-50/50 to-sky-50/50 flex flex-col items-center justify-center text-indigo-400 gap-2 border-b border-slate-50">
+                <i class="fa-solid fa-map-pin text-xl"></i>
+                <span class="text-[10px] font-bold uppercase tracking-wider">Adventure Logged</span>
+              </div>
+            {% endif %}
+
+            <!-- Content -->
+            <div class="p-6 flex-grow flex flex-col justify-between">
+              <div>
+                <div class="flex items-start justify-between gap-3 mb-3">
+                  <div>
+                    <h3 class="text-lg font-bold text-slate-800 leading-snug">{{ exp.place_visited }}</h3>
+                    <span class="text-xs font-semibold text-indigo-600 block mt-0.5"><i class="fa-solid fa-hiking mr-1"></i>{{ exp.activity }}</span>
+                  </div>
+                  <span class="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100 text-amber-700 font-bold text-xs">
+                    <i class="fa-solid fa-star text-amber-500 font-black"></i>{{ exp.rating|floatformat:1 }}
+                  </span>
+                </div>
+                <p class="text-slate-500 text-xs leading-relaxed mb-6">"{{ exp.experience_text|truncatewords:25 }}"</p>
+              </div>
+
+              <div class="flex items-center justify-between border-t border-slate-100 pt-4 mt-auto">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-[10px] uppercase">
+                    {{ exp.guest_name|slice:":1" }}
+                  </div>
+                  <div>
+                    <span class="text-[11px] font-bold text-slate-800 block leading-tight">{{ exp.guest_name }}</span>
+                    <span class="text-[9px] text-slate-400 font-medium">{{ exp.created_at|date:"M d, Y" }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-center py-12 bg-white rounded-3xl border border-slate-100 max-w-xl mx-auto shadow-sm">
+        <i class="fa-solid fa-compass text-slate-350 text-3xl mb-4 block"></i>
+        <h4 class="text-base font-bold text-slate-800">No local experiences shared yet</h4>
+        <p class="text-xs text-slate-400 mt-1 max-w-xs mx-auto">Have you visited any interesting locations or done fun activities near {{ hotel.name }}? Share them with future guests!</p>
+        <a href="{% url 'hotel:experiences_list' %}?hotel_id={{ hotel.id }}&write=true" class="mt-5 px-5 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition inline-block">
+          Log Your First Adventure
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- Lightbox Photo Viewer for Experiences -->
+<div id="expPhotoViewer" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md hidden flex flex-col justify-between" role="dialog" aria-modal="true">
+  <div class="px-6 py-4 flex items-center justify-between text-white border-b border-white/5">
+    <div>
+      <h4 id="exp-viewer-title" class="font-bold text-sm tracking-wide">Photo Gallery</h4>
+      <p id="exp-viewer-counter" class="text-xs text-white/50 font-semibold mt-0.5">Image 1 of 1</p>
+    </div>
+    <button onclick="closeExpPhotoViewer()" class="w-10 h-10 rounded-full hover:bg-white/10 text-white/80 hover:text-white flex items-center justify-center transition">
+      &times;
+    </button>
+  </div>
+
+  <div class="flex-grow flex items-center justify-center relative px-10">
+    <button id="exp-viewer-prev" onclick="prevExpPhoto()" class="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/5 hover:bg-white/15 text-white/80 hover:text-white flex items-center justify-center transition">
+      <i class="fa-solid fa-chevron-left text-lg"></i>
+    </button>
+
+    <div class="max-h-[70vh] max-w-[85vw] flex items-center justify-center overflow-hidden rounded-2xl border border-white/10 shadow-2xl relative">
+      <img id="exp-viewer-image" src="" alt="Viewing photo" class="max-h-[70vh] max-w-[85vw] object-contain transition-all duration-300">
+    </div>
+
+    <button id="exp-viewer-next" onclick="nextExpPhoto()" class="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/5 hover:bg-white/15 text-white/80 hover:text-white flex items-center justify-center transition">
+      <i class="fa-solid fa-chevron-right text-lg"></i>
+    </button>
+  </div>
+
+  <div class="px-6 py-4 bg-slate-900 border-t border-white/5 flex justify-center gap-2.5 overflow-x-auto" id="exp-viewer-thumbnails"></div>
+</div>
+
 <!-- Lightbox Modal -->
-<div id="lightboxModal" class="modal">
-  <span class="absolute top-5 right-6 text-white text-3xl cursor-pointer z-20" onclick="closeLightbox()">&times;</span>
-  <div class="max-w-5xl w-full mx-4">
-    <div id="lightboxImage" class="text-center"></div>
-    <div class="flex justify-center gap-4 mt-5">
-      <button onclick="prevImage()" class="bg-white/20 hover:bg-white/30 text-white px-5 py-2 rounded-full transition">Previous</button>
-      <span id="lightboxCounter" class="text-white"></span>
-      <button onclick="nextImage()" class="bg-white/20 hover:bg-white/30 text-white px-5 py-2 rounded-full transition">Next</button>
+<div id="lightboxModal" class="modal" onclick="closeLightbox()">
+<div id="lightboxModal" class="modal" onclick="closeLightbox()">
+  <span class="absolute top-6 right-6 text-white text-3xl font-light cursor-pointer z-30 hover:scale-105 transition" onclick="closeLightbox()">&times;</span>
+  <div class="max-w-5xl w-full mx-4 modal-container" onclick="event.stopPropagation()">
+    <div id="lightboxImage" class="text-center relative"></div>
+    <div class="flex justify-between items-center gap-6 mt-6 max-w-sm mx-auto">
+      <button onclick="prevImage()" class="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-full transition text-xs font-bold"><i data-lucide="chevron-left" class="w-4 h-4"></i> Previous</button>
+      <span id="lightboxCounter" class="text-white text-sm font-semibold"></span>
+      <button onclick="nextImage()" class="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-full transition text-xs font-bold">Next <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
     </div>
   </div>
 </div>
 
-<!-- Room Modal -->
-<div id="roomModal" class="modal">
-  <div class="bg-white rounded-2xl max-w-3xl w-full mx-4 overflow-hidden">
-    <div class="bg-gradient-to-r from-sky-600 to-indigo-600 px-5 py-4 flex justify-between items-center">
-      <h3 id="modalRoomTitle" class="text-white font-bold text-xl">Room Details</h3>
-      <button onclick="closeRoomModal()" class="text-white hover:text-slate-200 text-2xl">&times;</button>
+<!-- Room Details Modal -->
+<div id="roomModal" class="modal" onclick="closeRoomModal()">
+  <div class="bg-white rounded-3xl max-w-2xl w-full mx-4 overflow-hidden shadow-2xl modal-container" onclick="event.stopPropagation()">
+    <div class="bg-gradient-to-r from-slate-900 to-indigo-950 px-6 py-5 flex justify-between items-center border-b border-white/5">
+      <h3 id="modalRoomTitle" class="text-white font-extrabold text-lg md:text-xl">Room Details</h3>
+      <button onclick="closeRoomModal()" class="text-slate-300 hover:text-white text-3xl font-light transition">&times;</button>
     </div>
-    <div id="modalRoomContent" class="p-6"></div>
+    <div id="modalRoomContent" class="p-8"></div>
   </div>
 </div>
 
-<div id="toast" class="toast hidden bg-slate-800 text-white px-5 py-3 rounded-lg shadow-lg text-sm"></div>
+<!-- Toast Notification -->
+<div id="toast" class="toast hidden bg-slate-900/95 backdrop-blur-md text-white border border-white/15 px-6 py-3.5 rounded-2xl shadow-2xl text-xs md:text-sm font-bold flex items-center gap-2">
+  <i data-lucide="info" class="w-4 h-4 text-sky-400"></i>
+  <span id="toastMsg">Notification message</span>
+</div>
+
+<!-- inject serialized room types json data -->
+{{ room_types_json|json_script:"room-types-data" }}
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   if (typeof lucide !== 'undefined') lucide.createIcons();
   
-  // Tabs
+  // Swiper Hero Carousel
+  const swiper = new Swiper('.hero-swiper', {
+    loop: true,
+    autoplay: {
+      delay: 5500,
+      disableOnInteraction: false,
+    },
+    effect: 'fade',
+    fadeEffect: {
+      crossFade: true
+    },
+    pagination: {
+      el: '.hero-swiper-pagination',
+      clickable: true,
+    },
+    navigation: {
+      nextEl: '.swiper-custom-next',
+      prevEl: '.swiper-custom-prev',
+    },
+  });
+
+  // Tab Content Switcher
   const tabs = document.querySelectorAll('.tab-btn');
-  const contents = document.querySelectorAll('.tab-content');
+  const contents = document.querySelectorAll('.tab-content-panel');
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
       const tabId = tab.dataset.tab;
@@ -525,59 +1030,384 @@ document.addEventListener('DOMContentLoaded', function() {
       localStorage.setItem('hotelActiveTab', tabId);
     });
   });
-  const saved = localStorage.getItem('hotelActiveTab');
-  if (saved && saved !== 'about') document.querySelector(`[data-tab="${saved}"]`)?.click();
   
-  // Date picker defaults
+  const savedTab = localStorage.getItem('hotelActiveTab');
+  if (savedTab && savedTab !== 'about') {
+    document.querySelector(`[data-tab="${savedTab}"]`)?.click();
+  }
+  
+  // Date Picker Logic & Validation
   const today = new Date();
-  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
-  const checkIn = document.getElementById('check_in');
-  const checkOut = document.getElementById('check_out');
-  if (checkIn && checkOut) {
-    checkIn.valueAsDate = today;
-    checkOut.valueAsDate = tomorrow;
-    checkIn.min = today.toISOString().split('T')[0];
-    checkOut.min = tomorrow.toISOString().split('T')[0];
-    checkIn.addEventListener('change', () => {
-      const min = new Date(checkIn.value); min.setDate(min.getDate() + 1);
-      checkOut.min = min.toISOString().split('T')[0];
-      if (new Date(checkOut.value) <= new Date(checkIn.value)) checkOut.valueAsDate = min;
+  const tomorrow = new Date(today); 
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  const checkInInput = document.getElementById('check_in');
+  const checkOutInput = document.getElementById('check_out');
+  
+  if (checkInInput && checkOutInput) {
+    checkInInput.valueAsDate = today;
+    checkOutInput.valueAsDate = tomorrow;
+    checkInInput.min = today.toISOString().split('T')[0];
+    checkOutInput.min = tomorrow.toISOString().split('T')[0];
+    
+    checkInInput.addEventListener('change', () => {
+      const minOutDate = new Date(checkInInput.value);
+      minOutDate.setDate(minOutDate.getDate() + 1);
+      checkOutInput.min = minOutDate.toISOString().split('T')[0];
+      if (new Date(checkOutInput.value) <= new Date(checkInInput.value)) {
+        checkOutInput.valueAsDate = minOutDate;
+      }
     });
   }
   
-  // Scrolling animations
+  // Scroll Animation Observer
   const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-  }, { threshold: 0.1 });
+    entries.forEach(e => { 
+      if (e.isIntersecting) {
+        e.target.classList.add('visible'); 
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.05 });
+  
   document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
 });
 
-// Lightbox
-const galleryImages = [{% for i in gallery %}{ url: "{{ i.image.url|escapejs }}", title: "{{ i.alt_text|default:hotel.name|escapejs }}" },{% endfor %}];
+// Lightbox Photo Gallery
+const galleryImages = [
+  {% for i in gallery %}
+    { url: "{{ i.image.url|escapejs }}", title: "{{ i.alt_text|default:hotel.name|escapejs }}" },
+  {% endfor %}
+];
 let currentIdx = 0;
-function openLightbox(idx) { currentIdx = idx; updateLightbox(); document.getElementById('lightboxModal').classList.add('active'); document.body.style.overflow = 'hidden'; }
-function updateLightbox() { const img = galleryImages[currentIdx]; if(img) { document.getElementById('lightboxImage').innerHTML = `<img src="${img.url}" alt="${img.title}" class="max-w-full max-h-[75vh] rounded-xl shadow-2xl mx-auto"><div class="text-white text-center mt-3">${img.title}</div>`; document.getElementById('lightboxCounter').innerText = `${currentIdx+1} / ${galleryImages.length}`; } }
-function prevImage() { if(galleryImages.length){ currentIdx = (currentIdx-1+galleryImages.length)%galleryImages.length; updateLightbox(); } }
-function nextImage() { if(galleryImages.length){ currentIdx = (currentIdx+1)%galleryImages.length; updateLightbox(); } }
-function closeLightbox() { document.getElementById('lightboxModal').classList.remove('active'); document.body.style.overflow = 'auto'; }
-function openFullGallery() { window.location.href = "{% url 'hotel:hotel_gallery' hotel.slug %}"; }
 
-function showRoomDetails(id) { const modal = document.getElementById('roomModal'); const content = document.getElementById('modalRoomContent'); content.innerHTML = `<div class="text-center py-8"><i data-lucide="loader-circle" class="w-8 h-8 animate-spin text-sky-600 mx-auto"></i><p class="mt-2 text-slate-500">Loading...</p></div>`; lucide.createIcons(); modal.classList.add('active'); document.body.style.overflow = 'hidden'; setTimeout(() => { content.innerHTML = `<div class="space-y-4"><div class="grid grid-cols-2 gap-3"><div class="bg-slate-50 p-3 rounded-lg"><div class="text-xs text-slate-500">Size</div><div class="font-semibold">350 sq ft</div></div><div class="bg-slate-50 p-3 rounded-lg"><div class="text-xs text-slate-500">Bed</div><div class="font-semibold">King Bed</div></div></div><div><h4 class="font-semibold mb-2">Amenities</h4><div class="flex flex-wrap gap-2"><span class="text-xs bg-slate-100 px-2 py-1 rounded-full">Free WiFi</span><span class="text-xs bg-slate-100 px-2 py-1 rounded-full">AC</span><span class="text-xs bg-slate-100 px-2 py-1 rounded-full">TV</span><span class="text-xs bg-slate-100 px-2 py-1 rounded-full">Mini Bar</span></div></div><div class="bg-sky-50 rounded-xl p-4 flex justify-between items-center"><div><span class="text-2xl font-bold text-sky-600">$199</span><span class="text-xs text-slate-500">/night</span></div><button onclick="bookRoom('${id}')" class="btn-primary text-white px-5 py-2 rounded-lg font-semibold">Book Now</button></div></div>`; lucide.createIcons(); }, 300); }
-function closeRoomModal() { document.getElementById('roomModal').classList.remove('active'); document.body.style.overflow = 'auto'; }
-function bookRoom(id) { const ci = document.getElementById('check_in')?.value, co = document.getElementById('check_out')?.value, guests = document.getElementById('guests')?.value; if(!ci || !co){ showToast('Select dates first', 'error'); return; } window.location.href = `{% url 'hotel:hotel_profile' hotel.slug %}booking/?room_type=${id}&check_in=${ci}&check_out=${co}&guests=${guests}`; }
-function shareHotel(platform) { const url = encodeURIComponent(window.location.href), title = encodeURIComponent('{{ hotel.name }}'); let shareUrl = ''; if(platform==='facebook') shareUrl=`https://www.facebook.com/sharer/sharer.php?u=${url}`; else if(platform==='twitter') shareUrl=`https://twitter.com/intent/tweet?url=${url}&text=${title}`; else if(platform==='whatsapp') shareUrl=`https://wa.me/?text=${title} - ${url}`; if(shareUrl) window.open(shareUrl, '_blank', 'width=600,height=400'); showToast('Shared!', 'success'); }
-function copyHotelLink() { navigator.clipboard.writeText(window.location.href); showToast('Link copied!', 'success'); }
-function showToast(msg) { const toast = document.getElementById('toast'); toast.textContent = msg; toast.classList.remove('hidden'); setTimeout(() => toast.classList.add('hidden'), 2500); }
-function getDirections() { const lat = {{ hotel.latitude|default:"0" }}, lng = {{ hotel.longitude|default:"0" }}; if(lat && lng) window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank'); else showToast('Location coordinates not available'); }
-function startVirtualTour() { showToast('Virtual tour coming soon'); }
-function writeReview() { window.location.href = `{% url 'hotel:hotel_reviews' hotel.slug %}?write=true`; }
-
-// Map placeholder (Leaflet)
-if(document.getElementById('map') && {{ hotel.latitude|default:"0" }} && {{ hotel.longitude|default:"0" }}) {
-  const script = document.createElement('script'); script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'; script.onload = () => { const map = L.map('map').setView([{{ hotel.latitude }}, {{ hotel.longitude }}], 14); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); L.marker([{{ hotel.latitude }}, {{ hotel.longitude }}]).addTo(map).bindPopup('<b>{{ hotel.name }}</b>').openPopup(); }; document.body.appendChild(script); const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'; document.head.appendChild(link);
+function openLightbox(idx) {
+  currentIdx = idx;
+  updateLightbox();
+  const lightbox = document.getElementById('lightboxModal');
+  lightbox.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  lucide.createIcons();
 }
 
-document.addEventListener('keydown', e => { if(e.key === 'Escape') { closeLightbox(); closeRoomModal(); } });
-window.onclick = e => { if(e.target === document.getElementById('lightboxModal')) closeLightbox(); if(e.target === document.getElementById('roomModal')) closeRoomModal(); };
+function updateLightbox() {
+  const img = galleryImages[currentIdx];
+  if(img) {
+    document.getElementById('lightboxImage').innerHTML = `
+      <img src="${img.url}" alt="${img.title}" class="max-w-full max-h-[70vh] rounded-2xl shadow-2xl mx-auto border border-white/10">
+      <div class="text-white text-center mt-4 text-sm font-semibold font-sans tracking-wide">${img.title}</div>
+    `;
+    document.getElementById('lightboxCounter').innerText = `${currentIdx + 1} / ${galleryImages.length}`;
+  }
+}
+
+function prevImage() {
+  if(galleryImages.length) {
+    currentIdx = (currentIdx - 1 + galleryImages.length) % galleryImages.length;
+    updateLightbox();
+  }
+}
+
+function nextImage() {
+  if(galleryImages.length) {
+    currentIdx = (currentIdx + 1) % galleryImages.length;
+    updateLightbox();
+  }
+}
+
+function closeLightbox() {
+  document.getElementById('lightboxModal').classList.remove('active');
+  document.body.style.overflow = 'auto';
+}
+
+function openFullGallery() {
+  window.location.href = "{% url 'hotel:hotel_gallery' hotel.slug %}";
+}
+
+// Room Details Parsing & Modal
+const roomTypesData = JSON.parse(document.getElementById('room-types-data').textContent);
+
+function showRoomDetails(id) {
+  const roomType = roomTypesData.find(rt => rt.id === id);
+  if (!roomType) return;
+  
+  const modal = document.getElementById('roomModal');
+  const title = document.getElementById('modalRoomTitle');
+  const content = document.getElementById('modalRoomContent');
+  
+  title.innerText = roomType.name;
+  
+  const currencySymbol = "{{ hotel.default_currency_symbol|default:hotel.default_currency|default:'UGX' }}";
+  
+  let imgHtml = '';
+  if (roomType.image_url) {
+    imgHtml = `
+      <div class="h-60 md:h-72 w-full overflow-hidden rounded-2xl mb-6 shadow-inner relative border border-slate-100">
+        <img src="${roomType.image_url}" alt="${roomType.name}" class="w-full h-full object-cover">
+        <div class="absolute top-4 right-4 bg-slate-900/80 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
+          Featured Image
+        </div>
+      </div>
+    `;
+  } else {
+    imgHtml = `
+      <div class="h-60 w-full bg-slate-50 flex flex-col items-center justify-center rounded-2xl mb-6 text-slate-350 border border-slate-100">
+        <i data-lucide="image" class="w-12 h-12 mb-2"></i>
+        <span class="text-xs font-semibold">No room photos uploaded</span>
+      </div>
+    `;
+  }
+  
+  content.innerHTML = `
+    ${imgHtml}
+    <div class="space-y-6">
+      <div>
+        <h4 class="font-bold text-slate-800 text-sm uppercase tracking-wider mb-2">Description</h4>
+        <p class="text-slate-500 text-sm leading-relaxed">${roomType.description}</p>
+      </div>
+      
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+          <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Max Capacity</div>
+          <div class="font-extrabold text-slate-800 text-sm flex items-center gap-1.5">
+            <i data-lucide="users" class="w-4 h-4 text-[var(--brand-primary)]"></i>
+            ${roomType.capacity_adults} Adults
+          </div>
+        </div>
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+          <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Layout Size</div>
+          <div class="font-extrabold text-slate-800 text-sm flex items-center gap-1.5">
+            <i data-lucide="maximize" class="w-4 h-4 text-[var(--brand-primary)]"></i>
+            ${roomType.size} sq ft
+          </div>
+        </div>
+        <div class="col-span-2 md:col-span-1 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+          <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Status</div>
+          <div class="font-extrabold text-slate-800 text-sm flex items-center gap-1.5">
+            <i data-lucide="door-open" class="w-4 h-4 text-[var(--brand-primary)]"></i>
+            ${roomType.rooms_count > 0 ? roomType.rooms_count + ' Available' : 'Sold Out'}
+          </div>
+        </div>
+      </div>
+      
+      <div class="border-t border-slate-100 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>
+          <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Base Rate</span>
+          <span class="text-3xl font-black text-[var(--brand-primary)]">${currencySymbol} ${roomType.base_price.toLocaleString()} <span class="text-xs text-slate-400 font-medium">/ night</span></span>
+        </div>
+        <button onclick="bookRoom('${roomType.id}')" class="w-full sm:w-auto px-8 py-3.5 btn-brand-primary text-white rounded-2xl font-bold hover:shadow-lg flex items-center justify-center gap-2" ${roomType.rooms_count === 0 ? 'disabled' : ''}>
+          <i data-lucide="bookmark-check" class="w-5 h-5"></i> Book Suite
+        </button>
+      </div>
+    </div>
+  `;
+  
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  lucide.createIcons();
+}
+
+function closeRoomModal() {
+  document.getElementById('roomModal').classList.remove('active');
+  document.body.style.overflow = 'auto';
+}
+
+function bookRoom(id) {
+  const ci = document.getElementById('check_in')?.value;
+  const co = document.getElementById('check_out')?.value;
+  const guests = document.getElementById('guests')?.value;
+  
+  if(!ci || !co) {
+    showToast('Please select stay dates first', 'error');
+    return;
+  }
+  window.location.href = `{% url 'hotel:hotel_profile' hotel.slug %}booking/?room_type=${id}&check_in=${ci}&check_out=${co}&guests=${guests}`;
+}
+
+// Share Widgets
+function shareHotel(platform) {
+  const url = encodeURIComponent(window.location.href);
+  const title = encodeURIComponent('{{ hotel.name }}');
+  let shareUrl = '';
+  
+  if(platform === 'facebook') shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+  else if(platform === 'twitter') shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${title}`;
+  else if(platform === 'whatsapp') shareUrl = `https://wa.me/?text=${title} - ${url}`;
+  
+  if(shareUrl) {
+    window.open(shareUrl, '_blank', 'width=600,height=400');
+    showToast('Redirected to share platform!', 'success');
+  }
+}
+
+function copyHotelLink() {
+  navigator.clipboard.writeText(window.location.href);
+  showToast('Profile page link copied!', 'success');
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  const toastMsg = document.getElementById('toastMsg');
+  toastMsg.textContent = msg;
+  toast.classList.remove('hidden');
+  setTimeout(() => toast.classList.add('hidden'), 3500);
+}
+
+function getDirections() {
+  const lat = {{ hotel.latitude|default:"0" }};
+  const lng = {{ hotel.longitude|default:"0" }};
+  if(lat && lng) {
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+  } else {
+    showToast('GPS navigation coordinates not available');
+  }
+}
+
+function startVirtualTour() {
+  showToast('VR Tour coming soon for this hotel!');
+}
+
+function writeReview() {
+  window.location.href = `{% url 'hotel:hotel_reviews' hotel.slug %}?write=true`;
+}
+
+// Leaflet Interactive Maps
+if(document.getElementById('map') && {{ hotel.latitude|default:"0" }} && {{ hotel.longitude|default:"0" }}) {
+  const script = document.createElement('script');
+  script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  script.onload = () => {
+    const lat = {{ hotel.latitude }};
+    const lng = {{ hotel.longitude }};
+    const map = L.map('map', { scrollWheelZoom: false }).setView([lat, lng], 15);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    L.marker([lat, lng]).addTo(map)
+      .bindPopup('<b class="text-slate-800">{{ hotel.name }}</b>')
+      .openPopup();
+  };
+  document.body.appendChild(script);
+  
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+  document.head.appendChild(link);
+}
+
+// Experiences images collections dataset mapping
+const experiencesImages = {
+  {% for exp in experiences %}
+    {% if exp.images.all %}
+      "{{ exp.id }}": {
+        "place": "{{ exp.place_visited|escapejs }}",
+        "images": [
+          {% for img in exp.images.all %}
+            "{{ img.image.url }}"{% if not forloop.last %},{% endif %}
+          {% endfor %}
+        ]
+      },
+    {% endif %}
+  {% endfor %}
+};
+
+let activeExpId = null;
+let activeExpImageIndex = 0;
+
+function openExpPhotoViewer(expId) {
+  const data = experiencesImages[expId];
+  if (!data) return;
+
+  activeExpId = expId;
+  activeExpImageIndex = 0;
+
+  document.getElementById('exp-viewer-title').innerText = data.place;
+  document.getElementById('expPhotoViewer').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+
+  renderExpActivePhoto();
+  renderExpThumbnails();
+}
+
+function closeExpPhotoViewer() {
+  document.getElementById('expPhotoViewer').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+function renderExpActivePhoto() {
+  const data = experiencesImages[activeExpId];
+  const imageUrl = data.images[activeExpImageIndex];
+  const imageEl = document.getElementById('exp-viewer-image');
+
+  imageEl.style.opacity = 0;
+  setTimeout(() => {
+    imageEl.src = imageUrl;
+    imageEl.style.opacity = 1;
+  }, 150);
+
+  document.getElementById('exp-viewer-counter').innerText = `Image ${activeExpImageIndex + 1} of ${data.images.length}`;
+
+  document.getElementById('exp-viewer-prev').style.visibility = (activeExpImageIndex === 0) ? 'hidden' : 'visible';
+  document.getElementById('exp-viewer-next').style.visibility = (activeExpImageIndex === data.images.length - 1) ? 'hidden' : 'visible';
+}
+
+function renderExpThumbnails() {
+  const data = experiencesImages[activeExpId];
+  const container = document.getElementById('exp-viewer-thumbnails');
+  container.innerHTML = '';
+
+  if (data.images.length <= 1) {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = 'flex';
+
+  data.images.forEach((imgUrl, index) => {
+    const thumb = document.createElement('button');
+    thumb.className = `w-14 h-14 rounded-lg overflow-hidden border-2 transition-all ${index === activeExpImageIndex ? 'border-indigo-500 scale-105' : 'border-white/15 opacity-60 hover:opacity-100'}`;
+    thumb.onclick = () => {
+      activeExpImageIndex = index;
+      renderExpActivePhoto();
+      renderExpThumbnails();
+    };
+    thumb.innerHTML = `<img src="${imgUrl}" class="w-full h-full object-cover">`;
+    container.appendChild(thumb);
+  });
+}
+
+function prevExpPhoto() {
+  if (activeExpImageIndex > 0) {
+    activeExpImageIndex--;
+    renderExpActivePhoto();
+    renderExpThumbnails();
+  }
+}
+
+function nextExpPhoto() {
+  const data = experiencesImages[activeExpId];
+  if (activeExpImageIndex < data.images.length - 1) {
+    activeExpImageIndex++;
+    renderExpActivePhoto();
+    renderExpThumbnails();
+  }
+}
+
+// Global Keyboard Bindings
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') {
+    closeLightbox();
+    closeRoomModal();
+    closeExpPhotoViewer();
+  }
+  if(e.key === 'ArrowLeft') {
+    const viewer = document.getElementById('expPhotoViewer');
+    if (!viewer.classList.contains('hidden')) prevExpPhoto();
+  }
+  if(e.key === 'ArrowRight') {
+    const viewer = document.getElementById('expPhotoViewer');
+    if (!viewer.classList.contains('hidden')) nextExpPhoto();
+  }
+});
 </script>
 {% endblock %}

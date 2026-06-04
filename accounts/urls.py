@@ -2,6 +2,7 @@
 
 from django.urls import path
 from django.views.generic import RedirectView
+from django.contrib.auth import views as auth_views
 from django.conf import settings
 
 from . import views
@@ -9,6 +10,10 @@ from . import views
 app_name = "accounts"
 
 urlpatterns = [
+
+    # Authentication
+    path("login/", auth_views.LoginView.as_view(template_name="registration/login.html"), name="login"),
+    path("logout/", auth_views.LogoutView.as_view(next_page="/"), name="logout"),
     # Profile redirect (for compatibility with /accounts/profile/)
     path("profile/", RedirectView.as_view(pattern_name="accounts:my_profile", permanent=False), name="profile_redirect"),
     

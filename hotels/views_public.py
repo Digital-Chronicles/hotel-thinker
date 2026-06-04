@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from django.core.paginator import Paginator
 from django.db.models import Avg, Count, Min, Max, Q, Prefetch, F
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib import messages
 
 from hotels.models import (
     Hotel,
@@ -11,7 +12,10 @@ from hotels.models import (
     HotelImage,
     HotelReview,
     HotelSetting,
+    HotelExperience,
+    HotelExperienceImage,
 )
+from hotels.forms import HotelReviewForm, HotelExperienceForm
 from rooms.models import Room, RoomImage, RoomType
 
 
@@ -331,6 +335,13 @@ def public_hotel_profile(request, slug):
     # FIXED: Removed 'is_active' filter since RoomType doesn't have this field
     room_types = list(
         RoomType.objects.filter(hotel=hotel)  # Removed is_active=True
+        .prefetch_related(
+            Prefetch(
+                "images",
+                queryset=RoomImage.objects.filter(is_active=True).order_by("-is_primary", "order", "-created_at"),
+                to_attr="prefetched_rt_images"
+            )
+        )
         .annotate(
             rooms_count=Count("rooms", filter=Q(rooms__is_active=True), distinct=True),
             min_price=F("base_price"),
@@ -338,6 +349,28 @@ def public_hotel_profile(request, slug):
         )
         .order_by("name")
     )
+
+    # Attach image URLs to room types and build a list for JS serialization
+    import json
+    from django.core.serializers.json import DjangoJSONEncoder
+    
+    room_types_data = []
+    for rt in room_types:
+        rt_images = getattr(rt, "prefetched_rt_images", [])
+        rt.image_url = rt_images[0].image.url if rt_images else None
+        
+        room_types_data.append({
+            "id": str(rt.id),
+            "name": rt.name,
+            "description": rt.description or "Comfortable and elegantly appointed room with modern amenities.",
+            "base_price": float(rt.base_price),
+            "rooms_count": rt.rooms_count,
+            "image_url": rt.image_url,
+            "capacity_adults": 2,  # Default capacity fallback
+            "size": 350,          # Default size fallback
+        })
+    room_types_json = json.dumps(room_types_data, cls=DjangoJSONEncoder)
+
 
     # Get all rooms
     all_rooms = list(
@@ -427,6 +460,13 @@ def public_hotel_profile(request, slug):
     if hasattr(Room, 'Status') and hasattr(Room.Status, 'choices'):
         room_status_choices = Room.Status.choices
 
+    # Fetch approved experiences for this hotel (with prefetching of images)
+    experiences = list(
+        HotelExperience.objects.filter(hotel=hotel, is_approved=True)
+        .prefetch_related("images")
+        .order_by("-created_at")[:6]
+    )
+
     return render(
         request,
         "public_site/hotel_profile.html",
@@ -437,6 +477,7 @@ def public_hotel_profile(request, slug):
             "gallery": gallery,
             "cover_image": cover_image,
             "room_types": room_types,
+            "room_types_json": room_types_json,
             "all_rooms": all_rooms,
             "featured_rooms": featured_rooms,
             "recent_reviews": recent_reviews,
@@ -445,6 +486,7 @@ def public_hotel_profile(request, slug):
             "primary_contact": primary_contact,
             "other_contacts": other_contacts,
             "room_statuses": room_status_choices,
+            "experiences": experiences,
         },
     )
 
@@ -507,7 +549,7 @@ def public_hotel_gallery(request, slug):
 
 
 def public_hotel_reviews(request, slug):
-    """Hotel reviews page with pagination"""
+    """Hotel reviews page with pagination and submission support"""
     hotel = get_object_or_404(
         Hotel.objects.filter(is_active=True, is_published=True), 
         slug=slug
@@ -516,6 +558,20 @@ def public_hotel_reviews(request, slug):
     # Add brand colors to hotel
     hotel.brand_color_primary = hotel.brand_color_primary or "#3B82F6"
     hotel.brand_color_secondary = hotel.brand_color_secondary or "#10B981"
+
+    if request.method == "POST":
+        form = HotelReviewForm(request.POST)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.hotel = hotel
+            # Auto-approve for presentation purposes so they see their review instantly
+            review.is_approved = True
+            review.is_verified_stay = True
+            review.save()
+            messages.success(request, "Thank you! Your guest review has been successfully submitted and published.")
+            return redirect("hotel:hotel_reviews", slug=hotel.slug)
+    else:
+        form = HotelReviewForm()
 
     reviews_qs = HotelReview.objects.filter(
         hotel=hotel,
@@ -545,14 +601,18 @@ def public_hotel_reviews(request, slug):
         if review_summary[key] is not None:
             review_summary[key] = round(float(review_summary[key]), 1)
     
-    # Calculate rating distribution if needed
-    rating_distribution = {}
-    for rating in range(1, 6):
-        rating_distribution[rating] = HotelReview.objects.filter(
+    # Calculate rating distribution if needed (ordered from 5 down to 1)
+    rating_distribution = []
+    for rating in range(5, 0, -1):
+        count = HotelReview.objects.filter(
             hotel=hotel,
             is_approved=True,
             overall_rating=rating
         ).count()
+        rating_distribution.append({
+            "rating": rating,
+            "count": count
+        })
 
     return render(
         request,
@@ -563,6 +623,8 @@ def public_hotel_reviews(request, slug):
             "page_obj": page_obj,
             "review_summary": review_summary,
             "rating_distribution": rating_distribution,
+            "form": form,
+            "open_modal": request.method == "POST" and not form.is_valid()
         },
     )
 
@@ -592,3 +654,75 @@ def public_about(request):
         stats["average_rating"] = round(float(stats["average_rating"]), 1)
 
     return render(request, "public_site/about.html", {"stats": stats})
+
+
+def public_experiences_list(request):
+    """List all guest experiences with option to submit a new one (multiple photos supported)"""
+    
+    if request.method == "POST":
+        form = HotelExperienceForm(request.POST)
+        if form.is_valid():
+            experience = form.save(commit=False)
+            experience.is_approved = True
+            experience.save()
+            
+            # Save multiple uploaded images
+            uploaded_images = request.FILES.getlist('images')
+            for img in uploaded_images:
+                HotelExperienceImage.objects.create(
+                    experience=experience,
+                    image=img
+                )
+            
+            messages.success(request, "Your experience and photo collection have been shared successfully!")
+            return redirect("hotel:experiences_list")
+    else:
+        # Check if pre-selected hotel is requested via query param
+        initial_data = {}
+        hotel_slug = request.GET.get("hotel")
+        if hotel_slug:
+            selected_hotel = Hotel.objects.filter(slug=hotel_slug, is_active=True, is_published=True).first()
+            if selected_hotel:
+                initial_data["hotel"] = selected_hotel.id
+        form = HotelExperienceForm(initial=initial_data)
+
+    # Filter experiences
+    experiences_qs = HotelExperience.objects.filter(is_approved=True).prefetch_related('images').select_related('hotel')
+    
+    # Optional search by query or hotel
+    q = (request.GET.get("q") or "").strip()
+    if q:
+        experiences_qs = experiences_qs.filter(
+            Q(place_visited__icontains=q) |
+            Q(activity__icontains=q) |
+            Q(experience_text__icontains=q) |
+            Q(guest_name__icontains=q) |
+            Q(hotel__name__icontains=q) |
+            Q(hotel__city__icontains=q)
+        )
+        
+    hotel_id = request.GET.get("hotel_id")
+    if hotel_id:
+        experiences_qs = experiences_qs.filter(hotel_id=hotel_id)
+
+    # Pagination
+    paginator = Paginator(experiences_qs, 9)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+    
+    # Active hotels for search filter & dropdown options
+    active_hotels = Hotel.objects.filter(is_active=True, is_published=True).order_by('name')
+    
+    return render(
+        request,
+        "public_site/experiences.html",
+        {
+            "experiences": page_obj.object_list,
+            "page_obj": page_obj,
+            "form": form,
+            "q": q,
+            "selected_hotel_id": hotel_id,
+            "active_hotels": active_hotels,
+            "open_modal": request.method == "POST" and not form.is_valid(),
+        }
+    )

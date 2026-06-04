@@ -153,6 +153,17 @@ class Hotel(models.Model):
     )
     total_rooms = models.IntegerField(default=0, help_text=_("Total number of rooms"))
     total_floors = models.IntegerField(default=1, help_text=_("Number of floors"))
+
+    # Currency setup
+    # default_currency is the main currency used for room rates, invoices, and reports.
+    # supported_currencies stores all accepted currencies for this hotel, for example ["UGX", "USD"].
+    default_currency = models.CharField(max_length=3, default='UGX')
+    default_currency_symbol = models.CharField(max_length=8, default='UGX')
+    supported_currencies = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_("List of supported ISO currency codes, e.g. UGX, USD, EUR"),
+    )
     
     # Descriptions
     short_description = models.CharField(
@@ -235,6 +246,32 @@ class Hotel(models.Model):
         related_name='created_hotels'
     )
     
+    def normalize_currencies(self):
+        """Keep hotel currencies clean, uppercase, unique, and always including default_currency."""
+        default = (self.default_currency or "UGX").strip().upper()[:3]
+        currencies = self.supported_currencies or []
+        if isinstance(currencies, str):
+            currencies = [item.strip() for item in currencies.replace(";", ",").split(",")]
+        clean = []
+        for code in currencies:
+            code = str(code or "").strip().upper()[:3]
+            if len(code) == 3 and code not in clean:
+                clean.append(code)
+        if default and default not in clean:
+            clean.insert(0, default)
+        self.default_currency = default
+        self.supported_currencies = clean or [default]
+
+    @property
+    def currency(self):
+        """Backward-compatible alias used by older templates/API code."""
+        return self.default_currency
+
+    @property
+    def currency_symbol(self):
+        """Backward-compatible alias used by older templates/API code."""
+        return self.default_currency_symbol
+
     class Meta:
         indexes = [
             models.Index(fields=['name']),
@@ -250,6 +287,7 @@ class Hotel(models.Model):
         verbose_name_plural = _("Hotels")
 
     def save(self, *args, **kwargs):
+        self.normalize_currencies()
         # Check if this is a new instance or if name has changed
         if self._state.adding:
             # New hotel, generate slug
@@ -747,3 +785,48 @@ class HotelSetting(models.Model):
 
     def __str__(self):
         return f"Settings for {self.hotel.name}"
+
+
+class HotelExperience(models.Model):
+    """User submitted local experiences / activities connected to a hotel stay"""
+    hotel = models.ForeignKey(
+        Hotel,
+        on_delete=models.CASCADE,
+        related_name='experiences'
+    )
+    guest_name = models.CharField(max_length=255)
+    guest_email = models.EmailField()
+    place_visited = models.CharField(max_length=255, help_text=_("e.g. Mount Rwenzori, Queen Elizabeth National Park"))
+    activity = models.CharField(max_length=255, help_text=_("e.g. Mountain Climbing, Wildlife Safari"))
+    rating = models.PositiveIntegerField(default=5, validators=[MinValueValidator(1), MaxValueValidator(5)])
+    experience_text = models.TextField(help_text=_("Describe your experience and activities"))
+    is_approved = models.BooleanField(default=True, help_text=_("Approved for public display"))
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = _("Hotel Experience")
+        verbose_name_plural = _("Hotel Experiences")
+
+    def __str__(self):
+        return f"{self.guest_name} at {self.place_visited} ({self.hotel.name})"
+
+
+class HotelExperienceImage(models.Model):
+    """Multiple images associated with a hotel experience"""
+    experience = models.ForeignKey(
+        HotelExperience,
+        on_delete=models.CASCADE,
+        related_name='images'
+    )
+    image = models.ImageField(upload_to='experiences/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = _("Hotel Experience Image")
+        verbose_name_plural = _("Hotel Experience Images")
+
+    def __str__(self):
+        return f"Image for {self.experience.guest_name}'s stay at {self.experience.place_visited}"

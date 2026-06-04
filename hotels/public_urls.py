@@ -17,4 +17,5 @@ urlpatterns = [
     # OPTIONAL
     path("hotels/<slug:slug>/gallery/", views_public.public_hotel_gallery, name="hotel_gallery"),
     path("hotels/<slug:slug>/reviews/", views_public.public_hotel_reviews, name="hotel_reviews"),
+    path("experiences/", views_public.public_experiences_list, name="experiences_list"),
 ]

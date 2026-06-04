@@ -7,7 +7,7 @@ from .models import (
     Hotel, HotelChain, HotelCategory, HotelSetting, 
     HotelImage, HotelDocument, HotelReview, 
     HotelContactPerson, HotelBankDetail, HotelAmenity,
-    HotelAmenityMapping
+    HotelAmenityMapping, HotelExperience, HotelExperienceImage
 )
 
 
@@ -31,6 +31,28 @@ TW_FILE = (
     "file:bg-gray-100 file:text-gray-800 hover:file:bg-gray-200"
 )
 TW_RADIO = "h-4 w-4 border-gray-300 text-blue-800 focus:ring-2 focus:ring-blue-600"
+
+COMMON_CURRENCIES = [
+    ("UGX", "UGX - Ugandan Shilling"),
+    ("USD", "USD - United States Dollar"),
+    ("EUR", "EUR - Euro"),
+    ("GBP", "GBP - British Pound"),
+    ("KES", "KES - Kenyan Shilling"),
+    ("TZS", "TZS - Tanzanian Shilling"),
+    ("RWF", "RWF - Rwandan Franc"),
+    ("CDF", "CDF - Congolese Franc"),
+]
+
+CURRENCY_SYMBOLS = {
+    "UGX": "UGX",
+    "USD": "$",
+    "EUR": "€",
+    "GBP": "£",
+    "KES": "KSh",
+    "TZS": "TSh",
+    "RWF": "FRw",
+    "CDF": "FC",
+}
 
 
 def apply_tailwind(form: forms.Form) -> None:
@@ -124,6 +146,7 @@ class HotelForm(forms.ModelForm):
             
             # Hotel Details
             'star_rating', 'total_rooms', 'total_floors',
+            'default_currency', 'default_currency_symbol', 'supported_currencies',
             
             # Descriptions
             'short_description', 'description', 'meta_description', 'meta_keywords',
@@ -156,11 +179,24 @@ class HotelForm(forms.ModelForm):
             'house_rules': forms.Textarea(attrs={'rows': 4}),
             'child_policy': forms.Textarea(attrs={'rows': 2}),
             'pet_policy': forms.Textarea(attrs={'rows': 2}),
+            'supported_currencies': forms.CheckboxSelectMultiple(choices=COMMON_CURRENCIES),
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         apply_tailwind(self)
+
+        if 'default_currency' in self.fields:
+            self.fields['default_currency'].widget = forms.Select(choices=COMMON_CURRENCIES, attrs={'class': TW_SELECT})
+        if 'default_currency_symbol' in self.fields:
+            self.fields['default_currency_symbol'].widget.attrs.setdefault('placeholder', 'UGX')
+        if 'supported_currencies' in self.fields:
+            self.fields['supported_currencies'].required = False
+            self.fields['supported_currencies'].help_text = _('Select all currencies this hotel accepts. The default currency is added automatically.')
+            if self.instance and self.instance.pk and self.instance.supported_currencies:
+                self.initial['supported_currencies'] = self.instance.supported_currencies
+            else:
+                self.initial.setdefault('supported_currencies', ['UGX'])
         
         # Add placeholders and input types
         if 'latitude' in self.fields:
@@ -189,6 +225,27 @@ class HotelForm(forms.ModelForm):
                 self.fields[field_name].widget = forms.TimeInput(
                     attrs={'type': 'time', 'class': TW_INPUT}
                 )
+
+    def clean_supported_currencies(self):
+        values = self.cleaned_data.get('supported_currencies') or []
+        cleaned = []
+        for code in values:
+            code = str(code or '').strip().upper()[:3]
+            if len(code) == 3 and code not in cleaned:
+                cleaned.append(code)
+        return cleaned
+
+    def clean(self):
+        cleaned = super().clean()
+        default = (cleaned.get('default_currency') or 'UGX').strip().upper()[:3]
+        currencies = cleaned.get('supported_currencies') or []
+        if default and default not in currencies:
+            currencies.insert(0, default)
+        cleaned['default_currency'] = default
+        cleaned['supported_currencies'] = currencies
+        if not cleaned.get('default_currency_symbol'):
+            cleaned['default_currency_symbol'] = CURRENCY_SYMBOLS.get(default, default)
+        return cleaned
 
 
 # ==================== HOTEL SETTING FORM ====================
@@ -569,3 +626,32 @@ class HotelSearchForm(forms.Form):
         for field_name, field in self.fields.items():
             if not hasattr(field.widget, 'attrs') or 'class' not in field.widget.attrs:
                 field.widget.attrs.setdefault('class', TW_INPUT)
+
+
+class HotelExperienceForm(forms.ModelForm):
+    """Form for guests to submit hotel experiences"""
+    class Meta:
+        model = HotelExperience
+        fields = [
+            'hotel', 'guest_name', 'guest_email',
+            'place_visited', 'activity', 'rating', 'experience_text'
+        ]
+        widgets = {
+            'experience_text': forms.Textarea(attrs={'rows': 4}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        apply_tailwind(self)
+        
+        if 'rating' in self.fields:
+            self.fields['rating'].widget.attrs.update({
+                'min': '1',
+                'max': '5',
+                'class': TW_INPUT
+            })
+        
+        # Make hotel choice dropdown cleaner
+        if 'hotel' in self.fields:
+            self.fields['hotel'].queryset = Hotel.objects.filter(is_active=True, is_published=True).order_by('name')
+            self.fields['hotel'].empty_label = "Select the Hotel you stayed at"

@@ -1,27 +1,33 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="description" content="{% block meta_description %}Book luxury hotels worldwide at best prices. Find deals on hotels, resorts, and vacation rentals.{% endblock %}">
-  <title>{% block title %}Hotel Thinker · Curated Stays Worldwide{% endblock %}</title>
-  
-  <!-- Tailwind CSS CDN v3 -->
+  <meta name="description" content="{% block meta_description %}Book hotels, compare stays, and discover trusted accommodation with Hotel Thinker.{% endblock %}">
+  <title>{% block title %}Hotel Thinker · Find Better Stays{% endblock %}</title>
+
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts: Inter + Playfair Display for elegance -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
-  <!-- Font Awesome 6 (free icons) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
           fontFamily: {
-            'sans': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-            'serif': ['Playfair Display', 'Georgia', 'serif'],
+            sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+            serif: ['Playfair Display', 'Georgia', 'serif'],
           },
           colors: {
             brand: {
@@ -36,462 +42,495 @@
               800: '#1e40af',
               900: '#1e3a8a',
             },
-            accent: {
-              50: '#fef2f2',
-              100: '#fee2e2',
-              200: '#fecaca',
-              300: '#fca5a5',
-              400: '#f87171',
-              500: '#ef4444',
-              600: '#dc2626',
-              700: '#b91c1c',
+            ink: {
+              50: '#f8fafc',
+              100: '#f1f5f9',
+              200: '#e2e8f0',
+              300: '#cbd5e1',
+              400: '#94a3b8',
+              500: '#64748b',
+              600: '#475569',
+              700: '#334155',
+              800: '#1e293b',
+              900: '#0f172a',
             }
           },
+          boxShadow: {
+            soft: '0 18px 45px rgba(15, 23, 42, 0.08)',
+            card: '0 12px 30px rgba(15, 23, 42, 0.07)',
+            glow: '0 18px 45px rgba(37, 99, 235, 0.22)',
+          },
           animation: {
-            'fade-in': 'fadeIn 0.7s cubic-bezier(0.4, 0, 0.2, 1)',
-            'slide-up': 'slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-            'slide-down': 'slideDown 0.3s ease-out',
-            'scale-in': 'scaleIn 0.4s cubic-bezier(0.34, 1.2, 0.64, 1)',
-            'float': 'float 6s ease-in-out infinite',
-            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'fade-in': 'fadeIn 0.45s ease-out both',
+            'slide-up': 'slideUp 0.45s ease-out both',
+            'slide-down': 'slideDown 0.22s ease-out both',
           },
           keyframes: {
             fadeIn: {
-              '0%': { opacity: '0' },
-              '100%': { opacity: '1' },
+              '0%': { opacity: 0 },
+              '100%': { opacity: 1 },
             },
             slideUp: {
-              '0%': { transform: 'translateY(24px)', opacity: '0' },
-              '100%': { transform: 'translateY(0)', opacity: '1' },
+              '0%': { transform: 'translateY(18px)', opacity: 0 },
+              '100%': { transform: 'translateY(0)', opacity: 1 },
             },
             slideDown: {
-              '0%': { transform: 'translateY(-12px)', opacity: '0' },
-              '100%': { transform: 'translateY(0)', opacity: '1' },
-            },
-            scaleIn: {
-              '0%': { transform: 'scale(0.96)', opacity: '0' },
-              '100%': { transform: 'scale(1)', opacity: '1' },
-            },
-            float: {
-              '0%, 100%': { transform: 'translateY(0px)' },
-              '50%': { transform: 'translateY(-8px)' },
-            },
-          },
-          backgroundImage: {
-            'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-            'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-          },
-          boxShadow: {
-            'premium': '0 20px 35px -10px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.02)',
-            'glow': '0 0 15px rgba(59,130,246,0.4)',
+              '0%': { transform: 'translateY(-8px)', opacity: 0 },
+              '100%': { transform: 'translateY(0)', opacity: 1 },
+            }
           }
         }
       }
     }
   </script>
-  
+
   <style>
-    /* Custom utility classes that complement Tailwind */
-    @layer utilities {
-      .text-balance {
-        text-wrap: balance;
-      }
-      .animation-delay-100 {
-        animation-delay: 100ms;
-      }
-      .animation-delay-200 {
-        animation-delay: 200ms;
-      }
-      .animation-delay-300 {
-        animation-delay: 300ms;
-      }
-      .gradient-text {
-        background: linear-gradient(120deg, #3b82f6 0%, #8b5cf6 40%, #ec4899 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        background-size: 200% auto;
-        animation: gradientFlow 5s ease infinite;
-      }
-      @keyframes gradientFlow {
-        0%, 100% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-      }
-      .hover-lift {
-        transition: transform 0.25s ease, box-shadow 0.25s ease;
-      }
-      .hover-lift:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 20px 25px -12px rgba(0, 0, 0, 0.15);
-      }
-      .focus-ring {
-        @apply focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-white;
-      }
-    }
-    
-    /* Smooth scroll behavior */
     html {
       scroll-behavior: smooth;
     }
-    
-    /* Custom scrollbar (pure CSS, Tailwind compatible) */
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 32rem),
+        linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      color: #0f172a;
+    }
+
+    .font-display {
+      font-family: 'Playfair Display', Georgia, serif;
+    }
+
+    .glass-header {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+    }
+
+    .nav-link {
+      position: relative;
+    }
+
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      left: 1rem;
+      right: 1rem;
+      bottom: 0.35rem;
+      height: 2px;
+      border-radius: 999px;
+      background: #2563eb;
+      opacity: 0;
+      transform: scaleX(0.5);
+      transition: all 0.2s ease;
+    }
+
+    .nav-link:hover::after {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+
+    .gradient-text {
+      background: linear-gradient(120deg, #2563eb 0%, #0f172a 48%, #1d4ed8 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .app-container {
+      width: min(100% - 2rem, 1180px);
+      margin-inline: auto;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      border-radius: 0.9rem;
+      background: linear-gradient(135deg, #2563eb, #0f172a);
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 14px 28px rgba(37, 99, 235, 0.22);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 36px rgba(37, 99, 235, 0.28);
+    }
+
+    .btn-light {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      border-radius: 0.9rem;
+      background: #fff;
+      color: #1e293b;
+      font-weight: 700;
+      border: 1px solid #e2e8f0;
+      transition: all 0.18s ease;
+    }
+
+    .btn-light:hover {
+      color: #2563eb;
+      border-color: #bfdbfe;
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    .menu-backdrop {
+      background: rgba(15, 23, 42, 0.62);
+      backdrop-filter: blur(8px);
+    }
+
+    .focus-ring:focus {
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.22);
+    }
+
     ::-webkit-scrollbar {
       width: 8px;
       height: 8px;
     }
+
     ::-webkit-scrollbar-track {
       background: #f1f5f9;
-      border-radius: 10px;
     }
+
     ::-webkit-scrollbar-thumb {
-      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-      border-radius: 10px;
+      background: #94a3b8;
+      border-radius: 999px;
     }
+
     ::-webkit-scrollbar-thumb:hover {
-      background: linear-gradient(135deg, #2563eb, #7c3aed);
-    }
-    
-    /* Base body styling with subtle grain */
-    body {
-      background: linear-gradient(135deg, #fafbfc 0%, #f1f5f9 100%);
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    }
-    
-    /* Glass morphism effect for header */
-    .glass-header {
-      background: rgba(255, 255, 255, 0.92);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+      background: #64748b;
     }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
-<body class="antialiased overflow-x-hidden">
-  
-  <!-- Enhanced Header with Glassmorphism -->
-  <header class="glass-header sticky top-0 z-50 transition-all duration-300 shadow-sm">
-    <nav class="container mx-auto px-4 sm:px-6 lg:px-8 py-3 lg:py-4">
-      <div class="flex items-center justify-between">
-        <!-- Logo Area with Animation -->
-        <a href="{% url 'hotel:home' %}" class="flex items-center gap-3 group">
-          <div class="w-10 h-10 lg:w-11 lg:h-11 rounded-xl bg-gradient-to-br from-brand-500 via-brand-600 to-accent-500 flex items-center justify-center shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:scale-105 group-hover:rotate-1">
-            <i class="fas fa-hotel text-white text-base lg:text-lg"></i>
-          </div>
-          <span class="text-xl lg:text-2xl font-bold">
-            <span class="gradient-text">Hotel Thinker</span>
+
+<body class="min-h-screen overflow-x-hidden antialiased">
+
+  <!-- Header -->
+  <header id="siteHeader" class="glass-header sticky top-0 z-50 transition-shadow duration-200">
+    <nav class="app-container py-3">
+      <div class="flex items-center justify-between gap-4">
+        <!-- Brand -->
+        <a href="{% url 'hotel:home' %}" class="flex items-center gap-3 group" aria-label="Hotel Thinker home">
+          <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-ink-900 text-white shadow-glow transition-transform duration-200 group-hover:scale-105">
+            <i class="fa-solid fa-hotel text-lg"></i>
+          </span>
+          <span class="leading-tight">
+            <span class="block text-xl font-black tracking-tight gradient-text">Hotel Thinker</span>
+            <span class="hidden sm:block text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-400">Curated stays</span>
           </span>
         </a>
-        
-        <!-- Desktop Navigation (Refined) -->
-        <div class="hidden md:flex items-center gap-1">
-          <a href="{% url 'hotel:home' %}" class="px-4 py-2.5 text-gray-700 hover:text-brand-600 font-medium rounded-xl hover:bg-brand-50 transition-all duration-200 text-sm lg:text-base">Home</a>
-          <a href="{% url 'hotel:hotels_list' %}" class="px-4 py-2.5 text-gray-700 hover:text-brand-600 font-medium rounded-xl hover:bg-brand-50 transition-all duration-200 text-sm lg:text-base">Hotels</a>
-          <a href="{% url 'hotel:about' %}" class="px-4 py-2.5 text-gray-700 hover:text-brand-600 font-medium rounded-xl hover:bg-brand-50 transition-all duration-200 text-sm lg:text-base">About</a>
-          <a href="#" class="px-4 py-2.5 text-gray-700 hover:text-brand-600 font-medium rounded-xl hover:bg-brand-50 transition-all duration-200 text-sm lg:text-base">Experiences</a>
+
+        <!-- Desktop Navigation -->
+        <div class="hidden lg:flex items-center rounded-2xl bg-white/70 px-2 py-1 shadow-sm ring-1 ring-ink-100">
+          <a href="{% url 'hotel:home' %}" class="nav-link px-4 py-2.5 text-sm font-semibold text-ink-700 hover:text-brand-700 transition">Home</a>
+          <a href="{% url 'hotel:hotels_list' %}" class="nav-link px-4 py-2.5 text-sm font-semibold text-ink-700 hover:text-brand-700 transition">Hotels</a>
+          <a href="{% url 'hotel:about' %}" class="nav-link px-4 py-2.5 text-sm font-semibold text-ink-700 hover:text-brand-700 transition">About</a>
+          <a href="{% url 'hotel:experiences_list' %}" class="nav-link px-4 py-2.5 text-sm font-semibold text-ink-700 hover:text-brand-700 transition">Experiences</a>
         </div>
-        
-        <!-- Auth Section (Modern Dropdown) -->
-        <div class="flex items-center gap-3">
+
+        <!-- Right Actions -->
+        <div class="flex items-center gap-2">
           {% if request.user.is_authenticated %}
           <div class="relative">
-            <button id="userMenuBtn" class="flex items-center gap-2 bg-white/70 backdrop-blur-sm rounded-full pl-1 pr-3 py-1 lg:pl-1 lg:pr-4 lg:py-1.5 hover:bg-white shadow-sm hover:shadow transition-all duration-200 border border-gray-100/50">
-              <div class="w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center text-white font-bold text-sm shadow-inner">
+            <button id="userMenuBtn" type="button" class="focus-ring flex items-center gap-2 rounded-full bg-white px-1.5 py-1.5 pr-3 text-left shadow-sm ring-1 ring-ink-100 transition hover:shadow-card" aria-expanded="false" aria-controls="userDropdown">
+              <span class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-brand-600 to-ink-900 text-sm font-black text-white">
                 {{ request.user.username|first|upper }}
-              </div>
-              <span class="hidden lg:inline text-sm font-semibold text-gray-800">{{ request.user.get_full_name|default:request.user.username }}</span>
-              <i class="fas fa-chevron-down text-gray-400 text-xs transition-transform duration-200 group-hover:rotate-180"></i>
+              </span>
+              <span class="hidden md:block max-w-[150px] truncate text-sm font-bold text-ink-800">
+                {{ request.user.get_full_name|default:request.user.username }}
+              </span>
+              <i class="fa-solid fa-chevron-down text-xs text-ink-400"></i>
             </button>
-            
-            <!-- Dropdown Menu -->
-            <div id="userDropdown" class="hidden absolute right-0 mt-3 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 slide-down-animation">
-              <div class="bg-gradient-to-r from-brand-600 to-accent-500 px-5 py-4 text-white">
-                <p class="text-sm font-bold">{{ request.user.get_full_name|default:request.user.username }}</p>
-                <p class="text-xs opacity-90 truncate mt-0.5">{{ request.user.email }}</p>
+
+            <div id="userDropdown" class="hidden absolute right-0 mt-3 w-72 overflow-hidden rounded-3xl bg-white shadow-soft ring-1 ring-ink-100 animate-slide-down">
+              <div class="bg-gradient-to-br from-brand-700 to-ink-900 p-5 text-white">
+                <p class="text-sm font-black">{{ request.user.get_full_name|default:request.user.username }}</p>
+                <p class="mt-1 truncate text-xs text-white/75">{{ request.user.email|default:"Signed in" }}</p>
               </div>
-              <div class="py-2">
-                <a href="{% url 'accounts:dashboard' %}" class="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-brand-50 transition-colors duration-150">
-                  <i class="fas fa-tachometer-alt w-5 text-brand-500"></i>
-                  <span>Dashboard</span>
+              <div class="p-2">
+                <a href="{% url 'accounts:dashboard' %}" class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-ink-700 hover:bg-brand-50 hover:text-brand-700 transition">
+                  <i class="fa-solid fa-gauge-high w-5 text-brand-600"></i> Dashboard
                 </a>
-                <a href="{% url 'accounts:my_profile' %}" class="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-brand-50 transition-colors duration-150">
-                  <i class="fas fa-user-circle w-5 text-brand-500"></i>
-                  <span>My Profile</span>
+                <a href="{% url 'accounts:my_profile' %}" class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-ink-700 hover:bg-brand-50 hover:text-brand-700 transition">
+                  <i class="fa-solid fa-user-circle w-5 text-brand-600"></i> My Profile
                 </a>
-                <a href="#" class="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-brand-50 transition-colors duration-150">
-                  <i class="fas fa-bookmark w-5 text-brand-500"></i>
-                  <span>Saved Hotels</span>
+                <a href="#" class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-ink-700 hover:bg-brand-50 hover:text-brand-700 transition">
+                  <i class="fa-solid fa-bookmark w-5 text-brand-600"></i> Saved Hotels
                 </a>
-                <a href="#" class="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-brand-50 transition-colors duration-150">
-                  <i class="fas fa-credit-card w-5 text-brand-500"></i>
-                  <span>My Bookings</span>
+                <a href="#" class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-ink-700 hover:bg-brand-50 hover:text-brand-700 transition">
+                  <i class="fa-solid fa-calendar-check w-5 text-brand-600"></i> My Bookings
                 </a>
-                <hr class="my-1 border-gray-100">
-                <form method="post" action="{% url 'logout' %}">
+                <div class="my-2 border-t border-ink-100"></div>
+                <form method="post" action="{% url 'accounts:logout' %}">
                   {% csrf_token %}
-                  <button type="submit" class="w-full flex items-center gap-3 px-5 py-3 text-red-600 hover:bg-red-50 transition-colors duration-150">
-                    <i class="fas fa-sign-out-alt w-5"></i>
-                    <span>Sign Out</span>
+                  <button type="submit" class="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition">
+                    <i class="fa-solid fa-right-from-bracket w-5"></i> Sign Out
                   </button>
                 </form>
               </div>
             </div>
           </div>
           {% else %}
-          <a href="{% url 'login' %}" class="hidden sm:inline-block text-gray-700 hover:text-brand-600 font-medium transition-colors duration-200 px-3 py-2">Sign In</a>
-          <a href="#" class="bg-gradient-to-r from-brand-600 to-accent-500 text-white px-5 py-2 rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 font-medium text-sm shadow-md">Sign Up Free</a>
+          <a href="{% url 'accounts:login' %}" class="hidden sm:inline-flex rounded-xl px-4 py-2.5 text-sm font-bold text-ink-700 hover:bg-white hover:text-brand-700 transition">Sign In</a>
+          <a href="{% url 'accounts:login' %}" class="btn-primary px-4 py-2.5 text-sm">Get Started</a>
           {% endif %}
+
+          <button id="mobileMenuToggle" type="button" class="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-ink-900 text-white shadow-card lg:hidden" aria-controls="mobileMenu" aria-expanded="false">
+            <i class="fa-solid fa-bars"></i>
+          </button>
         </div>
       </div>
     </nav>
   </header>
-  
-  <!-- Mobile Floating Action Button & Menu -->
-  <button id="mobileMenuToggle" class="md:hidden fixed bottom-6 right-6 z-50 bg-gradient-to-r from-brand-600 to-accent-500 text-white w-14 h-14 rounded-full shadow-xl flex items-center justify-center hover:scale-110 transition-transform duration-300 focus-ring">
-    <i class="fas fa-bars text-xl"></i>
-  </button>
-  
-  <div id="mobileMenu" class="hidden md:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-all duration-300">
-    <div class="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl p-6 animate-slide-up">
-      <div class="flex justify-between items-center mb-8">
-        <h3 class="text-2xl font-serif font-bold gradient-text">Menu</h3>
-        <button id="closeMobileMenu" class="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors flex items-center justify-center">
-          <i class="fas fa-times text-lg"></i>
+
+  <!-- Mobile Menu -->
+  <div id="mobileMenu" class="fixed inset-0 z-[60] hidden lg:hidden">
+    <div class="menu-backdrop absolute inset-0" data-close-mobile></div>
+    <aside class="absolute right-0 top-0 h-full w-[88%] max-w-sm bg-white shadow-2xl animate-slide-up">
+      <div class="flex items-center justify-between border-b border-ink-100 p-5">
+        <div class="flex items-center gap-3">
+          <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-ink-900 text-white">
+            <i class="fa-solid fa-hotel"></i>
+          </span>
+          <div>
+            <p class="font-black text-ink-900">Hotel Thinker</p>
+            <p class="text-xs text-ink-400">Find better stays</p>
+          </div>
+        </div>
+        <button id="closeMobileMenu" type="button" class="flex h-10 w-10 items-center justify-center rounded-2xl bg-ink-100 text-ink-700">
+          <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      <div class="space-y-1">
-        <a href="{% url 'hotel:home' %}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-brand-50 rounded-xl transition-colors">
-          <i class="fas fa-home w-5 text-brand-500"></i> Home
-        </a>
-        <a href="{% url 'hotel:hotels_list' %}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-brand-50 rounded-xl transition-colors">
-          <i class="fas fa-building w-5 text-brand-500"></i> Hotels
-        </a>
-        <a href="{% url 'hotel:about' %}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-brand-50 rounded-xl transition-colors">
-          <i class="fas fa-info-circle w-5 text-brand-500"></i> About
-        </a>
-        <a href="#" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-brand-50 rounded-xl transition-colors">
-          <i class="fas fa-compass w-5 text-brand-500"></i> Experiences
-        </a>
-      </div>
-      <div class="absolute bottom-8 left-6 right-6">
-        <div class="border-t border-gray-200 pt-4">
-          {% if not request.user.is_authenticated %}
-          <div class="space-y-2">
-            <a href="{% url 'login' %}" class="block w-full text-center py-2.5 text-brand-600 font-medium">Sign In</a>
-            <a href="#" class="block w-full text-center bg-gradient-to-r from-brand-600 to-accent-500 text-white py-2.5 rounded-xl font-medium">Sign Up</a>
-          </div>
-          {% endif %}
-          <p class="text-xs text-gray-400 text-center mt-4">© 2025 Hotel Thinker</p>
+
+      <div class="p-5">
+        <div class="space-y-2">
+          <a href="{% url 'hotel:home' %}" class="flex items-center gap-3 rounded-2xl px-4 py-3 font-bold text-ink-700 hover:bg-brand-50 hover:text-brand-700 transition">
+            <i class="fa-solid fa-house w-5 text-brand-600"></i> Home
+          </a>
+          <a href="{% url 'hotel:hotels_list' %}" class="flex items-center gap-3 rounded-2xl px-4 py-3 font-bold text-ink-700 hover:bg-brand-50 hover:text-brand-700 transition">
+            <i class="fa-solid fa-building w-5 text-brand-600"></i> Hotels
+          </a>
+          <a href="{% url 'hotel:about' %}" class="flex items-center gap-3 rounded-2xl px-4 py-3 font-bold text-ink-700 hover:bg-brand-50 hover:text-brand-700 transition">
+            <i class="fa-solid fa-circle-info w-5 text-brand-600"></i> About
+          </a>
+          <a href="{% url 'hotel:experiences_list' %}" class="flex items-center gap-3 rounded-2xl px-4 py-3 font-bold text-ink-700 hover:bg-brand-50 hover:text-brand-700 transition">
+            <i class="fa-solid fa-compass w-5 text-brand-600"></i> Experiences
+          </a>
         </div>
+
+        {% if not request.user.is_authenticated %}
+        <div class="mt-6 rounded-3xl bg-ink-50 p-4">
+          <p class="text-sm font-bold text-ink-800">Access your bookings</p>
+          <p class="mt-1 text-xs text-ink-500">Sign in to view saved hotels and reservations.</p>
+          <div class="mt-4 grid grid-cols-2 gap-2">
+            <a href="{% url 'accounts:login' %}" class="btn-light px-4 py-2.5 text-sm">Sign In</a>
+            <a href="{% url 'accounts:login' %}" class="btn-primary px-4 py-2.5 text-sm">Start</a>
+          </div>
+        </div>
+        {% endif %}
       </div>
-    </div>
+
+      <div class="absolute bottom-0 left-0 right-0 border-t border-ink-100 p-5 text-center text-xs text-ink-400">
+        © {% now "Y" %} Hotel Thinker. All rights reserved.
+      </div>
+    </aside>
   </div>
-  
-  <!-- Main Content Area - Dynamic Blocks -->
+
+  <!-- Page Content -->
   <main class="min-h-screen">
     {% block content %}
-    <!-- Default content can be placed here or overridden -->
-    <div class="container mx-auto px-4 py-12">
-      <div class="text-center animate-fade-in">
-        <h1 class="text-4xl md:text-6xl font-serif font-bold gradient-text mb-4">Welcome to Hotel Thinker</h1>
-        <p class="text-gray-600 text-lg max-w-2xl mx-auto">Discover extraordinary stays at the world's most remarkable hotels.</p>
+    <section class="app-container py-20 text-center">
+      <p class="text-sm font-bold uppercase tracking-[0.25em] text-brand-600">Welcome</p>
+      <h1 class="mt-4 text-4xl font-black tracking-tight text-ink-900 md:text-6xl">Discover better stays with <span class="gradient-text">Hotel Thinker</span></h1>
+      <p class="mx-auto mt-5 max-w-2xl text-lg leading-8 text-ink-500">Browse curated hotels, compare rooms, and book with confidence.</p>
+      <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+        <a href="{% url 'hotel:hotels_list' %}" class="btn-primary px-6 py-3">Explore Hotels <i class="fa-solid fa-arrow-right"></i></a>
+        <a href="{% url 'hotel:about' %}" class="btn-light px-6 py-3">Learn More</a>
       </div>
-    </div>
+    </section>
     {% endblock %}
   </main>
-  
-  <!-- Enhanced Premium Footer -->
-  <footer class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white pt-16 pb-8 mt-20">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12 mb-12">
-        <!-- Brand Column -->
-        <div class="space-y-4">
-          <div class="flex items-center gap-2.5">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center">
-              <i class="fas fa-crown text-white text-sm"></i>
+
+  <!-- Footer -->
+  <footer class="mt-20 bg-ink-900 text-white">
+    <div class="app-container py-14">
+      <div class="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <div class="flex items-center gap-3">
+            <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-600 text-white">
+              <i class="fa-solid fa-hotel"></i>
+            </span>
+            <div>
+              <p class="text-xl font-black">Hotel Thinker</p>
+              <p class="text-xs uppercase tracking-[0.2em] text-white/45">Curated stays</p>
             </div>
-            <span class="text-2xl font-serif font-bold tracking-tight">Hotel Thinker</span>
           </div>
-          <p class="text-slate-300 text-sm leading-relaxed">Curating extraordinary stays at the world's most remarkable hotels. Your journey begins with thoughtful choices.</p>
-          <div class="flex space-x-3 pt-2">
-            <a href="#" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-brand-600 transition-colors duration-200 hover:-translate-y-0.5 transform"><i class="fab fa-facebook-f text-sm"></i></a>
-            <a href="#" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-brand-600 transition-colors duration-200 hover:-translate-y-0.5 transform"><i class="fab fa-twitter text-sm"></i></a>
-            <a href="#" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-brand-600 transition-colors duration-200 hover:-translate-y-0.5 transform"><i class="fab fa-instagram text-sm"></i></a>
-            <a href="#" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-brand-600 transition-colors duration-200 hover:-translate-y-0.5 transform"><i class="fab fa-linkedin-in text-sm"></i></a>
+          <p class="mt-4 text-sm leading-7 text-white/65">A clean platform for discovering hotels, checking details, viewing locations, and booking stays.</p>
+          <div class="mt-5 flex gap-3">
+            <a href="#" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-brand-600 transition"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-brand-600 transition"><i class="fa-brands fa-x-twitter"></i></a>
+            <a href="#" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-brand-600 transition"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-brand-600 transition"><i class="fa-brands fa-linkedin-in"></i></a>
           </div>
         </div>
-        
-        <!-- Explore Links -->
+
         <div>
-          <h4 class="font-bold text-lg mb-4 relative inline-block after:content-[''] after:absolute after:bottom-[-6px] after:left-0 after:w-8 after:h-0.5 after:bg-brand-500 after:rounded-full">Explore</h4>
-          <ul class="space-y-2.5">
-            <li><a href="{% url 'hotel:home' %}" class="text-slate-300 hover:text-white transition-colors flex items-center gap-2 text-sm"><i class="fas fa-chevron-right text-[10px] text-brand-400"></i>Home</a></li>
-            <li><a href="{% url 'hotel:hotels_list' %}" class="text-slate-300 hover:text-white transition-colors flex items-center gap-2 text-sm"><i class="fas fa-chevron-right text-[10px] text-brand-400"></i>Hotels</a></li>
-            <li><a href="{% url 'hotel:about' %}" class="text-slate-300 hover:text-white transition-colors flex items-center gap-2 text-sm"><i class="fas fa-chevron-right text-[10px] text-brand-400"></i>About Us</a></li>
-            <li><a href="#" class="text-slate-300 hover:text-white transition-colors flex items-center gap-2 text-sm"><i class="fas fa-chevron-right text-[10px] text-brand-400"></i>Travel Guide</a></li>
-            <li><a href="#" class="text-slate-300 hover:text-white transition-colors flex items-center gap-2 text-sm"><i class="fas fa-chevron-right text-[10px] text-brand-400"></i>Luxury Collection</a></li>
+          <h3 class="font-black">Explore</h3>
+          <ul class="mt-4 space-y-3 text-sm text-white/65">
+            <li><a href="{% url 'hotel:home' %}" class="hover:text-white transition">Home</a></li>
+            <li><a href="{% url 'hotel:hotels_list' %}" class="hover:text-white transition">Hotels</a></li>
+            <li><a href="{% url 'hotel:about' %}" class="hover:text-white transition">About Us</a></li>
+            <li><a href="{% url 'hotel:experiences_list' %}" class="hover:text-white transition">Experiences</a></li>
           </ul>
         </div>
-        
-        <!-- Support Links -->
+
         <div>
-          <h4 class="font-bold text-lg mb-4 relative inline-block after:content-[''] after:absolute after:bottom-[-6px] after:left-0 after:w-8 after:h-0.5 after:bg-brand-500 after:rounded-full">Support</h4>
-          <ul class="space-y-2.5">
-            <li><a href="#" class="text-slate-300 hover:text-white transition-colors flex items-center gap-2 text-sm"><i class="fas fa-headset text-brand-400 w-4"></i>Help Center</a></li>
-            <li><a href="#" class="text-slate-300 hover:text-white transition-colors flex items-center gap-2 text-sm"><i class="fas fa-envelope text-brand-400 w-4"></i>Contact Us</a></li>
-            <li><a href="#" class="text-slate-300 hover:text-white transition-colors flex items-center gap-2 text-sm"><i class="fas fa-shield-alt text-brand-400 w-4"></i>Privacy Policy</a></li>
-            <li><a href="#" class="text-slate-300 hover:text-white transition-colors flex items-center gap-2 text-sm"><i class="fas fa-file-contract text-brand-400 w-4"></i>Terms of Service</a></li>
-            <li><a href="#" class="text-slate-300 hover:text-white transition-colors flex items-center gap-2 text-sm"><i class="fas fa-question-circle text-brand-400 w-4"></i>FAQs</a></li>
+          <h3 class="font-black">Support</h3>
+          <ul class="mt-4 space-y-3 text-sm text-white/65">
+            <li><a href="#" class="hover:text-white transition">Help Center</a></li>
+            <li><a href="#" class="hover:text-white transition">Contact</a></li>
+            <li><a href="#" class="hover:text-white transition">Privacy Policy</a></li>
+            <li><a href="#" class="hover:text-white transition">Terms of Service</a></li>
           </ul>
         </div>
-        
-        <!-- Newsletter Signup -->
+
         <div>
-          <h4 class="font-bold text-lg mb-4 relative inline-block after:content-[''] after:absolute after:bottom-[-6px] after:left-0 after:w-8 after:h-0.5 after:bg-brand-500 after:rounded-full">Newsletter</h4>
-          <p class="text-slate-300 text-sm mb-4">Get exclusive deals and travel inspiration straight to your inbox.</p>
-          <div class="space-y-3">
-            <div class="flex">
-              <input type="email" placeholder="Your email address" class="flex-1 px-4 py-2.5 bg-slate-800/50 rounded-l-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 border-0 placeholder:text-slate-400 text-white">
-              <button class="bg-gradient-to-r from-brand-600 to-accent-500 px-5 rounded-r-xl hover:shadow-lg transition-all duration-200 hover:scale-105">
-                <i class="fas fa-paper-plane"></i>
-              </button>
-            </div>
-            <p class="text-xs text-slate-400">We respect your privacy. No spam, ever.</p>
-          </div>
+          <h3 class="font-black">Newsletter</h3>
+          <p class="mt-4 text-sm leading-7 text-white/65">Get hotel updates and travel ideas.</p>
+          <form action="#" class="mt-4 flex overflow-hidden rounded-2xl bg-white/10 ring-1 ring-white/10">
+            <input type="email" placeholder="Email address" class="min-w-0 flex-1 bg-transparent px-4 py-3 text-sm text-white placeholder:text-white/45 focus:outline-none">
+            <button type="submit" class="bg-brand-600 px-4 text-white hover:bg-brand-700 transition" aria-label="Subscribe">
+              <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </form>
         </div>
       </div>
-      
-      <!-- Bottom Bar with Payment Icons -->
-      <div class="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-400">
-        <p>&copy; {% now "Y" %} Hotel Thinker. Crafted with <i class="fas fa-heart text-red-400 text-xs mx-0.5"></i> for exceptional stays worldwide.</p>
+
+      <div class="mt-10 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 text-sm text-white/45 md:flex-row">
+        <p>© {% now "Y" %} Hotel Thinker. All rights reserved.</p>
         <div class="flex items-center gap-4">
-          <div class="flex space-x-3 text-base">
-            <i class="fab fa-cc-visa hover:text-white transition-colors"></i>
-            <i class="fab fa-cc-mastercard hover:text-white transition-colors"></i>
-            <i class="fab fa-cc-amex hover:text-white transition-colors"></i>
-            <i class="fab fa-cc-paypal hover:text-white transition-colors"></i>
-          </div>
-          <div class="h-4 w-px bg-white/20"></div>
-          <a href="#" class="hover:text-white transition">Sitemap</a>
-          <a href="#" class="hover:text-white transition">Accessibility</a>
+          <span class="hidden sm:inline">Secure payments</span>
+          <i class="fa-brands fa-cc-visa text-lg"></i>
+          <i class="fa-brands fa-cc-mastercard text-lg"></i>
+          <i class="fa-brands fa-cc-paypal text-lg"></i>
         </div>
       </div>
     </div>
   </footer>
-  
-  <!-- Back to Top Floating Button -->
-  <button id="backToTop" class="fixed bottom-6 left-6 z-40 bg-gradient-to-r from-brand-600 to-accent-500 text-white w-11 h-11 rounded-full shadow-xl hidden items-center justify-center hover:shadow-2xl transition-all duration-300 hover:scale-110 focus-ring">
-    <i class="fas fa-arrow-up text-sm"></i>
+
+  <!-- Back to Top -->
+  <button id="backToTop" type="button" class="fixed bottom-5 left-5 z-40 hidden h-11 w-11 items-center justify-center rounded-full bg-brand-600 text-white shadow-glow transition hover:-translate-y-1 hover:bg-brand-700">
+    <i class="fa-solid fa-arrow-up text-sm"></i>
   </button>
-  
-  <!-- Core JavaScript (Enhanced Interactions) -->
+
   <script>
-    (function() {
-      // 1. User Dropdown Logic
+    (function () {
       const userBtn = document.getElementById('userMenuBtn');
       const userDropdown = document.getElementById('userDropdown');
-      if (userBtn && userDropdown) {
-        userBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          userDropdown.classList.toggle('hidden');
-        });
-        document.addEventListener('click', (e) => {
-          if (!userDropdown.contains(e.target) && !userBtn.contains(e.target)) {
-            userDropdown.classList.add('hidden');
-          }
-        });
-      }
-      
-      // 2. Mobile Menu Toggle with enhanced accessibility
       const mobileToggle = document.getElementById('mobileMenuToggle');
       const mobileMenu = document.getElementById('mobileMenu');
       const closeMobile = document.getElementById('closeMobileMenu');
-      
-      if (mobileToggle && mobileMenu) {
-        mobileToggle.addEventListener('click', () => {
-          mobileMenu.classList.remove('hidden');
-          document.body.style.overflow = 'hidden';
+      const header = document.getElementById('siteHeader');
+      const backTop = document.getElementById('backToTop');
+
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+
+      if (userBtn && userDropdown) {
+        userBtn.addEventListener('click', function (event) {
+          event.stopPropagation();
+          const isHidden = userDropdown.classList.toggle('hidden');
+          userBtn.setAttribute('aria-expanded', String(!isHidden));
         });
-        
-        const closeMenu = () => {
-          mobileMenu.classList.add('hidden');
-          document.body.style.overflow = '';
-        };
-        
-        if (closeMobile) closeMobile.addEventListener('click', closeMenu);
-        mobileMenu.addEventListener('click', (e) => {
-          if (e.target === mobileMenu) closeMenu();
-        });
-        document.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape' && !mobileMenu.classList.contains('hidden')) {
-            closeMenu();
+
+        document.addEventListener('click', function (event) {
+          if (!userDropdown.contains(event.target) && !userBtn.contains(event.target)) {
+            userDropdown.classList.add('hidden');
+            userBtn.setAttribute('aria-expanded', 'false');
           }
         });
       }
-      
-      // 3. Back to Top Button visibility & smooth scroll
-      const backTop = document.getElementById('backToTop');
-      if (backTop) {
-        window.addEventListener('scroll', () => {
-          if (window.scrollY > 400) {
+
+      function openMobileMenu() {
+        if (!mobileMenu) return;
+        mobileMenu.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        if (mobileToggle) mobileToggle.setAttribute('aria-expanded', 'true');
+      }
+
+      function closeMobileMenu() {
+        if (!mobileMenu) return;
+        mobileMenu.classList.add('hidden');
+        document.body.style.overflow = '';
+        if (mobileToggle) mobileToggle.setAttribute('aria-expanded', 'false');
+      }
+
+      if (mobileToggle) mobileToggle.addEventListener('click', openMobileMenu);
+      if (closeMobile) closeMobile.addEventListener('click', closeMobileMenu);
+      document.querySelectorAll('[data-close-mobile]').forEach(function (item) {
+        item.addEventListener('click', closeMobileMenu);
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+          closeMobileMenu();
+          if (userDropdown) userDropdown.classList.add('hidden');
+        }
+      });
+
+      function onScroll() {
+        if (header) {
+          header.classList.toggle('shadow-card', window.scrollY > 20);
+        }
+
+        if (backTop) {
+          if (window.scrollY > 420) {
             backTop.classList.remove('hidden');
             backTop.classList.add('flex');
           } else {
-            backTop.classList.remove('flex');
             backTop.classList.add('hidden');
+            backTop.classList.remove('flex');
           }
-        });
-        backTop.addEventListener('click', () => {
+        }
+      }
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      if (backTop) {
+        backTop.addEventListener('click', function () {
           window.scrollTo({ top: 0, behavior: 'smooth' });
         });
       }
-      
-      // 4. Sticky header background enhancement on scroll
-      const header = document.querySelector('header');
-      if (header) {
-        window.addEventListener('scroll', () => {
-          if (window.scrollY > 30) {
-            header.classList.add('shadow-md', 'bg-white/95');
-            header.classList.remove('bg-white/92');
-          } else {
-            header.classList.remove('shadow-md', 'bg-white/95');
-            header.classList.add('bg-white/92');
-          }
+
+      const animatedElements = document.querySelectorAll('.animate-on-scroll');
+      if ('IntersectionObserver' in window && animatedElements.length) {
+        const observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('animate-fade-in');
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.12 });
+
+        animatedElements.forEach(function (el) {
+          observer.observe(el);
         });
       }
-      
-      // 5. Intersection Observer for fade-in animations on content blocks
-      const animatedElements = document.querySelectorAll('.animate-on-scroll');
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('animate-fade-in', 'opacity-100');
-            entry.target.classList.remove('opacity-0');
-            observer.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
-      
-      animatedElements.forEach(el => {
-        el.classList.add('opacity-0');
-        observer.observe(el);
-      });
-      
-      // 6. Add ripple effect to buttons (optional modern touch)
-      const buttons = document.querySelectorAll('.btn-ripple');
-      buttons.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-          let x = e.clientX - e.target.offsetLeft;
-          let y = e.clientY - e.target.offsetTop;
-          let ripple = document.createElement('span');
-          ripple.style.left = `${x}px`;
-          ripple.style.top = `${y}px`;
-          ripple.className = 'absolute w-4 h-4 bg-white/30 rounded-full transform scale-0 animate-ping';
-          this.appendChild(ripple);
-          setTimeout(() => ripple.remove(), 600);
-        });
-      });
     })();
   </script>
+
   {% block extra_js %}{% endblock %}
 </body>
+
 </html>

@@ -753,3 +753,300 @@ class BarOrderCreateSerializer(serializers.Serializer):
 
 class StatusUpdateSerializer(serializers.Serializer):
     status = serializers.CharField()
+
+# =========================
+# SUPERUSER HOTEL REGISTRATION / SETUP API
+# =========================
+
+from rooms.models import RoomType, Room
+
+
+class SuperuserHotelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Hotel
+        fields = [
+            "id",
+            "name",
+            "slug",
+            "hotel_chain",
+            "category",
+            "email",
+            "phone",
+            "phone_alt",
+            "whatsapp",
+            "website",
+            "address_line1",
+            "address_line2",
+            "city",
+            "state",
+            "postal_code",
+            "country",
+            "latitude",
+            "longitude",
+            "tax_number",
+            "business_registration",
+            "year_established",
+            "number_of_employees",
+            "star_rating",
+            "total_rooms",
+            "total_floors",
+            "default_currency",
+            "default_currency_symbol",
+            "supported_currencies",
+            "short_description",
+            "description",
+            "meta_description",
+            "meta_keywords",
+            "brand_color_primary",
+            "brand_color_secondary",
+            "is_active",
+            "is_featured",
+            "is_verified",
+            "is_published",
+            "facebook_url",
+            "instagram_url",
+            "twitter_url",
+            "linkedin_url",
+            "youtube_url",
+            "tripadvisor_url",
+            "check_in_time",
+            "check_out_time",
+            "reception_open_time",
+            "reception_close_time",
+            "cancellation_policy",
+            "payment_policy",
+            "house_rules",
+            "child_policy",
+            "pet_policy",
+            "created_by",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "slug", "created_by", "created_at", "updated_at"]
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+        if request and request.user and request.user.is_authenticated:
+            validated_data.setdefault("created_by", request.user)
+        return super().create(validated_data)
+
+
+class SuperuserRoomTypeSerializer(serializers.ModelSerializer):
+    hotel_name = serializers.CharField(source="hotel.name", read_only=True)
+
+    class Meta:
+        model = RoomType
+        fields = ["id", "hotel", "hotel_name", "name", "description", "base_price"]
+        read_only_fields = ["id", "hotel_name"]
+
+
+class SuperuserRoomSerializer(serializers.ModelSerializer):
+    hotel_name = serializers.CharField(source="hotel.name", read_only=True)
+    room_type_name = serializers.CharField(source="room_type.name", read_only=True)
+
+    class Meta:
+        model = Room
+        fields = [
+            "id",
+            "hotel",
+            "hotel_name",
+            "room_type",
+            "room_type_name",
+            "number",
+            "floor",
+            "status",
+            "is_active",
+        ]
+        read_only_fields = ["id", "hotel_name", "room_type_name"]
+
+    def validate(self, attrs):
+        hotel = attrs.get("hotel") or getattr(self.instance, "hotel", None)
+        room_type = attrs.get("room_type") or getattr(self.instance, "room_type", None)
+        if hotel and room_type and room_type.hotel_id != hotel.id:
+            raise serializers.ValidationError({"room_type": "Room type must belong to the selected hotel."})
+        return attrs
+
+
+class SuperuserMenuCategorySerializer(serializers.ModelSerializer):
+    hotel_name = serializers.CharField(source="hotel.name", read_only=True)
+
+    class Meta:
+        model = MenuCategory
+        fields = [
+            "id",
+            "hotel",
+            "hotel_name",
+            "name",
+            "description",
+            "sort_order",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "hotel_name", "created_at", "updated_at"]
+
+
+class SuperuserMenuItemSerializer(serializers.ModelSerializer):
+    hotel_name = serializers.CharField(source="hotel.name", read_only=True)
+    category_name = serializers.CharField(source="category.name", read_only=True)
+
+    class Meta:
+        model = MenuItem
+        fields = [
+            "id",
+            "hotel",
+            "hotel_name",
+            "category",
+            "category_name",
+            "name",
+            "description",
+            "ingredients",
+            "price",
+            "cost_price",
+            "track_stock",
+            "stock_qty",
+            "reorder_level",
+            "is_vegetarian",
+            "is_vegan",
+            "is_gluten_free",
+            "is_spicy",
+            "is_featured",
+            "is_recommended",
+            "is_active",
+            "preparation_time",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "hotel_name", "category_name", "created_at", "updated_at"]
+
+    def validate(self, attrs):
+        hotel = attrs.get("hotel") or getattr(self.instance, "hotel", None)
+        category = attrs.get("category") or getattr(self.instance, "category", None)
+        if hotel and category and category.hotel_id != hotel.id:
+            raise serializers.ValidationError({"category": "Menu category must belong to the selected hotel."})
+        return attrs
+
+
+class HotelRegistrationRoomTypeInputSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=120)
+    description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    base_price = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, default=0)
+
+
+class HotelRegistrationRoomInputSerializer(serializers.Serializer):
+    number = serializers.CharField(max_length=50)
+    room_type = serializers.IntegerField(required=False)
+    room_type_name = serializers.CharField(max_length=120, required=False)
+    floor = serializers.CharField(max_length=50, required=False, allow_blank=True, allow_null=True)
+    status = serializers.ChoiceField(choices=Room.Status.choices, required=False, default=Room.Status.AVAILABLE)
+    is_active = serializers.BooleanField(required=False, default=True)
+
+    def validate(self, attrs):
+        if not attrs.get("room_type") and not attrs.get("room_type_name"):
+            raise serializers.ValidationError("Provide either room_type or room_type_name for each room.")
+        return attrs
+
+
+class HotelRegistrationMenuCategoryInputSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=120)
+    description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    sort_order = serializers.IntegerField(required=False, default=0, min_value=0)
+    is_active = serializers.BooleanField(required=False, default=True)
+
+
+class HotelRegistrationMenuItemInputSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=160)
+    category = serializers.IntegerField(required=False)
+    category_name = serializers.CharField(max_length=120, required=False)
+    description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    ingredients = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    price = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, default=0)
+    cost_price = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, default=0)
+    track_stock = serializers.BooleanField(required=False, default=False)
+    stock_qty = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, default=0)
+    reorder_level = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, default=0)
+    is_vegetarian = serializers.BooleanField(required=False, default=False)
+    is_vegan = serializers.BooleanField(required=False, default=False)
+    is_gluten_free = serializers.BooleanField(required=False, default=False)
+    is_spicy = serializers.BooleanField(required=False, default=False)
+    is_featured = serializers.BooleanField(required=False, default=False)
+    is_recommended = serializers.BooleanField(required=False, default=False)
+    is_active = serializers.BooleanField(required=False, default=True)
+    preparation_time = serializers.IntegerField(required=False, default=15, min_value=0)
+
+    def validate(self, attrs):
+        if not attrs.get("category") and not attrs.get("category_name"):
+            raise serializers.ValidationError("Provide either category or category_name for each menu item.")
+        return attrs
+
+
+class HotelRegistrationSerializer(serializers.Serializer):
+    hotel = SuperuserHotelSerializer()
+    room_types = HotelRegistrationRoomTypeInputSerializer(many=True, required=False)
+    rooms = HotelRegistrationRoomInputSerializer(many=True, required=False)
+    menu_categories = HotelRegistrationMenuCategoryInputSerializer(many=True, required=False)
+    menu_items = HotelRegistrationMenuItemInputSerializer(many=True, required=False)
+
+    @transaction.atomic
+    def create(self, validated_data):
+        request = self.context.get("request")
+        hotel_data = validated_data.get("hotel")
+        room_types_data = validated_data.get("room_types", [])
+        rooms_data = validated_data.get("rooms", [])
+        categories_data = validated_data.get("menu_categories", [])
+        items_data = validated_data.get("menu_items", [])
+
+        if request and request.user and request.user.is_authenticated:
+            hotel_data.setdefault("created_by", request.user)
+        hotel = Hotel.objects.create(**hotel_data)
+
+        room_types_by_name = {}
+        created_room_types = []
+        for room_type_data in room_types_data:
+            room_type = RoomType.objects.create(hotel=hotel, **room_type_data)
+            room_types_by_name[room_type.name] = room_type
+            created_room_types.append(room_type)
+
+        categories_by_name = {}
+        created_categories = []
+        for category_data in categories_data:
+            category = MenuCategory.objects.create(hotel=hotel, **category_data)
+            categories_by_name[category.name] = category
+            created_categories.append(category)
+
+        created_rooms = []
+        for room_data in rooms_data:
+            room_type_id = room_data.pop("room_type", None)
+            room_type_name = room_data.pop("room_type_name", None)
+            if room_type_id:
+                room_type = RoomType.objects.get(pk=room_type_id, hotel=hotel)
+            else:
+                room_type = room_types_by_name.get(room_type_name) or RoomType.objects.get(hotel=hotel, name=room_type_name)
+            created_rooms.append(Room.objects.create(hotel=hotel, room_type=room_type, **room_data))
+
+        created_items = []
+        for item_data in items_data:
+            category_id = item_data.pop("category", None)
+            category_name = item_data.pop("category_name", None)
+            if category_id:
+                category = MenuCategory.objects.get(pk=category_id, hotel=hotel)
+            else:
+                category = categories_by_name.get(category_name) or MenuCategory.objects.get(hotel=hotel, name=category_name)
+            created_items.append(MenuItem.objects.create(hotel=hotel, category=category, **item_data))
+
+        return {
+            "hotel": hotel,
+            "room_types": created_room_types,
+            "rooms": created_rooms,
+            "menu_categories": created_categories,
+            "menu_items": created_items,
+        }
+
+    def to_representation(self, instance):
+        return {
+            "hotel": SuperuserHotelSerializer(instance["hotel"]).data,
+            "room_types": SuperuserRoomTypeSerializer(instance["room_types"], many=True).data,
+            "rooms": SuperuserRoomSerializer(instance["rooms"], many=True).data,
+            "menu_categories": SuperuserMenuCategorySerializer(instance["menu_categories"], many=True).data,
+            "menu_items": SuperuserMenuItemSerializer(instance["menu_items"], many=True).data,
+        }

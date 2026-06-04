@@ -942,3 +942,128 @@ class HotelMemberQuickAddForm(forms.Form):
             hotel_member._generated_password = user._generated_password
 
         return hotel_member
+
+
+class GuestRegisterForm(forms.Form):
+    full_name = forms.CharField(
+        label=_("Full Name"),
+        max_length=255,
+        widget=forms.TextInput(attrs={"class": BASE_INPUT, "placeholder": _("Your Full Name")})
+    )
+    email = forms.EmailField(
+        label=_("Email Address"),
+        widget=forms.EmailInput(attrs={"class": BASE_INPUT, "placeholder": _("name@example.com")})
+    )
+    password = forms.CharField(
+        label=_("Password"),
+        widget=forms.PasswordInput(attrs={"class": BASE_INPUT, "placeholder": _("Min. 8 characters")})
+    )
+    password_confirm = forms.CharField(
+        label=_("Confirm Password"),
+        widget=forms.PasswordInput(attrs={"class": BASE_INPUT, "placeholder": _("Repeat your password")})
+    )
+    phone = forms.CharField(
+        label=_("Phone Number"),
+        max_length=30,
+        widget=forms.TextInput(attrs={"class": BASE_INPUT, "placeholder": _("+2567XXXXXXXX")})
+    )
+    hotel = forms.ModelChoiceField(
+        queryset=None,  # We'll set this in __init__
+        label=_("Preferred Hotel Association"),
+        required=False,
+        empty_label=_("Select Preferred Hotel"),
+        widget=forms.Select(attrs={"class": BASE_SELECT})
+    )
+    nationality = forms.CharField(
+        label=_("Nationality"),
+        max_length=120,
+        required=False,
+        widget=forms.TextInput(attrs={"class": BASE_INPUT, "placeholder": _("e.g. Ugandan")})
+    )
+    city = forms.CharField(
+        label=_("City"),
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={"class": BASE_INPUT, "placeholder": _("e.g. Kampala")})
+    )
+    country = forms.CharField(
+        label=_("Country"),
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={"class": BASE_INPUT, "placeholder": _("e.g. Uganda")})
+    )
+    marketing_consent = forms.BooleanField(
+        label=_("I agree to marketing communications"),
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"})
+    )
+    newsletter_subscribed = forms.BooleanField(
+        label=_("Subscribe to our newsletter"),
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"})
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from hotels.models import Hotel
+        self.fields["hotel"].queryset = Hotel.objects.filter(is_active=True)
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email", "").strip().lower()
+        if User.objects.filter(email__iexact=email).exists() or User.objects.filter(username__iexact=email).exists():
+            raise ValidationError(_("An account with this email address already exists."))
+        return email
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get("password")
+        password_confirm = cleaned_data.get("password_confirm")
+
+        if password and password_confirm and password != password_confirm:
+            self.add_error("password_confirm", _("Passwords do not match."))
+
+        if password:
+            try:
+                from django.contrib.auth.password_validation import validate_password
+                validate_password(password)
+            except ValidationError as e:
+                self.add_error("password", e)
+
+        return cleaned_data
+
+    @transaction.atomic
+    def save(self):
+        from bookings.models import Guest
+        from hotels.models import Hotel
+        
+        email = self.cleaned_data["email"].strip().lower()
+        full_name = self.cleaned_data["full_name"].strip()
+        password = self.cleaned_data["password"]
+        
+        hotel = self.cleaned_data.get("hotel")
+        if not hotel:
+            hotel = Hotel.objects.filter(is_active=True).order_by("name").first()
+            
+        user = User.objects.create_user(username=email, email=email, password=password)
+        
+        parts = full_name.split(" ", 1)
+        user.first_name = parts[0]
+        user.last_name = parts[1] if len(parts) > 1 else ""
+        user.save(update_fields=["first_name", "last_name"])
+        
+        guest = Guest.objects.create(
+            hotel=hotel,
+            user=user,
+            full_name=full_name,
+            phone=self.cleaned_data["phone"],
+            email=email,
+            nationality=self.cleaned_data.get("nationality") or "",
+            city=self.cleaned_data.get("city") or "",
+            country=self.cleaned_data.get("country") or "",
+            marketing_consent=self.cleaned_data.get("marketing_consent", False),
+            newsletter_subscribed=self.cleaned_data.get("newsletter_subscribed", False)
+        )
+        
+        Profile.objects.get_or_create(user=user)
+        
+        return user
