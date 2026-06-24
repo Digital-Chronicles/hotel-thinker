@@ -1,4 +1,4 @@
-from django.db.models import Count
+from django.db.models import Count, Avg, Q
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
@@ -7,9 +7,9 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
 
 from hotels.models import Hotel, HotelExperience, HotelReview
-from rooms.models import RoomType
+from rooms.models import RoomType, RoomImage
 from restaurant.models import MenuCategory, MenuItem
-from bar.models import BarItem
+from bar.models import BarCategory, BarItem
 from bookings.models import Booking
 
 from .serializers import (
@@ -57,12 +57,21 @@ class PublicHotelListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         qs = Hotel.objects.filter(is_active=True, is_published=True).order_by("name")
+        q = self.request.query_params.get("q") or self.request.query_params.get("search")
         city = self.request.query_params.get("city")
         country = self.request.query_params.get("country")
+        featured = self.request.query_params.get("featured")
+        if q:
+            qs = qs.filter(
+                Q(name__icontains=q) | Q(city__icontains=q) | Q(country__icontains=q) |
+                Q(short_description__icontains=q) | Q(description__icontains=q)
+            )
         if city:
             qs = qs.filter(city__icontains=city)
         if country:
             qs = qs.filter(country__icontains=country)
+        if featured in ("1", "true", "True", "yes"):
+            qs = qs.filter(is_featured=True)
         return qs
 
     def get_serializer_context(self):
@@ -73,7 +82,33 @@ class PublicHotelListAPIView(generics.ListAPIView):
 
 class PublicHotelDetailAPIView(PublicHotelMixin, APIView):
     def get(self, request, slug):
-        return Response(PublicHotelSerializer(self.get_hotel(), context={"request": request}).data)
+        hotel = self.get_hotel()
+        room_types = RoomType.objects.filter(hotel=hotel).annotate(available_rooms=Count("rooms", filter=Q(rooms__is_active=True))).order_by("base_price", "name")
+        reviews = HotelReview.objects.filter(hotel=hotel, is_approved=True).order_by("-created_at")[:10]
+        experiences = HotelExperience.objects.filter(hotel=hotel, is_approved=True).prefetch_related("images").order_by("-created_at")[:10]
+        gallery = RoomImage.objects.filter(hotel=hotel, is_active=True).order_by("order", "-is_primary")[:20]
+        return Response({
+            "hotel": PublicHotelSerializer(hotel, context={"request": request}).data,
+            "room_types": PublicRoomTypeSerializer(room_types, many=True, context={"request": request}).data,
+            "gallery": [self._image_payload(request, img) for img in gallery],
+            "rating": {
+                "average": HotelReview.objects.filter(hotel=hotel, is_approved=True).aggregate(avg=Avg("overall_rating"))["avg"] or hotel.star_rating,
+                "count": HotelReview.objects.filter(hotel=hotel, is_approved=True).count(),
+            },
+            "reviews": PublicReviewSerializer(reviews, many=True, context={"request": request}).data,
+            "experiences": PublicExperienceSerializer(experiences, many=True, context={"request": request}).data,
+        })
+
+    def _image_payload(self, request, image):
+        url = image.image.url if image and image.image else None
+        return {
+            "id": image.id,
+            "url": request.build_absolute_uri(url) if request and url else url,
+            "title": image.title or image.alt_text or "",
+            "caption": image.caption or "",
+            "category": image.category,
+            "is_primary": image.is_primary,
+        }
 
 
 class GuestRegisterAPIView(APIView):
@@ -171,6 +206,50 @@ class PublicExperienceDetailAPIView(APIView):
         })
 
 
+class PublicHomeAPIView(APIView):
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = [OptionalTokenAuthentication, SessionAuthentication]
+
+    def get(self, request):
+        hotels = Hotel.objects.filter(is_active=True, is_published=True)
+        featured = hotels.filter(is_featured=True).order_by("name")[:10]
+        recommended = hotels.order_by("name")[:10]
+        experiences = HotelExperience.objects.filter(is_approved=True, hotel__is_active=True, hotel__is_published=True).select_related("hotel").prefetch_related("images").order_by("-created_at")[:10]
+        destinations = hotels.exclude(city__isnull=True).exclude(city="").values("city", "country").annotate(properties=Count("id")).order_by("city")[:20]
+        return Response({
+            "featured_hotels": PublicHotelSerializer(featured, many=True, context={"request": request}).data,
+            "recommended_hotels": PublicHotelSerializer(recommended, many=True, context={"request": request}).data,
+            "experiences": PublicExperienceSerializer(experiences, many=True, context={"request": request}).data,
+            "destinations": list(destinations),
+            "vibes": ["Beach", "City Escape", "Countryside", "Family", "Business", "Romantic", "Wellness"],
+        })
+
+
+class PublicHotelRoomsAPIView(PublicHotelMixin, APIView):
+    def get(self, request, slug):
+        hotel = self.get_hotel()
+        room_types = RoomType.objects.filter(hotel=hotel).annotate(available_rooms=Count("rooms", filter=Q(rooms__is_active=True))).order_by("base_price", "name")
+        return Response({"room_types": PublicRoomTypeSerializer(room_types, many=True, context={"request": request}).data})
+
+
+class PublicHotelGalleryAPIView(PublicHotelMixin, APIView):
+    def get(self, request, slug):
+        hotel = self.get_hotel()
+        qs = RoomImage.objects.filter(hotel=hotel, is_active=True).order_by("order", "-is_primary")
+        category = request.query_params.get("category")
+        if category:
+            qs = qs.filter(category=category)
+        data = []
+        for img in qs:
+            url = img.image.url if img.image else None
+            data.append({
+                "id": img.id, "url": request.build_absolute_uri(url) if request and url else url,
+                "title": img.title or "", "caption": img.caption or "", "category": img.category,
+                "is_primary": img.is_primary, "room_type": img.room_type_id, "room": img.room_id,
+            })
+        return Response({"images": data})
+
+
 class PublicAvailabilityAPIView(PublicHotelMixin, APIView):
     def get(self, request, slug):
         hotel = self.get_hotel()
@@ -210,8 +289,13 @@ class PublicMenuAPIView(PublicHotelMixin, APIView):
 
 class PublicBarAPIView(PublicHotelMixin, APIView):
     def get(self, request, slug):
-        items = BarItem.objects.filter(hotel=self.get_hotel(), is_active=True).select_related("category").order_by("category__sort_order", "name")
-        return Response({"items": PublicBarItemSerializer(items, many=True).data})
+        hotel = self.get_hotel()
+        categories = BarCategory.objects.filter(hotel=hotel, is_active=True).order_by("sort_order", "name")
+        items = BarItem.objects.filter(hotel=hotel, is_active=True).select_related("category").order_by("category__sort_order", "name")
+        return Response({
+            "categories": [{"id": c.id, "name": c.name, "sort_order": c.sort_order} for c in categories],
+            "items": PublicBarItemSerializer(items, many=True).data,
+        })
 
 
 class PublicBookingCreateAPIView(PublicHotelMixin, APIView):
@@ -305,3 +389,37 @@ class PublicReviewListCreateAPIView(PublicHotelMixin, APIView):
             "message": "Review posted successfully.",
             "review": PublicReviewSerializer(review, context={"request": request}).data,
         }, status=status.HTTP_201_CREATED)
+
+
+class GuestProfileUpdateAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [TokenAuthentication, SessionAuthentication]
+
+    def patch(self, request):
+        guest = get_guest_for_user(request.user)
+        if not guest:
+            return Response({"detail": "No guest profile found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = PublicGuestSerializer(guest, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"guest": serializer.data})
+
+
+class GuestBookingDetailAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [TokenAuthentication, SessionAuthentication]
+
+    def get_object(self, request, pk):
+        guest = get_guest_for_user(request.user)
+        return get_object_or_404(Booking.objects.select_related("hotel", "room", "room__room_type", "guest"), pk=pk, guest=guest)
+
+    def get(self, request, pk):
+        return Response({"booking": PublicBookingSerializer(self.get_object(request, pk)).data})
+
+    def delete(self, request, pk):
+        booking = self.get_object(request, pk)
+        if booking.status in [Booking.Status.CHECKED_IN, Booking.Status.CHECKED_OUT, Booking.Status.CANCELLED]:
+            return Response({"detail": "This booking cannot be cancelled."}, status=status.HTTP_400_BAD_REQUEST)
+        booking.status = Booking.Status.CANCELLED
+        booking.save(update_fields=["status", "updated_at"])
+        return Response({"message": "Booking cancelled.", "booking": PublicBookingSerializer(booking).data})
