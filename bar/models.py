@@ -19,6 +19,7 @@ class BarCategory(models.Model):
     """Categories for bar items (e.g., Beer, Wine, Spirits, Soft Drinks)"""
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name="bar_categories")
     name = models.CharField(max_length=120, help_text="Category name (e.g., Beer, Wine, Spirits)")
+    image_url = models.CharField(max_length=500, blank=True, default="")
     sort_order = models.PositiveIntegerField(default=0, help_text="Lower numbers appear first")
     is_active = models.BooleanField(default=True, help_text="Inactive categories won't appear in item selection")
     created_at = models.DateTimeField(default=timezone.now, help_text="Creation timestamp")
@@ -47,6 +48,7 @@ class BarItem(models.Model):
     category = models.ForeignKey(BarCategory, on_delete=models.PROTECT, related_name="items")
 
     name = models.CharField(max_length=160, help_text="Name of the beverage")
+    image_url = models.CharField(max_length=500, blank=True, default="")
     sku = models.CharField(max_length=60, blank=True, null=True, help_text="Stock keeping unit / barcode")
     unit = models.CharField(max_length=30, default="bottle", help_text="Unit of measurement (bottle, can, glass, etc.)")
 

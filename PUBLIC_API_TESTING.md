@@ -1,61 +1,74 @@
 # Public Guest API Testing
 
-## Register
+Use the built-in smoke test command to verify the public guest API against local database data.
 
-POST `/api/public/auth/register/`
+## Prepare Data
+
+If you do not already have a published hotel with rooms, menu items, and bar items:
+
+```bash
+python manage.py seed_testing_data
+```
+
+The seed command creates a published demo hotel you can test immediately.
+
+## Run All Public API Checks
+
+```bash
+python manage.py test_public_api
+```
+
+The command tests:
+
+- hotel list and hotel detail
+- room list and room detail
+- menu categories
+- menu items
+- menu items filtered by category
+- menu item detail
+- bar categories
+- bar items
+- bar items filtered by category
+- bar item detail
+- `image_url` presence on image-enabled responses
+
+## Test A Specific Hotel
+
+```bash
+python manage.py test_public_api --slug lakeview-demo-hotel
+```
+
+## Stop At First Failure
+
+```bash
+python manage.py test_public_api --fail-fast
+```
+
+## Show JSON Response Previews
+
+```bash
+python manage.py test_public_api --show-json
+```
+
+## Manual cURL Examples
+
+```bash
+curl http://127.0.0.1:8000/api/public/hotels/
+curl http://127.0.0.1:8000/api/public/hotels/lakeview-demo-hotel/rooms/
+curl http://127.0.0.1:8000/api/public/hotels/lakeview-demo-hotel/menu/categories/
+curl http://127.0.0.1:8000/api/public/hotels/lakeview-demo-hotel/menu/items/
+curl http://127.0.0.1:8000/api/public/hotels/lakeview-demo-hotel/bar/categories/
+curl http://127.0.0.1:8000/api/public/hotels/lakeview-demo-hotel/bar/items/
+```
+
+## Image URL Expectations
+
+For `Room`, `MenuCategory`, `MenuItem`, `BarCategory`, and `BarItem`, the API returns:
 
 ```json
 {
-  "username": "guest1",
-  "password": "Guest123"
+  "image_url": ""
 }
 ```
 
-## Login
-
-POST `/api/public/auth/login/`
-
-```json
-{
-  "username": "guest1",
-  "password": "Guest123"
-}
-```
-
-Use the returned token:
-
-```http
-Authorization: Token YOUR_TOKEN
-```
-
-## View experiences - public
-
-GET `/api/public/hotels/ocean-hotel/experiences/`
-
-## Create experience - signed-in users only
-
-POST `/api/public/hotels/ocean-hotel/experiences/`
-
-Headers:
-
-```http
-Authorization: Token YOUR_TOKEN
-Content-Type: application/json
-```
-
-```json
-{
-  "place_visited": "Queen Elizabeth National Park",
-  "activity": "Wildlife safari",
-  "rating": 5,
-  "experience_text": "The place was beautiful and the hotel helped us find directions."
-}
-```
-
-For image uploads, use `multipart/form-data` with fields:
-
-- `place_visited`
-- `activity`
-- `rating`
-- `experience_text`
-- `images` one or more image files
+when no image link is saved, or the stored URL string when one exists. These are direct database values, not uploaded Django media files.

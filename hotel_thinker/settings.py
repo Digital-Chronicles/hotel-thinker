@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "services",
     "store",    
     "bulk",
+    "operations.apps.OperationsConfig",
 ]
 
 BULK_ALLOWED_APPS = ["rooms", "bookings", "restaurant", "bar", "services"]

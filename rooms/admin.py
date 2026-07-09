@@ -13,8 +13,9 @@ class RoomTypeAdmin(admin.ModelAdmin):
 
 @admin.register(Room)
 class RoomAdmin(admin.ModelAdmin):
-    list_display = ("hotel", "number", "room_type", "status", "is_active")
+    list_display = ("hotel", "number", "room_type", "status", "image_url", "is_active")
     list_filter = ("hotel", "status", "is_active", "room_type")
-    search_fields = ("hotel__name", "number", "room_type__name")
+    fields = ("hotel", "room_type", "number", "floor", "status", "image_url", "is_active")
+    search_fields = ("hotel__name", "number", "room_type__name", "image_url")
     ordering = ("hotel__name", "number")
     autocomplete_fields = ("hotel", "room_type")

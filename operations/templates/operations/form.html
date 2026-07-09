@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} | Hotel Thinker{% endblock %}
+{% block breadcrumb %}<li class="text-slate-400">/</li><li><a class="text-blue-700" href="{% url 'operations:dashboard' %}">Operations</a></li><li class="text-slate-400">/</li><li class="font-semibold text-slate-700">{{ title }}</li>{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-card p-6"><h1 class="text-2xl font-bold mb-5">{{ title }}</h1><form method="post" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-4">{% csrf_token %}{% for field in form %}<div class="{% if field.field.widget.input_type == 'textarea' %}md:col-span-2{% endif %}"><label class="block text-sm font-semibold text-slate-700 mb-1">{{ field.label }}</label>{{ field }}{% if field.help_text %}<p class="text-xs text-slate-500 mt-1">{{ field.help_text }}</p>{% endif %}{% for error in field.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}</div>{% endfor %}<div class="md:col-span-2 flex justify-end gap-3 pt-4"><a href="{% url 'operations:dashboard' %}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700">Cancel</a><button class="px-5 py-2 rounded-xl bg-blue-700 text-white font-semibold">Save</button></div></form></div>
+{% endblock %}

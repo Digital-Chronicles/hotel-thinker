@@ -82,6 +82,7 @@ class MenuCategory(models.Model):
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name="menu_categories")
     name = models.CharField(max_length=120, help_text="e.g., Appetizers, Main Course, Desserts, Beverages")
     description = models.TextField(blank=True, null=True, help_text="Optional category description")
+    image_url = models.CharField(max_length=500, blank=True, default="")
     sort_order = models.PositiveIntegerField(default=0, help_text="Lower numbers appear first")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now, help_text="Creation timestamp")
@@ -108,6 +109,7 @@ class MenuItem(models.Model):
     category = models.ForeignKey(MenuCategory, on_delete=models.PROTECT, related_name="items")
     name = models.CharField(max_length=160, help_text="Name of the dish/beverage")
     description = models.TextField(blank=True, null=True, help_text="Detailed description of the item")
+    image_url = models.CharField(max_length=500, blank=True, default="")
     ingredients = models.TextField(blank=True, null=True, help_text="List of main ingredients")
     
     # Pricing

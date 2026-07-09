@@ -67,6 +67,29 @@ Hotel responses now include:
 - check-in/check-out time
 - logo and cover image URLs
 
+## Image URL links
+
+Rooms, menu categories, menu items, bar categories, and bar items can include an `image_url` value.
+
+- `image_url` is a plain URL string stored directly in the database.
+- Images are not uploaded to Django for this feature.
+- Django does not store image files for these catalog images.
+- An empty image URL is returned as an empty string: `""`.
+- Flutter should use the returned `image_url` directly when displaying images.
+
+Affected public endpoints:
+
+- `GET /api/public/hotels/<slug>/rooms/`
+- `GET /api/public/hotels/<slug>/rooms/<id>/`
+- `GET /api/public/hotels/<slug>/menu/categories/`
+- `GET /api/public/hotels/<slug>/menu/items/`
+- `GET /api/public/hotels/<slug>/menu/items/?category=<id>`
+- `GET /api/public/hotels/<slug>/menu/items/<id>/`
+- `GET /api/public/hotels/<slug>/bar/categories/`
+- `GET /api/public/hotels/<slug>/bar/items/`
+- `GET /api/public/hotels/<slug>/bar/items/?category=<id>`
+- `GET /api/public/hotels/<slug>/bar/items/<id>/`
+
 ## Booking endpoint
 
 `POST /api/public/hotels/<slug>/bookings/`

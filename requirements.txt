@@ -1,0 +1,10 @@
+Django==6.0.3
+djangorestframework==3.17.1
+django-filter==25.2
+django-cors-headers==4.7.0
+django-widget-tweaks==1.5.0
+Pillow==12.1.1
+psycopg2-binary==2.9.11
+python-dateutil==2.9.0.post0
+python-dotenv==1.2.2
+requests==2.32.5

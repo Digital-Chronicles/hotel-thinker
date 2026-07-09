@@ -67,15 +67,24 @@ def recalc_invoice(invoice):
 def upsert_line(invoice, description, quantity, unit_price):
     """Create or update invoice line item"""
     try:
+        qty = max(int(money(quantity)), 1)
+        price = money(unit_price)
         line, created = InvoiceLineItem.objects.get_or_create(
             invoice=invoice,
             description=description,
+            defaults={
+                "quantity": qty,
+                "unit_price": price,
+                "discount": D0,
+                "tax_rate": D0,
+            },
         )
-        line.quantity = max(int(money(quantity)), 1)
-        line.unit_price = money(unit_price)
-        line.discount = D0
-        line.tax_rate = D0
-        line.save()
+        if not created:
+            line.quantity = qty
+            line.unit_price = price
+            line.discount = D0
+            line.tax_rate = D0
+            line.save()
         return line
     except Exception as e:
         logger.error(f"Error upserting line for invoice {invoice.id}: {e}")

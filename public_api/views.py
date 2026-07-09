@@ -7,7 +7,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
 
 from hotels.models import Hotel, HotelExperience, HotelReview
-from rooms.models import RoomType, RoomImage
+from rooms.models import Room, RoomType, RoomImage
 from restaurant.models import MenuCategory, MenuItem
 from bar.models import BarCategory, BarItem
 from bookings.models import Booking
@@ -21,7 +21,9 @@ from .serializers import (
     PublicExperienceCreateSerializer,
     PublicReviewSerializer,
     PublicReviewCreateSerializer,
+    PublicRoomSerializer,
     PublicRoomTypeSerializer,
+    PublicBarCategorySerializer,
     PublicMenuCategorySerializer,
     PublicMenuItemSerializer,
     PublicBarItemSerializer,
@@ -228,8 +230,19 @@ class PublicHomeAPIView(APIView):
 class PublicHotelRoomsAPIView(PublicHotelMixin, APIView):
     def get(self, request, slug):
         hotel = self.get_hotel()
+        rooms = Room.objects.filter(hotel=hotel, is_active=True).select_related("room_type").order_by("room_type__base_price", "number")
         room_types = RoomType.objects.filter(hotel=hotel).annotate(available_rooms=Count("rooms", filter=Q(rooms__is_active=True))).order_by("base_price", "name")
-        return Response({"room_types": PublicRoomTypeSerializer(room_types, many=True, context={"request": request}).data})
+        return Response({
+            "rooms": PublicRoomSerializer(rooms, many=True).data,
+            "room_types": PublicRoomTypeSerializer(room_types, many=True, context={"request": request}).data,
+        })
+
+
+class PublicHotelRoomDetailAPIView(PublicHotelMixin, APIView):
+    def get(self, request, slug, pk):
+        hotel = self.get_hotel()
+        room = get_object_or_404(Room.objects.select_related("room_type"), pk=pk, hotel=hotel, is_active=True)
+        return Response(PublicRoomSerializer(room).data)
 
 
 class PublicHotelGalleryAPIView(PublicHotelMixin, APIView):
@@ -287,15 +300,75 @@ class PublicMenuAPIView(PublicHotelMixin, APIView):
         })
 
 
+class PublicMenuCategoryListAPIView(PublicHotelMixin, APIView):
+    def get(self, request, slug):
+        hotel = self.get_hotel()
+        categories = MenuCategory.objects.filter(hotel=hotel, is_active=True).order_by("sort_order", "name")
+        return Response({"categories": PublicMenuCategorySerializer(categories, many=True).data})
+
+
+class PublicMenuItemListAPIView(PublicHotelMixin, APIView):
+    def get(self, request, slug):
+        hotel = self.get_hotel()
+        items = MenuItem.objects.filter(hotel=hotel, is_active=True).select_related("category")
+        category = request.query_params.get("category")
+        if category:
+            items = items.filter(category_id=category)
+        items = items.order_by("category__sort_order", "name")
+        return Response({"items": PublicMenuItemSerializer(items, many=True).data})
+
+
+class PublicMenuItemDetailAPIView(PublicHotelMixin, APIView):
+    def get(self, request, slug, pk):
+        hotel = self.get_hotel()
+        item = get_object_or_404(
+            MenuItem.objects.select_related("category"),
+            pk=pk,
+            hotel=hotel,
+            is_active=True,
+        )
+        return Response(PublicMenuItemSerializer(item).data)
+
+
 class PublicBarAPIView(PublicHotelMixin, APIView):
     def get(self, request, slug):
         hotel = self.get_hotel()
         categories = BarCategory.objects.filter(hotel=hotel, is_active=True).order_by("sort_order", "name")
         items = BarItem.objects.filter(hotel=hotel, is_active=True).select_related("category").order_by("category__sort_order", "name")
         return Response({
-            "categories": [{"id": c.id, "name": c.name, "sort_order": c.sort_order} for c in categories],
+            "categories": PublicBarCategorySerializer(categories, many=True).data,
             "items": PublicBarItemSerializer(items, many=True).data,
         })
+
+
+class PublicBarCategoryListAPIView(PublicHotelMixin, APIView):
+    def get(self, request, slug):
+        hotel = self.get_hotel()
+        categories = BarCategory.objects.filter(hotel=hotel, is_active=True).order_by("sort_order", "name")
+        return Response({"categories": PublicBarCategorySerializer(categories, many=True).data})
+
+
+class PublicBarItemListAPIView(PublicHotelMixin, APIView):
+    def get(self, request, slug):
+        hotel = self.get_hotel()
+        items = BarItem.objects.filter(hotel=hotel, is_active=True).select_related("category")
+        category = request.query_params.get("category")
+        if category:
+            items = items.filter(category_id=category)
+        items = items.order_by("category__sort_order", "name")
+        return Response({"items": PublicBarItemSerializer(items, many=True).data})
+
+
+class PublicBarItemDetailAPIView(PublicHotelMixin, APIView):
+    def get(self, request, slug, pk):
+        hotel = self.get_hotel()
+        item = get_object_or_404(
+            BarItem.objects.select_related("category"),
+            pk=pk,
+            hotel=hotel,
+            is_active=True,
+        )
+        return Response(PublicBarItemSerializer(item).data)
 
 
 class PublicBookingCreateAPIView(PublicHotelMixin, APIView):

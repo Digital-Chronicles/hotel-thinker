@@ -390,7 +390,7 @@ class TableSerializer(serializers.ModelSerializer):
 class MenuCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = MenuCategory
-        fields = ["id", "name", "description"]
+        fields = ["id", "name", "description", "image_url"]
 
 
 class MenuItemSerializer(serializers.ModelSerializer):
@@ -404,6 +404,7 @@ class MenuItemSerializer(serializers.ModelSerializer):
             "category_name",
             "name",
             "description",
+            "image_url",
             "price",
             "preparation_time",
             "is_active",
@@ -581,6 +582,7 @@ class BarItemSerializer(serializers.ModelSerializer):
             "category_name",
             "name",
             "sku",
+            "image_url",
             "unit",
             "selling_price",
             "cost_price",
@@ -855,6 +857,7 @@ class SuperuserRoomSerializer(serializers.ModelSerializer):
             "number",
             "floor",
             "status",
+            "image_url",
             "is_active",
         ]
         read_only_fields = ["id", "hotel_name", "room_type_name"]
@@ -878,6 +881,7 @@ class SuperuserMenuCategorySerializer(serializers.ModelSerializer):
             "hotel_name",
             "name",
             "description",
+            "image_url",
             "sort_order",
             "is_active",
             "created_at",
@@ -900,6 +904,7 @@ class SuperuserMenuItemSerializer(serializers.ModelSerializer):
             "category_name",
             "name",
             "description",
+            "image_url",
             "ingredients",
             "price",
             "cost_price",

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Enterprise Operations | Hotel Thinker{% endblock %}
+{% block breadcrumb %}<li class="text-slate-400">/</li><li class="font-semibold text-slate-700">Operations</li>{% endblock %}
+{% block content %}
+<div class="space-y-6">
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <div><h1 class="text-3xl font-bold text-slate-900">Enterprise Operations</h1><p class="text-slate-500 mt-1">Housekeeping, maintenance, laundry, guest requests, night audit, channels and kitchen tickets.</p></div>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+    <a href="{% url 'operations:housekeeping_list' %}" class="bg-white rounded-2xl p-5 shadow-card hover:shadow-card-hover"><div class="text-sm text-slate-500">Open Housekeeping</div><div class="text-3xl font-extrabold text-blue-700">{{ housekeeping_open }}</div></a>
+    <a href="{% url 'operations:maintenance_list' %}" class="bg-white rounded-2xl p-5 shadow-card hover:shadow-card-hover"><div class="text-sm text-slate-500">Open Maintenance</div><div class="text-3xl font-extrabold text-red-600">{{ maintenance_open }}</div></a>
+    <a href="{% url 'operations:laundry_list' %}" class="bg-white rounded-2xl p-5 shadow-card hover:shadow-card-hover"><div class="text-sm text-slate-500">Active Laundry</div><div class="text-3xl font-extrabold text-indigo-600">{{ laundry_active }}</div></a>
+    <a href="{% url 'operations:guest_request_list' %}" class="bg-white rounded-2xl p-5 shadow-card hover:shadow-card-hover"><div class="text-sm text-slate-500">Guest Requests</div><div class="text-3xl font-extrabold text-amber-600">{{ guest_requests_open }}</div></a>
+    <a href="{% url 'operations:kitchen_ticket_list' %}" class="bg-white rounded-2xl p-5 shadow-card hover:shadow-card-hover"><div class="text-sm text-slate-500">Kitchen Tickets</div><div class="text-3xl font-extrabold text-emerald-600">{{ kitchen_active }}</div></a>
+    <a href="{% url 'operations:night_audit_list' %}" class="bg-white rounded-2xl p-5 shadow-card hover:shadow-card-hover"><div class="text-sm text-slate-500">Night Audit Drafts</div><div class="text-3xl font-extrabold text-slate-800">{{ night_audit_drafts }}</div></a>
+  </div>
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+    <div class="bg-white rounded-2xl p-5 shadow-card"><h2 class="font-bold mb-3">Recent Housekeeping</h2>{% for item in recent_housekeeping %}<div class="py-2 border-b"><a class="font-semibold text-blue-700" href="{% url 'operations:housekeeping_detail' item.pk %}">{{ item.room }} - {{ item.title }}</a><div class="text-xs text-slate-500">{{ item.status }} · {{ item.priority }}</div></div>{% empty %}<p class="text-slate-500">No tasks yet.</p>{% endfor %}</div>
+    <div class="bg-white rounded-2xl p-5 shadow-card"><h2 class="font-bold mb-3">Recent Maintenance</h2>{% for item in recent_maintenance %}<div class="py-2 border-b"><a class="font-semibold text-blue-700" href="{% url 'operations:maintenance_detail' item.pk %}">{{ item.title }}</a><div class="text-xs text-slate-500">{{ item.status }} · {{ item.severity }}</div></div>{% empty %}<p class="text-slate-500">No tickets yet.</p>{% endfor %}</div>
+    <div class="bg-white rounded-2xl p-5 shadow-card"><h2 class="font-bold mb-3">Recent Guest Requests</h2>{% for item in recent_requests %}<div class="py-2 border-b"><a class="font-semibold text-blue-700" href="{% url 'operations:guest_request_detail' item.pk %}">{{ item.request_type }}</a><div class="text-xs text-slate-500">{{ item.status }} · {{ item.room|default:'No room' }}</div></div>{% empty %}<p class="text-slate-500">No requests yet.</p>{% endfor %}</div>
+  </div>
+</div>
+{% endblock %}

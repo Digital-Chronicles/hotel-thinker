@@ -18,9 +18,10 @@ class BarItemInline(admin.TabularInline):
 
 @admin.register(BarCategory)
 class BarCategoryAdmin(admin.ModelAdmin):
-    list_display = ("name", "hotel", "sort_order", "is_active")
+    list_display = ("name", "hotel", "sort_order", "image_url", "is_active")
     list_filter = ("hotel", "is_active")
-    search_fields = ("name", "hotel__name")
+    fields = ("hotel", "name", "image_url", "sort_order", "is_active")
+    search_fields = ("name", "hotel__name", "image_url")
     ordering = ("hotel", "sort_order", "name")
 
 
@@ -33,6 +34,7 @@ class BarItemAdmin(admin.ModelAdmin):
         "unit",
         "selling_price",
         "cost_price",
+        "image_url",
         "stock_qty",
         "reorder_level",
         "track_stock",
@@ -49,6 +51,12 @@ class BarItemAdmin(admin.ModelAdmin):
         "sku",
         "hotel__name",
         "category__name",
+        "image_url",
+    )
+    fields = (
+        "hotel", "category", "name", "image_url", "sku", "unit",
+        "selling_price", "cost_price", "track_stock", "stock_qty",
+        "reorder_level", "is_active",
     )
     list_editable = ("selling_price", "stock_qty", "reorder_level", "is_active")
     autocomplete_fields = ("hotel", "category")

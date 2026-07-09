@@ -1,6 +1,6 @@
 # Hotel Thinker Public Guest API
 
-This update adds a clean public API for external guests to browse hotels, check room availability, and submit room, food, and drink orders.
+The public guest API lets external apps browse published hotels, rooms, menu items, bar items, guest experiences, reviews, and create guest-facing bookings or orders.
 
 ## Base URL
 
@@ -8,36 +8,163 @@ This update adds a clean public API for external guests to browse hotels, check 
 /api/public/
 ```
 
-## Public endpoints
+## Authentication
 
-### Hotels
+Most browsing endpoints are public. Guest profile, guest booking history, and authenticated experience/review creation use token auth:
+
+```http
+Authorization: Token YOUR_TOKEN
+```
+
+### Register
+
+```http
+POST /api/public/auth/register/
+Content-Type: application/json
+```
+
+```json
+{
+  "username": "guest1",
+  "password": "Guest123"
+}
+```
+
+### Login
+
+```http
+POST /api/public/auth/login/
+Content-Type: application/json
+```
+
+```json
+{
+  "username": "guest1",
+  "password": "Guest123"
+}
+```
+
+## Hotels
 
 ```http
 GET /api/public/hotels/
+GET /api/public/hotels/?city=Kampala
+GET /api/public/hotels/?country=Uganda
+GET /api/public/hotels/?q=lake
 GET /api/public/hotels/<hotel-slug>/
 ```
 
-### Room availability
+Hotel responses include contact details, location fields, map links, supported currencies, check-in/check-out time, logo URL, and cover URL.
+
+## Rooms
 
 ```http
-GET /api/public/hotels/<hotel-slug>/availability/?check_in=2026-05-20&check_out=2026-05-22
+GET /api/public/hotels/<hotel-slug>/rooms/
+GET /api/public/hotels/<hotel-slug>/rooms/<room-id>/
+GET /api/public/hotels/<hotel-slug>/availability/?check_in=2026-08-01&check_out=2026-08-03
 ```
 
-Returns available room types, prices, descriptions, available room counts, and image URL where available.
+Room responses include `image_url` directly from the `Room.image_url` database field.
 
-### Create room booking
+Example room detail:
+
+```json
+{
+  "id": 1,
+  "number": "101",
+  "floor": "1",
+  "status": "available",
+  "room_type": 1,
+  "name": "Deluxe Room",
+  "description": "Comfortable deluxe room with city view",
+  "price": "150000.00",
+  "image_url": "https://example.com/images/deluxe-room.jpg"
+}
+```
+
+## Menu
+
+```http
+GET /api/public/hotels/<hotel-slug>/menu/
+GET /api/public/hotels/<hotel-slug>/menu/categories/
+GET /api/public/hotels/<hotel-slug>/menu/items/
+GET /api/public/hotels/<hotel-slug>/menu/items/?category=<category-id>
+GET /api/public/hotels/<hotel-slug>/menu/items/<item-id>/
+```
+
+Example menu item:
+
+```json
+{
+  "id": 1,
+  "category": 1,
+  "category_name": "Breakfast",
+  "name": "Katogo",
+  "description": "Matooke cooked with beef or beans",
+  "price": "15000.00",
+  "is_available": true,
+  "image_url": "https://example.com/images/katogo.jpg"
+}
+```
+
+## Bar
+
+```http
+GET /api/public/hotels/<hotel-slug>/bar/
+GET /api/public/hotels/<hotel-slug>/bar/categories/
+GET /api/public/hotels/<hotel-slug>/bar/items/
+GET /api/public/hotels/<hotel-slug>/bar/items/?category=<category-id>
+GET /api/public/hotels/<hotel-slug>/bar/items/<item-id>/
+```
+
+Example bar item:
+
+```json
+{
+  "id": 1,
+  "category": 1,
+  "category_name": "Soft Drinks",
+  "name": "Mineral Water",
+  "description": "",
+  "unit": "bottle",
+  "selling_price": "3000.00",
+  "price": "3000.00",
+  "is_available": true,
+  "is_out_of_stock": false,
+  "image_url": "https://example.com/images/water.jpg"
+}
+```
+
+## Image URL Fields
+
+`Room`, `MenuCategory`, `MenuItem`, `BarCategory`, and `BarItem` store image links in:
+
+```python
+image_url
+```
+
+Rules:
+
+- `image_url` is a plain URL string stored directly in the database.
+- Images are not uploaded to Django for these fields.
+- Empty image URLs return `""`.
+- Flutter should use the returned `image_url` directly.
+
+## Bookings
 
 ```http
 POST /api/public/hotels/<hotel-slug>/bookings/
 Content-Type: application/json
+```
 
+```json
 {
   "room_type": 1,
   "full_name": "John Doe",
   "phone": "+256700000000",
   "email": "john@example.com",
-  "check_in": "2026-05-20",
-  "check_out": "2026-05-22",
+  "check_in": "2026-08-01",
+  "check_out": "2026-08-03",
   "adults": 2,
   "children": 0,
   "special_requests": "Quiet room please"
@@ -46,14 +173,12 @@ Content-Type: application/json
 
 You may send either `room_type` or a specific `room`. If neither is sent, the API selects the cheapest available room.
 
-### Food menu and order
+## Food Orders
 
 ```http
-GET /api/public/hotels/<hotel-slug>/menu/
 POST /api/public/hotels/<hotel-slug>/food-orders/
+Content-Type: application/json
 ```
-
-Example body:
 
 ```json
 {
@@ -66,7 +191,7 @@ Example body:
 }
 ```
 
-For room charges, add:
+For room charges, include:
 
 ```json
 {
@@ -75,14 +200,12 @@ For room charges, add:
 }
 ```
 
-### Drinks and order
+## Drink Orders
 
 ```http
-GET /api/public/hotels/<hotel-slug>/bar/
 POST /api/public/hotels/<hotel-slug>/drink-orders/
+Content-Type: application/json
 ```
-
-Example body:
 
 ```json
 {
@@ -93,11 +216,28 @@ Example body:
 }
 ```
 
-## Files changed
+## Testing The API
 
-- Added `public_api/` app
-- Registered `public_api.apps.PublicApiConfig`
-- Added `/api/public/` URL routes
-- Fixed mobile API status names that were causing crashes: restaurant uses `open/paid`, bar uses `open/served`
-- Fixed missing `django.db.models` import in `mobile_api/serializers.py`
-- Enabled CORS credentials for API clients
+Seed demo data if needed:
+
+```bash
+python manage.py seed_testing_data
+```
+
+Run the public API smoke test:
+
+```bash
+python manage.py test_public_api
+```
+
+Test a specific hotel:
+
+```bash
+python manage.py test_public_api --slug lakeview-demo-hotel
+```
+
+Print response previews:
+
+```bash
+python manage.py test_public_api --show-json
+```

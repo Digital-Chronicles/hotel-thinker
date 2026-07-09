@@ -12,7 +12,7 @@ from hotels.models import Hotel, HotelExperience, HotelExperienceImage, HotelRev
 from rooms.models import Room, RoomType, RoomImage
 from bookings.models import Booking, Guest
 from restaurant.models import MenuCategory, MenuItem, RestaurantOrder, RestaurantOrderItem
-from bar.models import BarItem, BarOrder, BarOrderItem
+from bar.models import BarCategory, BarItem, BarOrder, BarOrderItem
 
 
 ACTIVE_BOOKING_STATUSES = [
@@ -294,30 +294,68 @@ class PublicRoomTypeSerializer(serializers.ModelSerializer):
         return None
 
 
+class PublicRoomSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source="room_type.name", read_only=True)
+    description = serializers.CharField(source="room_type.description", read_only=True)
+    price = serializers.DecimalField(source="room_type.base_price", max_digits=12, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = Room
+        fields = [
+            "id", "number", "floor", "status", "room_type", "name", "description",
+            "price", "image_url",
+        ]
+
+
 class PublicMenuCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = MenuCategory
-        fields = ["id", "name", "description", "sort_order"]
+        fields = ["id", "name", "description", "image_url", "sort_order"]
 
 
 class PublicMenuItemSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source="category.name", read_only=True)
+    is_available = serializers.BooleanField(source="is_active", read_only=True)
 
     class Meta:
         model = MenuItem
         fields = [
             "id", "category", "category_name", "name", "description", "price",
+            "is_available", "image_url",
             "is_vegetarian", "is_vegan", "is_gluten_free", "is_spicy",
             "is_featured", "is_recommended", "preparation_time",
         ]
 
 
+class PublicBarCategorySerializer(serializers.ModelSerializer):
+    description = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BarCategory
+        fields = ["id", "name", "description", "image_url", "sort_order"]
+
+    def get_description(self, obj):
+        return getattr(obj, "description", "") or ""
+
+
 class PublicBarItemSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source="category.name", read_only=True)
+    description = serializers.SerializerMethodField()
+    price = serializers.DecimalField(source="selling_price", max_digits=12, decimal_places=2, read_only=True)
+    is_available = serializers.SerializerMethodField()
 
     class Meta:
         model = BarItem
-        fields = ["id", "category", "category_name", "name", "unit", "selling_price", "is_out_of_stock"]
+        fields = [
+            "id", "category", "category_name", "name", "description", "unit",
+            "selling_price", "price", "is_available", "is_out_of_stock", "image_url",
+        ]
+
+    def get_description(self, obj):
+        return getattr(obj, "description", "") or ""
+
+    def get_is_available(self, obj):
+        return bool(obj.is_active and not obj.is_out_of_stock)
 
 
 class PublicBookingCreateSerializer(serializers.Serializer):

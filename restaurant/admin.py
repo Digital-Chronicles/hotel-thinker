@@ -29,18 +29,25 @@ class TableAdmin(admin.ModelAdmin):
 
 @admin.register(MenuCategory)
 class MenuCategoryAdmin(admin.ModelAdmin):
-    list_display = ("hotel", "name", "sort_order", "is_active")
+    list_display = ("hotel", "name", "sort_order", "image_url", "is_active")
     list_filter = ("hotel", "is_active")
-    search_fields = ("hotel__name", "name")
+    fields = ("hotel", "name", "description", "image_url", "sort_order", "is_active")
+    search_fields = ("hotel__name", "name", "description", "image_url")
     ordering = ("hotel__name", "sort_order", "name")
     autocomplete_fields = ("hotel",)
 
 
 @admin.register(MenuItem)
 class MenuItemAdmin(admin.ModelAdmin):
-    list_display = ("hotel", "category", "name", "price", "is_active")
+    list_display = ("hotel", "category", "name", "price", "image_url", "is_active")
     list_filter = ("hotel", "category", "is_active")
-    search_fields = ("hotel__name", "name", "category__name")
+    fields = (
+        "hotel", "category", "name", "description", "image_url", "ingredients",
+        "price", "cost_price", "track_stock", "stock_qty", "reorder_level",
+        "is_vegetarian", "is_vegan", "is_gluten_free", "is_spicy",
+        "is_featured", "is_recommended", "is_active", "preparation_time",
+    )
+    search_fields = ("hotel__name", "name", "description", "category__name", "image_url")
     ordering = ("hotel__name", "category__name", "name")
     autocomplete_fields = ("hotel", "category")
 

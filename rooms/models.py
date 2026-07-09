@@ -36,6 +36,7 @@ class Room(models.Model):
     number = models.CharField(max_length=50)  # e.g. 101, A-01
     floor = models.CharField(max_length=50, blank=True, null=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.AVAILABLE)
+    image_url = models.CharField(max_length=500, blank=True, default="")
 
     is_active = models.BooleanField(default=True)
 
